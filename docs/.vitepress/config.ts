@@ -4,7 +4,7 @@ import { withMermaid } from 'vitepress-plugin-mermaid'
 export default withMermaid(
   defineConfig({
   title: '嵌入式学习笔记',
-  description: '嵌入式代码分析与学习心得',
+  description: 'Linux 驱动与嵌入式开发 · USB 内核源码分析与学习实践',
   lang: 'zh-CN',
   base: '/',
 
@@ -15,6 +15,7 @@ export default withMermaid(
   themeConfig: {
     nav: [
       { text: '首页', link: '/' },
+      { text: '关于', link: '/about' },
       { text: '学习笔记', link: '/notes/' },
       { text: '代码分析', link: '/analysis/' },
       {
