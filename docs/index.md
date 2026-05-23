@@ -27,5 +27,6 @@ features:
 
 ## 最近更新
 
+- [USB 2.0 枚举流程](/analysis/usb/usb-enumeration) — 典型控制传输与描述符读取时序
 - [UVC 驱动分析](/analysis/uvc-driver) — USB Video Class 驱动结构初探
 - [FreeRTOS 任务调度](/notes/rtos/task-scheduling) — 任务状态与调度机制笔记
