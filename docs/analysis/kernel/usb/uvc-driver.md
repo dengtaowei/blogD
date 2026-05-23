@@ -1,10 +1,13 @@
-# UVC 驱动分析
+﻿# UVC 驱动分析
+
+> **Linux 内核 · USB 子系统** · 类驱动  
+> 前置：[枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)
 
 ## 背景
 
 UVC（USB Video Class）是 USB 摄像头的标准协议。Linux 内核中的 `uvcvideo` 驱动实现了对该类设备的识别、格式协商与视频流采集。
 
-本文作为分析系列的开篇，梳理驱动的整体架构。
+本文梳理 UVC 类驱动的整体架构（设备完成枚举、interface probe 绑定之后）。
 
 ## 核心数据结构
 

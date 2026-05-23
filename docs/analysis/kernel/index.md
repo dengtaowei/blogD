@@ -1,0 +1,15 @@
+# Linux 内核
+
+Linux 内核子系统源码分析（Linux 6.8）。
+
+## USB 子系统
+
+1. [USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration)
+2. [hub_port_init 调用链](/analysis/kernel/usb/hub-port-init)
+3. [usb_get_descriptor 调用链](/analysis/kernel/usb/get-descriptor-trace)
+4. [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)
+5. [UVC 驱动分析](/analysis/kernel/usb/uvc-driver)
+
+## Pinctrl 子系统
+
+- [STM32 Pinctrl 分析](/analysis/kernel/pinctrl/stm32-pinctrl)

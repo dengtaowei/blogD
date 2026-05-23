@@ -1,4 +1,4 @@
----
+﻿---
 layout: home
 
 hero:
@@ -27,8 +27,8 @@ features:
 
 ## 最近更新
 
-- [枚举与两轮 Probe](/analysis/usb/enumeration-and-probe) — USB core 设备注册与 interface 驱动绑定
-- [hub_port_init 调用链](/analysis/usb/hub-port-init) — 从 Hub 中断到设备地址分配
-- [USB 2.0 枚举流程](/analysis/usb/usb-enumeration) — 典型控制传输与描述符读取时序
-- [UVC 驱动分析](/analysis/uvc-driver) — USB Video Class 驱动结构初探
+- [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe) — USB core 设备注册与 interface 驱动绑定
+- [hub_port_init 调用链](/analysis/kernel/usb/hub-port-init) — 从 Hub 中断到设备地址分配
+- [USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) — 典型控制传输与描述符读取时序
+- [UVC 驱动分析](/analysis/kernel/usb/uvc-driver) — USB Video Class 驱动结构初探
 - [FreeRTOS 任务调度](/notes/rtos/task-scheduling) — 任务状态与调度机制笔记

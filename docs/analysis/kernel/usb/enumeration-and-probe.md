@@ -1,7 +1,7 @@
-# USB 设备枚举与两轮 Probe
+﻿# USB 设备枚举与两轮 Probe
 
 > Linux 6.8 · 源码路径 `drivers/usb/core/`  
-> **USB 内核分析系列**：[① 协议枚举](/analysis/usb/usb-enumeration) → [② hub_port_init](/analysis/usb/hub-port-init) → [③ usb_get_descriptor](/analysis/usb/get-descriptor-trace) → **④ 本文**
+> **Linux 内核 · USB 子系统**：[① 协议枚举](/analysis/kernel/usb/usb-enumeration) → [② hub_port_init](/analysis/kernel/usb/hub-port-init) → [③ usb_get_descriptor](/analysis/kernel/usb/get-descriptor-trace) → **④ 本文**
 
 ## 目录
 
@@ -252,8 +252,8 @@ sudo trace-cmd report /tmp/usb.dat -F function_graph | less
 | 目的 | 建议 |
 |------|------|
 | 查看完整子调用树 | `-g usb_new_device` |
-| `hub_port_init` 调用链（插盘 → 地址 + 设备描述符） | [hub_port_init](/analysis/usb/hub-port-init) |
-| `usb_get_descriptor` 调用链说明 | [get-descriptor-trace](/analysis/usb/get-descriptor-trace) |
+| `hub_port_init` 调用链（插盘 → 地址 + 设备描述符） | [hub_port_init](/analysis/kernel/usb/hub-port-init) |
+| `usb_get_descriptor` 调用链说明 | [get-descriptor-trace](/analysis/kernel/usb/get-descriptor-trace) |
 | 关注配置与接口注册 | `-g usb_set_configuration` |
 | 跟踪接口驱动绑定 | `-l usb_probe_interface` |
 | 带内核栈 | 录制时加 `--stack` |

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitepress'
+﻿import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
 
 export default withMermaid(
@@ -34,24 +34,25 @@ export default withMermaid(
       ],
       '/analysis/': [
         {
-          text: 'USB 协议与内核',
+          text: 'Linux 内核',
           items: [
-            { text: 'USB 2.0 枚举流程', link: '/analysis/usb/usb-enumeration' },
-            { text: 'hub_port_init 调用链', link: '/analysis/usb/hub-port-init' },
-            { text: 'usb_get_descriptor 调用链', link: '/analysis/usb/get-descriptor-trace' },
-            { text: '枚举与两轮 Probe', link: '/analysis/usb/enumeration-and-probe' }
-          ]
-        },
-        {
-          text: '内核子系统',
-          items: [
-            { text: 'STM32 Pinctrl 分析', link: '/analysis/kernel/stm32-pinctrl' }
-          ]
-        },
-        {
-          text: '驱动分析',
-          items: [
-            { text: 'UVC 驱动分析', link: '/analysis/uvc-driver' }
+            { text: '概览', link: '/analysis/kernel/' },
+            {
+              text: 'USB 子系统',
+              items: [
+                { text: 'USB 2.0 枚举流程', link: '/analysis/kernel/usb/usb-enumeration' },
+                { text: 'hub_port_init 调用链', link: '/analysis/kernel/usb/hub-port-init' },
+                { text: 'usb_get_descriptor 调用链', link: '/analysis/kernel/usb/get-descriptor-trace' },
+                { text: '枚举与两轮 Probe', link: '/analysis/kernel/usb/enumeration-and-probe' },
+                { text: 'UVC 驱动分析', link: '/analysis/kernel/usb/uvc-driver' }
+              ]
+            },
+            {
+              text: 'Pinctrl 子系统',
+              items: [
+                { text: 'STM32 Pinctrl 分析', link: '/analysis/kernel/pinctrl/stm32-pinctrl' }
+              ]
+            }
           ]
         }
       ]

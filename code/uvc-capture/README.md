@@ -1,4 +1,4 @@
-# UVC Capture
+﻿# UVC Capture
 
 UVC 驱动分析配套实验代码（占位，待补充）。
 
@@ -9,4 +9,4 @@ UVC 驱动分析配套实验代码（占位，待补充）。
 
 ## 关联文章
 
-- [UVC 驱动分析](/analysis/uvc-driver)
+- [UVC 驱动分析](/analysis/kernel/usb/uvc-driver)

@@ -1,7 +1,8 @@
 # STM32 Pinctrl：设备树解析与 set_mux
 
-Linux 6.8 · `drivers/pinctrl/stm32/pinctrl-stm32.c`  
-从设备树 `pinmux` 到 `stm32_pmx_set_mux` 写 GPIO 寄存器的完整路径。
+> Linux 6.8 · `drivers/pinctrl/stm32/pinctrl-stm32.c`  
+> **Linux 内核 · Pinctrl 子系统**  
+> 从设备树 `pinmux` 到 `stm32_pmx_set_mux` 写 GPIO 寄存器的完整路径。
 
 ---
 

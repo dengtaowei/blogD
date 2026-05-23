@@ -1,8 +1,8 @@
-# `usb_get_descriptor` 调用链
+﻿# `usb_get_descriptor` 调用链
 
 > Linux 6.8 · `drivers/usb/core/message.c`  
-> **USB 内核分析系列**（Linux 6.8）  
-> [① 协议枚举](/analysis/usb/usb-enumeration) → [② hub_port_init](/analysis/usb/hub-port-init) → **③ 本文** → [④ 枚举与 Probe](/analysis/usb/enumeration-and-probe)
+> **Linux 内核 · USB 子系统**（Linux 6.8）  
+> [① 协议枚举](/analysis/kernel/usb/usb-enumeration) → [② hub_port_init](/analysis/kernel/usb/hub-port-init) → **③ 本文** → [④ 枚举与 Probe](/analysis/kernel/usb/enumeration-and-probe)
 
 ---
 
@@ -16,7 +16,7 @@
 
 ## 1. 一次完整调用栈
 
-Hub `hub_wq` 线程等对**普通外设**（非 Root Hub）发起 GET_DESCRIPTOR 时（此前由 [hub_port_init](/analysis/usb/hub-port-init) 完成地址与 EP0 包长），单次调用从 core 到 xHCI 再返回的大致路径如下（省略 `kmalloc`、`__cond_resched` 等噪声）。
+Hub `hub_wq` 线程等对**普通外设**（非 Root Hub）发起 GET_DESCRIPTOR 时（此前由 [hub_port_init](/analysis/kernel/usb/hub-port-init) 完成地址与 EP0 包长），单次调用从 core 到 xHCI 再返回的大致路径如下（省略 `kmalloc`、`__cond_resched` 等噪声）。
 
 ### 1.1 向下：提交 URB（任务上下文 · 可睡眠）
 

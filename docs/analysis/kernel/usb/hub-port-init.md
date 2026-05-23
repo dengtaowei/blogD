@@ -1,8 +1,8 @@
-# `hub_port_init` 调用链
+﻿# `hub_port_init` 调用链
 
 > Linux 6.8 · `drivers/usb/core/hub.c`  
-> **USB 内核分析系列**（Linux 6.8）  
-> [① 协议枚举](/analysis/usb/usb-enumeration) → **② 本文** → [③ usb_get_descriptor](/analysis/usb/get-descriptor-trace) → [④ 枚举与 Probe](/analysis/usb/enumeration-and-probe)
+> **Linux 内核 · USB 子系统**（Linux 6.8）  
+> [① 协议枚举](/analysis/kernel/usb/usb-enumeration) → **② 本文** → [③ usb_get_descriptor](/analysis/kernel/usb/get-descriptor-trace) → [④ 枚举与 Probe](/analysis/kernel/usb/enumeration-and-probe)
 
 ---
 
@@ -99,7 +99,7 @@ hub_port_init()                                    hub.c
 | **F. BOS** | `usb_get_bos_descriptor` | 下游设备 | `usb_get_descriptor` × 2 |
 | **G. 通知 HCD** | `xhci_update_device` | — | 无 URB |
 
-阶段 B 与 [USB 2.0 枚举流程](/analysis/usb/usb-enumeration) 中 **① GET_DESCRIPTOR（8 字节或新方案更长）**、**② SET_ADDRESS** 对应；阶段 E 对应 **③ 完整 DEVICE**。
+阶段 B 与 [USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) 中 **① GET_DESCRIPTOR（8 字节或新方案更长）**、**② SET_ADDRESS** 对应；阶段 E 对应 **③ 完整 DEVICE**。
 
 **旧方案 vs 新方案**（`use_new_scheme()`）：
 
@@ -108,7 +108,7 @@ hub_port_init()                                    hub.c
 
 ### 2.3 下游设备一次 GET_DESCRIPTOR（与 giveback 上下文）
 
-与 [usb_get_descriptor 调用链](/analysis/usb/get-descriptor-trace) 相同模板：
+与 [usb_get_descriptor 调用链](/analysis/kernel/usb/get-descriptor-trace) 相同模板：
 
 ```text
 【任务上下文】
@@ -189,7 +189,7 @@ flowchart TB
 
 ## 4. 与协议步骤对照
 
-| [USB 2.0 枚举流程](/analysis/usb/usb-enumeration) | `hub_port_init` 内 |
+| [USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) | `hub_port_init` 内 |
 |----------------------------------------|-------------------|
 | 总线复位 / 速度协商 | `hub_port_reset` + Hub 端口状态 |
 | ① GET_DESCRIPTOR DEVICE（8 字节） | `get_bMaxPacketSize0`（旧方案；新方案可能先读更长） |
@@ -198,7 +198,7 @@ flowchart TB
 | ④ GET_DESCRIPTOR CONFIG | **不在** `hub_port_init`；在后续 `usb_new_device` → `usb_get_configuration` |
 | BOS（USB 3.x） | `usb_get_bos_descriptor` |
 
-`hub_port_init` 返回成功后，`hub_port_connect` 才调用 **`usb_new_device()`**，进入 [枚举与两轮 Probe](/analysis/usb/enumeration-and-probe) 中的 `usb_enumerate_device` / 两轮 probe。
+`hub_port_init` 返回成功后，`hub_port_connect` 才调用 **`usb_new_device()`**，进入 [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe) 中的 `usb_enumerate_device` / 两轮 probe。
 
 ---
 

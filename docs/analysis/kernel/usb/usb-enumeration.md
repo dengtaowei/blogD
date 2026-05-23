@@ -4,10 +4,7 @@
 
 本文从 **USB 2.0 协议层** 描述设备插入后、类驱动绑定前的典型枚举序列，聚焦控制传输三阶段（SETUP / 数据 / 状态）以及 **Token、DATA0/DATA1、ACK** 的交替关系（不含 NAK）。
 
-与 Linux 内核的对应关系：用户看到设备节点之前，`usbcore` 会完成上述标准请求；驱动 `probe` 发生在 **SET_CONFIGURATION** 之后。
-
-> **USB 内核分析系列**（Linux 6.8）  
-> **① 本文** → [② hub_port_init](/analysis/usb/hub-port-init) → [③ usb_get_descriptor](/analysis/usb/get-descriptor-trace) → [④ 枚举与 Probe](/analysis/usb/enumeration-and-probe)
+与 Linux 内核 `usbcore` 的对应关系：用户看到设备节点之前，内核会完成上述标准请求；驱动 `probe` 发生在 **SET_CONFIGURATION** 之后。系列续篇见侧边栏 **Linux 内核 → USB 子系统**。
 
 参与者为 **Host** 与 **Device**。每笔控制传输均符合规范中的 SETUP、可选数据阶段、状态阶段；**GET_DESCRIPTOR** 类请求的数据阶段为 **IN**，状态为 **OUT + DATA1(ZLP)**；**SET_ADDRESS** / **SET_CONFIGURATION** 无数据阶段，状态阶段为 **IN + 设备 DATA1(ZLP)**。
 
