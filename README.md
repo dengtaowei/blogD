@@ -37,8 +37,19 @@ npm run docs:preview
 
 ## 部署到 VPS
 
-1. 修改 `scripts/deploy.sh` 中的 VPS 地址与目标路径
-2. 执行部署：
+1. 修改部署脚本中的 VPS 地址、端口与目标路径：
+   - Windows：`scripts/deploy.ps1`
+   - Linux / macOS / Git Bash：`scripts/deploy.sh`
+2. 确保本机已安装 [OpenSSH 客户端](https://learn.microsoft.com/zh-cn/windows-server/administration/openssh/openssh_install_firstuse)（Windows 10+ 可选功能）
+3. 执行部署：
+
+**Windows（PowerShell）：**
+
+```powershell
+npm run docs:deploy
+```
+
+**Linux / macOS / Git Bash：**
 
 ```bash
 bash scripts/deploy.sh
