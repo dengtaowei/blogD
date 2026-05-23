@@ -10,6 +10,13 @@
 └── scripts/        # 部署脚本
 ```
 
+## 环境要求
+
+- **Node.js >= 18**（推荐 20 LTS 或 22）
+- 检查版本：`node -v`
+
+若 `npm run docs:dev` 报 `Unexpected token '??='`，说明当前 npm 脚本用的是旧版 Node（例如 v14）。请从 [nodejs.org](https://nodejs.org/) 安装新版 Node.js，安装后重新打开终端。
+
 ## 本地开发
 
 ```bash

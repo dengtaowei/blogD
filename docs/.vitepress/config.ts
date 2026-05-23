@@ -17,7 +17,7 @@ export default defineConfig({
       { text: '代码分析', link: '/analysis/' },
       {
         text: 'GitHub',
-        link: 'https://github.com/your-username/embedded-blog'
+        link: 'https://github.com/dengtaowei/blog'
       }
     ],
 
@@ -41,7 +41,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/your-username' }
+      { icon: 'github', link: 'https://github.com/dengtaowei/blog' }
     ],
 
     footer: {
