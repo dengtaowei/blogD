@@ -1,0 +1,19 @@
+node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+# 嵌入式构建产物
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+
+# 编辑器与系统
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
