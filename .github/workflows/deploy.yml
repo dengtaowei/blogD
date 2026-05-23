@@ -19,7 +19,7 @@ jobs:
       - run: npm run docs:build
 
       - name: Deploy via rsync
-        uses: easingthemes/ssh-deploy@v5
+        uses: easingthemes/ssh-deploy@v6.0.2
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
@@ -27,4 +27,4 @@ jobs:
           REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
           SOURCE: docs/.vitepress/dist/
           TARGET: /var/www/embedded-blog/
-          ARGS: -avz --delete -e "ssh -p ${{ secrets.REMOTE_PORT }}"
+          ARGS: -avz --delete
