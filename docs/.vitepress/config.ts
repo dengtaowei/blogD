@@ -34,9 +34,18 @@ export default withMermaid(
       ],
       '/analysis/': [
         {
-          text: 'USB',
+          text: 'USB 协议与内核',
           items: [
-            { text: 'USB 2.0 枚举流程', link: '/analysis/usb/usb-enumeration' }
+            { text: 'USB 2.0 枚举流程', link: '/analysis/usb/usb-enumeration' },
+            { text: 'hub_port_init 调用链', link: '/analysis/usb/hub-port-init' },
+            { text: 'usb_get_descriptor 调用链', link: '/analysis/usb/get-descriptor-trace' },
+            { text: '枚举与两轮 Probe', link: '/analysis/usb/enumeration-and-probe' }
+          ]
+        },
+        {
+          text: '内核子系统',
+          items: [
+            { text: 'STM32 Pinctrl 分析', link: '/analysis/kernel/stm32-pinctrl' }
           ]
         },
         {
