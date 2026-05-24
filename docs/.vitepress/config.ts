@@ -49,9 +49,10 @@ export default withMermaid(
               ]
             },
             {
-              text: 'Pinctrl 子系统',
+              text: 'Pinctrl / GPIO 子系统',
               items: [
-                { text: 'STM32 Pinctrl 分析', link: '/analysis/kernel/pinctrl/stm32-pinctrl' }
+                { text: 'STM32 Pinctrl 分析', link: '/analysis/kernel/pinctrl/stm32-pinctrl' },
+                { text: 'STM32 GPIO 分析', link: '/analysis/kernel/gpio/stm32-gpio' }
               ]
             }
           ]

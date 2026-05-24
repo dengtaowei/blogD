@@ -10,6 +10,7 @@ Linux 内核子系统源码分析（Linux 6.8）。
 4. [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)
 5. [UVC 驱动分析](/analysis/kernel/usb/uvc-driver)
 
-## Pinctrl 子系统
+## Pinctrl / GPIO 子系统
 
 - [STM32 Pinctrl 分析](/analysis/kernel/pinctrl/stm32-pinctrl)
+- [STM32 GPIO 分析](/analysis/kernel/gpio/stm32-gpio)

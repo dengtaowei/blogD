@@ -295,6 +295,7 @@ flowchart LR
 | apply mux | `drivers/pinctrl/pinmux.c` — `pinmux_enable_setting` |
 | SoC AF 表 | `drivers/pinctrl/stm32/pinctrl-stm32mp157.c` 等 |
 | DT binding | `Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml` |
+| 关联文档 | [STM32 GPIO 分析](/analysis/kernel/gpio/stm32-gpio) |
 
 ---
 

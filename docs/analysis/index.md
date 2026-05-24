@@ -14,6 +14,7 @@
 4. [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe) — `usb_new_device` 与驱动绑定
 5. [UVC 驱动分析](/analysis/kernel/usb/uvc-driver) — USB Video Class 类驱动结构
 
-### Pinctrl 子系统
+### Pinctrl / GPIO 子系统
 
 - [STM32 Pinctrl 分析](/analysis/kernel/pinctrl/stm32-pinctrl) — 设备树 pinmux 到 `set_mux` 写寄存器
+- [STM32 GPIO 分析](/analysis/kernel/gpio/stm32-gpio) — 设备树 gpiochip 注册到外设 `led-gpios` 消费
