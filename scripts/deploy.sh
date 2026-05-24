@@ -6,7 +6,7 @@ set -euo pipefail
 REMOTE_USER="root"
 REMOTE_HOST="68.168.135.59"
 REMOTE_PORT="27361"
-REMOTE_DIR="/var/www/embedded-blog"
+REMOTE_DIR="/var/www/linux-kernel-notes"
 # ======================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

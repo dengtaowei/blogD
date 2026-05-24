@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 $RemoteUser = "root"
 $RemoteHost = "68.168.135.59"
 $RemotePort = 27361
-$RemoteDir  = "/var/www/embedded-blog"
+$RemoteDir  = "/var/www/linux-kernel-notes"
 # ================================
 
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
