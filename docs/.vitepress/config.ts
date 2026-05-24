@@ -10,8 +10,8 @@ function githubSlugify(str: string): string {
 
 export default withMermaid(
   defineConfig({
-  title: '嵌入式学习笔记',
-  description: 'Linux 驱动与嵌入式开发 · USB 内核源码分析与学习实践',
+  title: 'Linux 内核学习笔记',
+  description: 'Linux 内核源码阅读与子系统分析 · USB / 设备模型 / 驱动 · 调用链梳理与调试实践',
   lang: 'zh-CN',
   base: '/',
 
@@ -93,9 +93,9 @@ export default withMermaid(
   themeConfig: {
     nav: [
       { text: '首页', link: '/' },
-      { text: '关于', link: '/about' },
+      { text: '内核分析', link: '/analysis/' },
       { text: '学习笔记', link: '/notes/' },
-      { text: '代码分析', link: '/analysis/' },
+      { text: '关于', link: '/about' },
       {
         text: 'GitHub',
         link: 'https://github.com/dengtaowei/blog'

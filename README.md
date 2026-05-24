@@ -1,12 +1,12 @@
-# 嵌入式学习笔记
+# Linux 内核学习笔记
 
-基于 [VitePress](https://vitepress.dev/) 的个人博客，记录嵌入式开发的学习心得与代码分析。
+基于 [VitePress](https://vitepress.dev/) 的个人博客，记录 Linux 内核源码阅读与子系统分析。
 
 ## 目录结构
 
 ```
 ├── docs/           # VitePress 文档与博客内容
-├── code/           # 嵌入式示例与分析源码
+├── code/           # 文章配套示例源码
 └── scripts/        # 部署脚本
 ```
 

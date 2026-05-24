@@ -2,16 +2,16 @@
 layout: home
 
 hero:
-  name: 嵌入式学习笔记
-  text: Linux 驱动与嵌入式开发
-  tagline: 源码分析 · 协议对照 · 调试实践
+  name: Linux 内核学习笔记
+  text: 源码阅读与子系统分析
+  tagline: 调用链梳理 · 协议对照 · 调试实践
   actions:
     - theme: brand
-      text: 关于我
-      link: /about
-    - theme: alt
       text: 内核分析
       link: /analysis/kernel/
+    - theme: alt
+      text: 关于我
+      link: /about
     - theme: alt
       text: 学习笔记
       link: /notes/
@@ -20,9 +20,9 @@ features:
   - icon: 🔍
     title: 内核源码分析
     details: 从 USB 协议到 hub_port_init、probe、类驱动，成体系梳理 Linux 6.8 内核路径
-  - icon: 📝
-    title: 学习笔记
-    details: RTOS、MCU 外设、设备树等知识点与实验记录
+  - icon: 📚
+    title: 子系统专题
+    details: USB core、设备模型、pinctrl / GPIO 等子系统的调用链与数据结构对照
   - icon: 💻
     title: 开源可验证
     details: 文章与配套代码托管于 GitHub，便于查阅与对照
@@ -114,10 +114,10 @@ features:
       <p class="home-card-title">STM32 Pinctrl 分析</p>
       <p class="home-card-desc">设备树 pinmux 到 set_mux 写 GPIO 寄存器。</p>
     </a>
-    <a class="home-card" href="/notes/rtos/task-scheduling">
-      <span class="home-card-tag">RTOS</span>
-      <p class="home-card-title">FreeRTOS 任务调度</p>
-      <p class="home-card-desc">任务状态、调度机制与实验记录要点。</p>
+    <a class="home-card" href="/analysis/kernel/gpio/stm32-gpio">
+      <span class="home-card-tag">GPIO · 内核</span>
+      <p class="home-card-title">STM32 GPIO 分析</p>
+      <p class="home-card-desc">gpiochip 注册、gpio-ranges 与外设驱动消费路径。</p>
     </a>
     <a class="home-card" href="/analysis/kernel/usb/uvc-driver">
       <span class="home-card-tag">USB · 驱动</span>

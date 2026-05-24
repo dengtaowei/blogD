@@ -2,7 +2,7 @@ node_modules/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 
-# 嵌入式构建产物
+# 构建产物
 *.o
 *.elf
 *.bin
