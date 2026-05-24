@@ -17,7 +17,7 @@
 
 ---
 
-## 1. 从插盘到 `hub_port_init` {#1-从插盘到-hub_port_init}
+## 1. 从插盘到 `hub_port_init`
 
 枚举**由中断牵起**，但 **`hub_port_init()` 在 Hub 工作队列线程里执行**（`hub_wq` 的 `kworker`，可睡眠），不在硬中断里直接跑。
 
@@ -57,7 +57,7 @@ flowchart TB
 
 ---
 
-## 2. `hub_port_init` 内部分阶段 {#2-hub_port_init-内部分阶段}
+## 2. `hub_port_init` 内部分阶段
 
 `hub_port_init(hub, udev, port1, retry_counter, dev_descr)` 在**地址 0 / DEFAULT 状态**下，完成端口复位、分配地址、读设备描述符与 BOS，最后通知 HCD。单次插盘在 **`hub_wq` 线程内**跑完（与 `usb_get_descriptor` 文档中的执行上下文一致）。
 
@@ -166,7 +166,7 @@ flowchart TB
 
 ---
 
-## 3. 两类控制传输路径 {#3-两类控制传输路径}
+## 3. 两类控制传输路径
 
 | 目标 | `urb->dev` | `usb_hcd_submit_urb` 分支 | 本场景用途 |
 |------|------------|---------------------------|------------|
@@ -187,7 +187,7 @@ flowchart TB
 
 ---
 
-## 4. 与协议步骤对照 {#4-与协议步骤对照}
+## 4. 与协议步骤对照
 
 | [USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) | `hub_port_init` 内 |
 |----------------------------------------|-------------------|
@@ -202,7 +202,7 @@ flowchart TB
 
 ---
 
-## 5. 要点说明 {#5-要点说明}
+## 5. 要点说明
 
 ### 5.1 职责边界
 
@@ -235,7 +235,7 @@ SuperSpeed 设备上，`hub_set_address()` 常走 HCD 的 **`address_device`**�
 
 ---
 
-## 6. 源码索引 {#6-源码索引}
+## 6. 源码索引
 
 | 文件 | 函数 / 说明 |
 |------|-------------|

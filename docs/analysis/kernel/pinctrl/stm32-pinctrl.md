@@ -17,7 +17,7 @@
 
 ---
 
-## 1. 总览 {#1-总览}
+## 1. 总览
 
 整条链路分 **三个阶段**，对应不同时机与数据形态：
 
@@ -95,7 +95,7 @@ sequenceDiagram
 
 ---
 
-## 2. 阶段 A：设备树 → pinctrl map {#2-阶段-a设备树--pinctrl-map}
+## 2. 阶段 A：设备树 → pinctrl map
 
 ### 2.1 设备树结构
 
@@ -174,7 +174,7 @@ flowchart LR
 
 ---
 
-## 3. 阶段 B：map → setting（字符串转数字） {#3-阶段-bmap--setting字符串转数字}
+## 3. 阶段 B：map → setting（字符串转数字）
 
 map 在 **外设 `pinctrl_get()`** 时由核心转为 **数字 selector**，存入 `pinctrl_setting`（`core.h`）：
 
@@ -238,7 +238,7 @@ group selector **常等于** pin 号（pin 表连续且无 package 过滤时）�
 
 ---
 
-## 4. 阶段 C：set_mux 写硬件 {#4-阶段-cset_mux-写硬件}
+## 4. 阶段 C：set_mux 写硬件
 
 **调用链（阶段 C）：**
 
@@ -279,7 +279,7 @@ flowchart LR
 
 ---
 
-## 附录 A：源码索引 {#附录-a源码索引}
+## 附录 A：源码索引
 
 | 内容 | 路径 |
 |------|------|
@@ -299,7 +299,7 @@ flowchart LR
 
 ---
 
-## 附录 B：要点速记 {#附录-b要点速记}
+## 附录 B：要点速记
 
 1. **`STM32_PINMUX`**：高字节 pin 号，低字节 func；与 `stm32_gpio_functions[]` 下标一致。
 2. **阶段 A**：拆 `u32` → 校验 SoC 表 → 字符串 map（`PF14` / `af5`）。
