@@ -39,7 +39,7 @@
 ## 联系
 
 - GitHub：[dengtaowei](https://github.com/dengtaowei)
-- 邮箱：`3186986746@qq.com`（合作 / 交流欢迎来信）
+- 邮箱：`1158725668@qq.com`（合作 / 交流欢迎来信）
 
 ---
 
