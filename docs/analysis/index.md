@@ -18,3 +18,9 @@
 
 - [STM32 Pinctrl 分析](/analysis/kernel/pinctrl/stm32-pinctrl) — 设备树 pinmux 到 `set_mux` 写寄存器
 - [STM32 GPIO 分析](/analysis/kernel/gpio/stm32-gpio) — 设备树 gpiochip 注册到外设 `led-gpios` 消费
+
+### 调试与实践
+
+针对具体问题的排查与实验记录（非成体系流程文）。
+
+- [概览](/analysis/kernel/debug/) · [USB](/analysis/kernel/debug/usb/) · [写作模板](/analysis/kernel/debug/template)

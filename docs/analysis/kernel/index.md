@@ -14,3 +14,11 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 - [STM32 Pinctrl 分析](/analysis/kernel/pinctrl/stm32-pinctrl)
 - [STM32 GPIO 分析](/analysis/kernel/gpio/stm32-gpio)
+
+## 调试与实践
+
+针对具体问题的排查记录与实验笔记（与上方流程分析互补）。
+
+- [概览与写作说明](/analysis/kernel/debug/)
+- [USB 调试记录](/analysis/kernel/debug/usb/)
+- [写作模板](/analysis/kernel/debug/template)

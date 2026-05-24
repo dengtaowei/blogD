@@ -27,6 +27,8 @@
 
 **其他内核专题**：[STM32 Pinctrl](/analysis/kernel/pinctrl/stm32-pinctrl) · [STM32 GPIO](/analysis/kernel/gpio/stm32-gpio)
 
+**调试与实践**（具体问题排查）：[概览](/analysis/kernel/debug/) · [USB 记录](/analysis/kernel/debug/usb/)
+
 **补充笔记**（非主线）：[FreeRTOS 任务调度](/notes/rtos/task-scheduling)
 
 ## 代码与仓库

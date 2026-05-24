@@ -132,6 +132,14 @@ export default withMermaid(
                 { text: 'STM32 Pinctrl 分析', link: '/analysis/kernel/pinctrl/stm32-pinctrl' },
                 { text: 'STM32 GPIO 分析', link: '/analysis/kernel/gpio/stm32-gpio' }
               ]
+            },
+            {
+              text: '调试与实践',
+              items: [
+                { text: '概览', link: '/analysis/kernel/debug/' },
+                { text: 'USB', link: '/analysis/kernel/debug/usb/' },
+                { text: '写作模板', link: '/analysis/kernel/debug/template' }
+              ]
             }
           ]
         }
