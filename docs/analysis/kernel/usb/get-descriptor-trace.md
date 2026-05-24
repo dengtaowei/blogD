@@ -14,7 +14,7 @@
 
 ---
 
-## 1. 一次完整调用栈
+## 1. 一次完整调用栈 {#1-一次完整调用栈}
 
 Hub `hub_wq` 线程等对**普通外设**（非 Root Hub）发起 GET_DESCRIPTOR 时（此前由 [hub_port_init](/analysis/kernel/usb/hub-port-init) 完成地址与 EP0 包长），单次调用从 core 到 xHCI 再返回的大致路径如下（省略 `kmalloc`、`__cond_resched` 等噪声）。
 
@@ -114,7 +114,7 @@ flowchart TB
 
 ---
 
-## 2. 要点说明
+## 2. 要点说明 {#2-要点说明}
 
 ### 2.1 同步 API 与回调
 
@@ -166,7 +166,7 @@ xHCI 主机控制器带 `HCD_BH`；对普通外设不走在中断里直接 `comp
 
 ---
 
-## 3. 源码索引
+## 3. 源码索引 {#3-源码索引}
 
 | 文件 | 函数 |
 |------|------|

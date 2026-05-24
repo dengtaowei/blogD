@@ -13,7 +13,7 @@
 
 ---
 
-## 1. 核心概念
+## 1. 核心概念 {#1-核心概念}
 
 ### 1.1 两层内核对象
 
@@ -37,7 +37,7 @@
 
 ---
 
-## 2. 四层流程（主线）
+## 2. 四层流程（主线） {#2-四层流程主线}
 
 ### 2.1 端到端调用链
 
@@ -122,7 +122,7 @@ usb_register_driver()       → driver.probe = usb_probe_interface;
 
 ---
 
-## 3. 两轮 Probe 与匹配规则
+## 3. 两轮 Probe 与匹配规则 {#3-两轮-probe-与匹配规则}
 
 ### 3.1 总览
 
@@ -237,7 +237,7 @@ flowchart LR
 
 ---
 
-## 4. trace-cmd 跟踪
+## 4. trace-cmd 跟踪 {#4-trace-cmd-跟踪}
 
 可用 function graph 从 `usb_new_device` 或 `usb_set_configuration` 观察上述调用链：
 
@@ -262,7 +262,7 @@ sudo trace-cmd report /tmp/usb.dat -F function_graph | less
 
 ---
 
-## 5. 源码索引
+## 5. 源码索引 {#5-源码索引}
 
 | 文件 | 关键点 |
 |------|--------|
