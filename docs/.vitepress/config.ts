@@ -134,6 +134,12 @@ export default withMermaid(
               ]
             },
             {
+              text: 'SPI 子系统',
+              items: [
+                { text: 'STM32MP157 SPI 子系统', link: '/analysis/kernel/spi/spi-sync-trace' }
+              ]
+            },
+            {
               text: '调试与实践',
               items: [
                 { text: '概览', link: '/analysis/kernel/debug/' },

@@ -78,7 +78,7 @@ sequenceDiagram
     participant DTS as 设备树
     participant STM32 as pinctrl-stm32
     participant GPIOLIB as gpiolib
-    participant LED as leddrv
+    participant LED as led_drv
     participant HW as GPIOA 硬件
 
     Note over DTS,HW: 阶段 A — pinctrl probe
@@ -160,7 +160,7 @@ Binding 详见 `Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml`
 #include <dt-bindings/gpio/gpio.h>
 
 myled {
-    compatible = "100ask,leddrv";
+    compatible = "example,led";
     led-gpios = <&gpioa 10 GPIO_ACTIVE_LOW>;
 };
 ```
@@ -320,12 +320,12 @@ gpiochip_add_pin_range(chip, pinctrl_devname,
 
 ## 5. 阶段 C：外设驱动消费 GPIO
 
-典型 LED 驱动 probe 片段（100ask 实验风格）：
+典型 LED 驱动 probe 片段：
 
 ```c
 #include <linux/gpio/consumer.h>
 
-static int leddrv_probe(struct platform_device *pdev)
+static int led_probe(struct platform_device *pdev)
 {
     struct gpio_desc *led;
 
