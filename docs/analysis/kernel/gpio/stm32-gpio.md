@@ -11,17 +11,17 @@
 
 - [1. 总览](#1-总览)
 - [2. 设备树结构](#2-设备树结构)
-- [3. 阶段 A：probe 注册 gpiochip](#3-阶段-aprobe-注册-gpiochip)
-- [4. 阶段 B：`gpio-ranges` 与 pinctrl 映射](#4-阶段-bgpio-ranges-与-pinctrl-映射)
-- [5. 阶段 C：外设驱动消费 GPIO](#5-阶段-c外设驱动消费-gpio)
-- [6. gpio_chip 操作与硬件寄存器](#6-gpio_chip-操作与硬件寄存器)
+- [3. 阶段 A：probe 注册 gpiochip](#3-阶段-a-probe-注册-gpiochip)
+- [4. 阶段 B：`gpio-ranges` 与 pinctrl 映射](#4-阶段-b-gpio-ranges-与-pinctrl-映射)
+- [5. 阶段 C：外设驱动消费 GPIO](#5-阶段-c-外设驱动消费-gpio)
+- [6. gpio_chip 操作与硬件寄存器](#6-gpio-chip-操作与硬件寄存器)
 - [附录 A：端到端数据对照（PA10）](#附录-a端到端数据对照pa10)
 - [附录 B：源码索引](#附录-b源码索引)
 - [附录 C：要点速记](#附录-c要点速记)
 
 ---
 
-## 1. 总览
+## 1. 总览 {#1-总览}
 
 STM32 的 GPIO 与 Pinmux **共用同一套硬件 IP**，Linux 里由 **`pinctrl-stm32` 一个驱动** 同时注册 pinctrl 与 gpiochip。本文示例基于 **STM32MP157** 精简设备树：注册 `GPIOA` / `GPIOB` 两个 bank，LED 驱动通过 `led-gpios = <&gpioa 10 GPIO_ACTIVE_LOW>` 使用 **PA10**。
 
@@ -69,7 +69,7 @@ flowchart TB
     DT --> PhaseA --> PhaseB --> PhaseC
 ```
 
-→ 阶段 A 详见 [§3](#3-阶段-aprobe-注册-gpiochip)，阶段 B 详见 [§4](#4-阶段-bgpio-ranges-与-pinctrl-映射)，阶段 C 详见 [§5](#5-阶段-c外设驱动消费-gpio)。
+→ 阶段 A 详见 [§3](#3-阶段-a-probe-注册-gpiochip)，阶段 B 详见 [§4](#4-阶段-b-gpio-ranges-与-pinctrl-映射)，阶段 C 详见 [§5](#5-阶段-c-外设驱动消费-gpio)。
 
 ### 1.2 时序图（以 PA10 为例）
 
@@ -100,7 +100,7 @@ sequenceDiagram
 
 ---
 
-## 2. 设备树结构
+## 2. 设备树结构 {#2-设备树结构}
 
 ### 2.1 Pinctrl 节点与 GPIO bank 子节点
 
@@ -149,7 +149,7 @@ pinctrl: pin-controller@50002000 {
 | `reg` | 相对 `ranges` 基址的 bank MMIO 偏移（GPIOA `0x0`，GPIOB `0x1000`） |
 | `st,bank-name` | 人类可读标签，也作为 `gpio_chip.label`（如 `/sys/class/gpio/` 下可见） |
 | `ngpios` | 本 bank 可用引脚数（MP157 每 bank 最多 16） |
-| `gpio-ranges` | 将 **gpiochip 线号** 映射到 **pinctrl 全局 pin 号**（见 [§4](#4-阶段-bgpio-ranges-与-pinctrl-映射)） |
+| `gpio-ranges` | 将 **gpiochip 线号** 映射到 **pinctrl 全局 pin 号**（见 [§4](#4-阶段-b-gpio-ranges-与-pinctrl-映射)） |
 | `clocks` | bank 时钟，probe 时 `clk_prepare_enable` |
 
 Binding 详见 `Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml`。
@@ -175,7 +175,7 @@ myled {
 
 ---
 
-## 3. 阶段 A：probe 注册 gpiochip
+## 3. 阶段 A：probe 注册 gpiochip {#3-阶段-a-probe-注册-gpiochip}
 
 **调用链（阶段 A）：**
 
@@ -214,7 +214,7 @@ gpiochip_add_data(&bank->gpio_chip, bank);
 
 ---
 
-## 4. 阶段 B：`gpio-ranges` 与 pinctrl 映射
+## 4. 阶段 B：`gpio-ranges` 与 pinctrl 映射 {#4-阶段-b-gpio-ranges-与-pinctrl-映射}
 
 ### 4.1 为什么需要 `gpio-ranges`？
 
@@ -318,7 +318,7 @@ gpiochip_add_pin_range(chip, pinctrl_devname,
 
 ---
 
-## 5. 阶段 C：外设驱动消费 GPIO
+## 5. 阶段 C：外设驱动消费 GPIO {#5-阶段-c-外设驱动消费-gpio}
 
 典型 LED 驱动 probe 片段（100ask 实验风格）：
 
@@ -366,7 +366,7 @@ devm_gpiod_get(dev, "led", GPIOD_OUT_LOW)
 
 ---
 
-## 6. gpio_chip 操作与硬件寄存器
+## 6. gpio_chip 操作与硬件寄存器 {#6-gpio-chip-操作与硬件寄存器}
 
 `stm32_gpio_template` 挂接的主要回调：
 
@@ -391,7 +391,7 @@ devm_gpiod_get(dev, "led", GPIOD_OUT_LOW)
 
 ---
 
-## 附录 A：端到端数据对照（PA10）
+## 附录 A：端到端数据对照（PA10） {#附录-a端到端数据对照pa10}
 
 | 环节 | gpiochip | offset | pinctrl pin | 引脚名 | 备注 |
 |------|----------|:------:|:-----------:|--------|------|
@@ -405,7 +405,7 @@ devm_gpiod_get(dev, "led", GPIOD_OUT_LOW)
 
 ---
 
-## 附录 B：源码索引
+## 附录 B：源码索引 {#附录-b源码索引}
 
 | 内容 | 路径 |
 |------|------|
@@ -424,7 +424,7 @@ devm_gpiod_get(dev, "led", GPIOD_OUT_LOW)
 
 ---
 
-## 附录 C：要点速记
+## 附录 C：要点速记 {#附录-c要点速记}
 
 1. **一个驱动两套角色**：`pinctrl-stm32` 同时提供 pinmux/pinconf 与 `gpio_chip`。
 2. **`gpio-ranges` 必不可少**（MP 系列）：把 `<&gpioa 10>` 的 offset 10 映射到 pinctrl 全局 pin 10，否则 `request` 失败。
