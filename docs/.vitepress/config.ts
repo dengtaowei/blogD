@@ -1,5 +1,12 @@
 ﻿import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
+import GithubSlugger from 'github-slugger'
+
+// 与 GitHub 渲染器相同的标题锚点算法，目录 `#...` 链接两边通用
+const githubSlugger = new GithubSlugger()
+function githubSlugify(str: string): string {
+  return githubSlugger.slug(str)
+}
 
 export default withMermaid(
   defineConfig({
@@ -7,6 +14,19 @@ export default withMermaid(
   description: 'Linux 驱动与嵌入式开发 · USB 内核源码分析与学习实践',
   lang: 'zh-CN',
   base: '/',
+
+  markdown: {
+    anchor: {
+      slugify: githubSlugify,
+    },
+    config(md) {
+      const render = md.render.bind(md)
+      md.render = (src, env) => {
+        githubSlugger.reset()
+        return render(src, env)
+      }
+    },
+  },
 
   mermaid: {
     theme: 'base',
