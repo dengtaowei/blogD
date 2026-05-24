@@ -86,7 +86,7 @@ features:
     </ul>
     <div class="home-links">
       <a class="home-link-btn" href="/analysis/kernel/">查看内核概览 →</a>
-      <a class="home-link-btn" href="https://github.com/dengtaowei/blog">GitHub 源码 →</a>
+      <a class="home-link-btn" href="https://github.com/dengtaowei/blogD">GitHub 源码 →</a>
     </div>
   </div>
 </section>

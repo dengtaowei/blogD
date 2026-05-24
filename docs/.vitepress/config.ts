@@ -98,7 +98,7 @@ export default withMermaid(
       { text: '关于', link: '/about' },
       {
         text: 'GitHub',
-        link: 'https://github.com/dengtaowei/blog'
+        link: 'https://github.com/dengtaowei/blogD'
       }
     ],
 
@@ -147,7 +147,7 @@ export default withMermaid(
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/dengtaowei/blog' }
+      { icon: 'github', link: 'https://github.com/dengtaowei/blogD' }
     ],
 
     footer: {

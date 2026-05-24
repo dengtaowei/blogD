@@ -42,7 +42,7 @@ struct uvc_streaming {
 
 ## 相关代码
 
-示例与分析代码见仓库 [`code/uvc-capture/`](https://github.com/dengtaowei/blog/tree/main/code/uvc-capture)。
+示例与分析代码见仓库 [`code/uvc-capture/`](https://github.com/dengtaowei/blogD/tree/main/code/uvc-capture)。
 
 ## 参考
 

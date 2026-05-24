@@ -33,7 +33,7 @@
 
 ## 代码与仓库
 
-- 博客源码：[github.com/dengtaowei/blog](https://github.com/dengtaowei/blog)
+- 博客源码：[github.com/dengtaowei/blogD](https://github.com/dengtaowei/blogD)
 - 文章配套示例：`code/` 目录（与文章同步维护）
 
 ## 联系
