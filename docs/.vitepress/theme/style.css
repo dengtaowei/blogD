@@ -276,3 +276,254 @@
     padding-inline: 1rem;
   }
 }
+
+/* Mermaid viewer — GitHub 风格 */
+:root {
+  --mermaid-ctrl-bg: #f6f8fa;
+  --mermaid-ctrl-hover-bg: #eef1f4;
+  --mermaid-ctrl-border: #d1d9e0;
+  --mermaid-ctrl-fg: #59636e;
+  --mermaid-ctrl-shadow: 0 1px 0 rgba(27, 31, 36, 0.04), 0 1px 3px rgba(27, 31, 36, 0.08);
+}
+
+.dark {
+  --mermaid-ctrl-bg: #21262d;
+  --mermaid-ctrl-hover-bg: #30363d;
+  --mermaid-ctrl-border: #3d444d;
+  --mermaid-ctrl-fg: #9198a1;
+  --mermaid-ctrl-shadow: 0 1px 0 rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.24);
+}
+
+.mermaid-zoom {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin: 1.25rem 0;
+  overflow: visible;
+}
+
+.mermaid-zoom-canvas {
+  position: relative;
+  overflow: visible;
+  padding: 0;
+}
+
+.mermaid-zoom.is-zoomed .mermaid-zoom-canvas {
+  overflow: auto;
+  cursor: grab;
+  max-height: 85vh;
+}
+
+.mermaid-zoom-canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.mermaid-zoom-stage {
+  display: block;
+  width: 100%;
+  transform-origin: 0 0;
+}
+
+.mermaid-zoom .mermaid {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.mermaid-zoom .mermaid svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+}
+
+.mermaid-zoom-actions-top {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  display: flex;
+  gap: 0;
+  padding: 2px;
+  border: 1px solid var(--mermaid-ctrl-border);
+  border-radius: 6px;
+  background: var(--mermaid-ctrl-bg);
+  box-shadow: var(--mermaid-ctrl-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.mermaid-zoom:hover .mermaid-zoom-actions-top,
+.mermaid-zoom:focus-within .mermaid-zoom-actions-top,
+.mermaid-zoom.is-fullscreen .mermaid-zoom-actions-top {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mermaid-zoom-actions-top button,
+.mermaid-zoom-controls-br button {
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--mermaid-ctrl-fg);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.mermaid-zoom-controls-br button {
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+}
+
+.mermaid-zoom-actions-top button {
+  width: 28px;
+  height: 28px;
+}
+
+.mermaid-zoom-actions-top .mermaid-zoom-btn-inline + .mermaid-zoom-btn-inline {
+  box-shadow: inset 1px 0 0 var(--mermaid-ctrl-border);
+}
+
+.mermaid-zoom-actions-top button:hover,
+.mermaid-zoom-controls-br button:hover {
+  background: var(--mermaid-ctrl-hover-bg);
+  color: var(--gh-fg-default, #1f2328);
+}
+
+.mermaid-zoom-actions-top button:active,
+.mermaid-zoom-controls-br button:active {
+  background: color-mix(in srgb, var(--mermaid-ctrl-border) 55%, transparent);
+}
+
+.mermaid-zoom-icon {
+  display: block;
+  flex-shrink: 0;
+}
+
+.mermaid-zoom-controls-br {
+  position: static;
+  align-self: flex-end;
+  margin-top: 8px;
+  z-index: 1;
+  padding: 4px;
+  border: 1px solid var(--mermaid-ctrl-border);
+  border-radius: 8px;
+  background: var(--mermaid-ctrl-bg);
+  box-shadow: var(--mermaid-ctrl-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.mermaid-zoom:hover .mermaid-zoom-controls-br,
+.mermaid-zoom:focus-within .mermaid-zoom-controls-br,
+.mermaid-zoom.is-fullscreen .mermaid-zoom-controls-br {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mermaid-zoom-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 28px);
+  grid-template-rows: repeat(3, 28px);
+  gap: 3px;
+}
+
+.mermaid-zoom-dpad button:nth-child(1) { grid-column: 2; grid-row: 1; }
+.mermaid-zoom-dpad button:nth-child(2) { grid-column: 3; grid-row: 1; }
+.mermaid-zoom-dpad button:nth-child(3) { grid-column: 1; grid-row: 2; }
+.mermaid-zoom-dpad button:nth-child(4) { grid-column: 2; grid-row: 2; }
+.mermaid-zoom-dpad button:nth-child(5) { grid-column: 3; grid-row: 2; }
+.mermaid-zoom-dpad button:nth-child(6) { grid-column: 2; grid-row: 3; }
+.mermaid-zoom-dpad button:nth-child(7) { grid-column: 3; grid-row: 3; }
+
+.mermaid-zoom-dpad button {
+  width: 28px;
+  height: 28px;
+  box-shadow: none;
+}
+
+.mermaid-zoom-btn-close {
+  display: none !important;
+}
+
+.mermaid-zoom:not(.is-fullscreen) .mermaid-zoom-btn-inline {
+  display: inline-flex;
+}
+
+.mermaid-zoom-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.22s ease;
+  pointer-events: none;
+}
+
+.mermaid-zoom-backdrop.is-open {
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+}
+
+.mermaid-zoom.is-fullscreen {
+  position: relative;
+  margin: 0;
+  width: min(1200px, 92vw);
+  max-height: 85vh;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.94) translateY(8px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.mermaid-zoom-backdrop.is-open .mermaid-zoom.is-fullscreen {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.mermaid-zoom.is-fullscreen .mermaid-zoom-btn-inline {
+  display: none;
+}
+
+.mermaid-zoom.is-fullscreen .mermaid-zoom-actions-top {
+  padding: 2px;
+}
+
+.mermaid-zoom.is-fullscreen .mermaid-zoom-btn-close {
+  display: inline-flex !important;
+  box-shadow: none;
+}
+
+.mermaid-zoom.is-fullscreen .mermaid-zoom-canvas {
+  width: 100%;
+  max-height: 85vh;
+  overflow: auto;
+  padding: 0;
+}
+
+.mermaid-zoom.is-fullscreen .mermaid-zoom-stage {
+  width: 100%;
+}
+
+.mermaid-zoom.is-fullscreen.is-zoomed .mermaid-zoom-canvas {
+  cursor: grab;
+}
+
+body.mermaid-zoom-fs-open {
+  overflow: hidden;
+}

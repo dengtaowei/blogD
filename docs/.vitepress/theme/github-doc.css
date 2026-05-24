@@ -1,0 +1,287 @@
+/**
+ * GitHub README / blob 视图风格
+ * 参考 https://github.com/dengtaowei/kernel-learn/blob/main/linux-6.8/stm32-pinctrl-analysis.md
+ */
+
+:root {
+  --gh-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial,
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --gh-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono',
+    monospace;
+
+  --gh-fg-default: #1f2328;
+  --gh-fg-muted: #59636e;
+  --gh-fg-accent: #0969da;
+  --gh-bg-default: #ffffff;
+  --gh-bg-muted: #f6f8fa;
+  --gh-border-default: #d1d9e0;
+  --gh-border-muted: #d8dee4;
+  --gh-mark-bg: #fff8c5;
+}
+
+.dark {
+  --gh-fg-default: #e6edf3;
+  --gh-fg-muted: #9198a1;
+  --gh-fg-accent: #4493f8;
+  --gh-bg-default: #0d1117;
+  --gh-bg-muted: #161b22;
+  --gh-border-default: #3d444d;
+  --gh-border-muted: #30363d;
+  --gh-mark-bg: #3d2e00;
+}
+
+/* 加宽整体布局，避免三栏时正文被压到 ~688px */
+:root {
+  --vp-layout-max-width: 1680px;
+  --vp-aside-width: 220px;
+}
+
+@media (min-width: 960px) {
+  .VPDoc.has-aside .content-container {
+    max-width: min(960px, calc(100vw - var(--vp-sidebar-width, 272px) - var(--vp-aside-width) - 80px));
+  }
+
+  .VPDoc:not(.has-aside) .content-container {
+    max-width: min(1100px, calc(100vw - var(--vp-sidebar-width, 272px) - 64px));
+  }
+
+  .VPDoc.has-aside .content {
+    flex: 1 1 auto;
+    max-width: none;
+  }
+
+  .VPDoc.has-aside .aside {
+    flex-shrink: 0;
+  }
+}
+
+@media (min-width: 1440px) {
+  .VPDoc.has-aside .content-container {
+    max-width: min(1040px, calc(100vw - var(--vp-sidebar-width, 272px) - var(--vp-aside-width) - 96px));
+  }
+}
+
+.vp-doc {
+  font-family: var(--gh-font-sans);
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--gh-fg-default);
+  word-wrap: break-word;
+}
+
+.vp-doc :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--gh-font-sans);
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--gh-fg-default);
+}
+
+.vp-doc h1 {
+  font-size: 2em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--gh-border-default);
+  margin-top: 0;
+}
+
+.vp-doc h2 {
+  font-size: 1.5em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--gh-border-default);
+}
+
+.vp-doc h3 {
+  font-size: 1.25em;
+}
+
+.vp-doc h4 {
+  font-size: 1em;
+}
+
+.vp-doc h5 {
+  font-size: 0.875em;
+}
+
+.vp-doc h6 {
+  font-size: 0.85em;
+  color: var(--gh-fg-muted);
+}
+
+.vp-doc p,
+.vp-doc blockquote,
+.vp-doc ul,
+.vp-doc ol,
+.vp-doc dl,
+.vp-doc table,
+.vp-doc pre,
+.vp-doc details,
+.vp-doc .mermaid-zoom {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.vp-doc a {
+  color: var(--gh-fg-accent);
+  text-decoration: none;
+}
+
+.vp-doc a:hover {
+  text-decoration: underline;
+}
+
+.vp-doc strong {
+  font-weight: 600;
+}
+
+.vp-doc hr {
+  height: 0.25em;
+  padding: 0;
+  margin: 24px 0;
+  background-color: var(--gh-border-default);
+  border: 0;
+}
+
+.vp-doc blockquote {
+  padding: 0 1em;
+  color: var(--gh-fg-muted);
+  border-left: 0.25em solid var(--gh-border-default);
+}
+
+.vp-doc blockquote > :first-child {
+  margin-top: 0;
+}
+
+.vp-doc blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* 行内代码 */
+.vp-doc :not(pre, h1, h2, h3, h4, h5, h6) > code,
+.vp-doc :not(pre) > code {
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 90%;
+  font-family: var(--gh-font-mono);
+  background-color: color-mix(in srgb, var(--gh-border-default) 35%, transparent);
+  border-radius: 6px;
+}
+
+.vp-doc h1 code,
+.vp-doc h2 code,
+.vp-doc h3 code,
+.vp-doc h4 code,
+.vp-doc h5 code,
+.vp-doc h6 code {
+  font-size: inherit;
+}
+
+/* 代码块容器 */
+.vp-doc div[class*='language-'],
+.vp-doc pre {
+  font-family: var(--gh-font-mono);
+  font-size: %95;
+  line-height: 1.45;
+  border-radius: 6px;
+}
+
+.vp-doc div[class*='language-'] {
+  background-color: var(--gh-bg-muted) !important;
+  border: 1px solid var(--gh-border-default);
+}
+
+.vp-doc div[class*='language-'] pre,
+.vp-doc div[class*='language-'] code {
+  background: transparent !important;
+}
+
+/* 表格 — GitHub 风格 */
+.vp-doc table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+  border-spacing: 0;
+  border-collapse: collapse;
+  font-size: inherit;
+}
+
+.vp-doc table th,
+.vp-doc table td {
+  padding: 6px 13px;
+  border: 1px solid var(--gh-border-default);
+}
+
+.vp-doc table tr {
+  background-color: var(--gh-bg-default);
+  border-top: 1px solid var(--gh-border-muted);
+}
+
+.vp-doc table tr:nth-child(2n) {
+  background-color: var(--gh-bg-muted);
+}
+
+.vp-doc table th {
+  font-weight: 600;
+}
+
+/* 图片 — 与 GitHub blob 预览一致 */
+.vp-doc img {
+  max-width: 100%;
+  box-sizing: content-box;
+  background-color: var(--gh-bg-default);
+}
+
+.vp-doc img:not([src*='#']) {
+  border-radius: 6px;
+}
+
+.vp-doc figure {
+  margin: 0 0 16px;
+}
+
+.vp-doc figcaption {
+  margin-top: 0.5em;
+  font-size: 14px;
+  color: var(--gh-fg-muted);
+  text-align: center;
+}
+
+/* 列表 */
+.vp-doc ul,
+.vp-doc ol {
+  padding-left: 2em;
+}
+
+.vp-doc li + li {
+  margin-top: 0.25em;
+}
+
+.vp-doc li > p {
+  margin-top: 16px;
+}
+
+.vp-doc li > p:first-child {
+  margin-top: 0;
+}
+
+/* 目录 / 引用块内链接 */
+.vp-doc blockquote a {
+  color: var(--gh-fg-muted);
+}
+
+.vp-doc blockquote a:hover {
+  color: var(--gh-fg-accent);
+}
+
+/* Mermaid 图表字体与 GitHub 渲染接近 */
+.vp-doc .mermaid,
+.vp-doc .mermaid svg {
+  font-family: var(--gh-font-sans) !important;
+}
+
+.vp-doc .mermaid .label,
+.vp-doc .mermaid .nodeLabel,
+.vp-doc .mermaid .edgeLabel {
+  font-family: var(--gh-font-sans) !important;
+}
