@@ -233,7 +233,7 @@ gpiochip_add_data(&bank->gpio_chip, bank);
 
 没有这张表，`stm32_gpio_request` 会找不到对应关系，报错 *pin not in range*。
 
-### 4.2 三个数字怎么读
+### 4.2 三个数字的含义
 
 ```dts
 gpio-ranges = <&pinctrl  chip_offset  pinctrl_pin_base  count>;
@@ -246,7 +246,7 @@ gpio-ranges = <&pinctrl  chip_offset  pinctrl_pin_base  count>;
 | `pinctrl_pin_base` | `0` | 上面那根线，对应 **pinctrl 全局几号 pin**（PA0 = 0 号） |
 | `count` | `16` | 从起点开始，**连续** 映射几根（16 根 = 整组 PA0～PA15） |
 
-读成一句话就是：
+翻译成一句话就是：
 
 > **「gpioa 从 offset 0 起，连续 16 根线，依次对应 pinctrl 的 pin 0～15。」**
 
