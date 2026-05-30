@@ -109,6 +109,8 @@ npm run docs:preview
 
 目标目录等工作流内配置见 `.github/workflows/ci.yml` 的 `deploy` job。
 
+**失败通知**：`main` 上 `build` 或 `deploy` 失败时，CI 会自动开/更新 GitHub Issue（标题以 `[CI] main 构建/部署失败` 开头）。若希望同时收到邮件：在 **头像 → Settings**（个人设置，非本仓库 Settings）打开 [Notifications](https://github.com/settings/notifications)，**System → Actions** 选 **Email**，勾选 **Only notify for failed workflows** 并 Save；且需 [Watch 本仓库](https://github.com/dengtaowei/blogD)。
+
 ### 手动部署
 
 仅在需要本机直传时使用（日常合入 `main` 走 Actions 即可，**无需配置**）。
