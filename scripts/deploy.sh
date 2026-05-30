@@ -2,15 +2,11 @@
 # Windows 用户请使用 scripts/deploy.ps1 或 npm run docs:deploy
 set -euo pipefail
 
-# ========== 部署配置（请修改为你的 VPS 信息）==========
-REMOTE_USER="root"
-REMOTE_HOST="68.168.135.59"
-REMOTE_PORT="27361"
-REMOTE_DIR="/var/www/linux-kernel-notes"
-# ======================================================
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/load-deploy-env.sh"
 
 cd "$PROJECT_DIR"
 

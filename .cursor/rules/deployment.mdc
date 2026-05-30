@@ -7,9 +7,9 @@ alwaysApply: false
 # 部署
 
 - `main` 分支 push 后由 **GitHub Actions**（`.github/workflows/ci.yml` 的 `deploy` job）复用 `build` 产物 rsync 到 VPS，依赖仓库 Secrets。
-- 手动部署：`scripts/deploy.sh`（Linux/macOS）或 `npm run docs:deploy`（Windows）。脚本顶部含 VPS 地址等配置。
+- 手动部署：`scripts/deploy.sh`（Linux/macOS）或 `npm run docs:deploy`（Windows）。读取 **`scripts/deploy.local.env`**（从 `deploy.example.env` 复制，已 gitignore）。
 - 构建产物为 `docs/.vitepress/dist/`，rsync 时带 `--delete`。
 
-## 密钥
+## 密钥与配置
 
-- **不要提交任何密钥**；部署凭据（`SSH_PRIVATE_KEY`、`REMOTE_HOST` 等）走 GitHub Secrets，勿写入仓库。
+- **不要提交任何密钥或 VPS 地址**；Actions 凭据走 GitHub Secrets，手动部署走 `deploy.local.env`（勿入库）。
