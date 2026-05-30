@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# 校验提交信息是否符合本项目规范：<类型>(<范围>): <简述>
+# 见 .cursor/rules/commit-convention.mdc。安装：npm run hooks:install
+set -euo pipefail
+
+msg_file="$1"
+
+# 取第一行有效内容（忽略注释行与空行）
+subject="$(grep -vE '^[[:space:]]*#' "$msg_file" | sed '/^[[:space:]]*$/d' | head -n1 || true)"
+
+# 放行 merge / revert / fixup / squash 等自动生成的提交
+case "$subject" in
+  Merge*|Revert*|fixup!*|squash!*|amend!*) exit 0 ;;
+esac
+
+types='post|update|fix|site|style|chore|repo'
+pattern="^(${types})(\([a-z0-9/_-]+\))?: .+"
+
+if ! printf '%s' "$subject" | grep -qE "$pattern"; then
+  {
+    echo "✗ 提交信息不符合规范："
+    echo "    $subject"
+    echo
+    echo "  正确格式：<类型>(<范围>): <简述>"
+    echo "  类型：    post update fix site style chore repo"
+    echo "  范围(可选)：usb gpio pinctrl spi debug notes config deploy theme"
+    echo "  示例：    post(debug/gpio): 新增 IMX6ULL SPI 片选 GPIO runtime PM 分析"
+    echo
+    echo "  规范详见 .cursor/rules/commit-convention.mdc"
+  } >&2
+  exit 1
+fi
+
+# 简述长度仅警告、不阻断（中文按字符计，留些余量到 60）
+len="$(printf '%s' "$subject" | wc -m | tr -d '[:space:]')"
+if [ "$len" -gt 60 ]; then
+  echo "⚠ 标题偏长（${len} 字符，建议 ≤ 50）：$subject" >&2
+fi
+
+exit 0

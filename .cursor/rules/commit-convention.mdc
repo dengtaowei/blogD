@@ -1,0 +1,38 @@
+---
+description: Git 提交信息规范（内容型博客，push main 即部署）
+alwaysApply: true
+---
+
+# 提交信息规范
+
+格式：`<类型>(<范围>): <简述>`，全中文、动作开头、不加句号，简述 ≤ 50 字。
+正文可选，空一行后写「为什么改 / 影响」；一次提交只做一件事。
+**`main` 分支 push 即触发自动部署**，提交前确保 `npm run docs:build` 通过。
+
+格式由 `commit-msg` 钩子校验（脚本在 `scripts/git-hooks/`）。换机器 / 重新 clone 后执行一次 `npm run hooks:install` 启用。
+
+## 类型
+
+| 类型 | 用途 |
+|------|------|
+| `post` | 新增一篇文章 |
+| `update` | 扩充 / 修订已有文章内容 |
+| `fix` | 修正笔误、技术错误、死链、锚点跳转等 |
+| `site` | 站点配置：`config.ts`、侧边栏、导航、首页 |
+| `style` | 排版 / 主题 / 样式，不改内容含义 |
+| `chore` | 依赖、脚本、CI、部署配置 |
+| `repo` | 仓库自身文档：README、AGENTS、`.cursor/rules` |
+
+## 范围（可选）
+
+子系统或区域：`usb` `gpio` `pinctrl` `spi` `debug` `notes`，或 `config` `deploy` `theme`。
+
+## 示例
+
+```text
+post(debug/gpio): 新增 IMX6ULL SPI 片选 GPIO runtime PM 分析
+update(gpio): 补充 1.2 时序图阶段 B 说明
+fix(gpio): 修正 gpio-ranges 三个数字的表述
+site: 侧边栏登记 Pinctrl/GPIO 调试记录
+chore(deploy): 调整 rsync 目标目录
+```

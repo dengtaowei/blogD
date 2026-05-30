@@ -26,6 +26,16 @@ npm run docs:dev
 
 浏览器访问 http://localhost:5173
 
+## 提交规范
+
+提交信息遵循 `<类型>(<范围>): <简述>`（详见 `.cursor/rules/commit-convention.mdc`）。
+
+由 `commit-msg` 钩子自动校验格式。Git 钩子不随仓库 clone，**首次克隆或换机器后执行一次**即可启用：
+
+```bash
+npm run hooks:install
+```
+
 ## 构建与预览
 
 ```bash
