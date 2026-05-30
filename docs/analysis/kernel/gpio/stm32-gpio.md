@@ -104,7 +104,7 @@ sequenceDiagram
 
 ### 2.1 Pinctrl 节点与 GPIO bank 子节点
 
-```dts
+```txt
 pinctrl: pin-controller@50002000 {
     #address-cells = <1>;
     #size-cells = <1>;
@@ -156,7 +156,7 @@ Binding 详见 `Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml`
 
 ### 2.2 GPIO 消费者节点
 
-```dts
+```txt
 #include <dt-bindings/gpio/gpio.h>
 
 myled {
@@ -235,7 +235,7 @@ gpiochip_add_data(&bank->gpio_chip, bank);
 
 ### 4.2 三个数字的含义
 
-```dts
+```txt
 gpio-ranges = <&pinctrl  chip_offset  pinctrl_pin_base  count>;
 /*  GPIOA 示例      0           0              16   */
 ```
@@ -254,7 +254,7 @@ gpio-ranges = <&pinctrl  chip_offset  pinctrl_pin_base  count>;
 
 ### 4.3 GPIOA / GPIOB 对照表
 
-```dts
+```txt
 gpioa: ... { gpio-ranges = <&pinctrl 0  0 16>; };  /* PA0～PA15 → pin 0～15  */
 gpiob: ... { gpio-ranges = <&pinctrl 0 16 16>; };  /* PB0～PB15 → pin 16～31 */
 ```
@@ -278,7 +278,7 @@ pinctrl_pin = pinctrl_pin_base + gpiochip_offset
 
 ### 4.4 例子：`<&gpioa 10>` 怎么走完阶段 B
 
-```dts
+```txt
 led-gpios = <&gpioa 10 GPIO_ACTIVE_LOW>;
 ```
 
