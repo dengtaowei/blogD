@@ -1,5 +1,7 @@
 ---
 date: 2026-05-24
+sidebarOrder: 20
+sidebarTitle: hub_port_init 调用链
 ---
 
 # `hub_port_init` 调用链

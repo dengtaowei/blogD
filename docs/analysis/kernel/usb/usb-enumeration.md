@@ -1,6 +1,8 @@
 ---
 date: 2026-05-24
 homeTag: USB · 协议
+sidebarOrder: 10
+sidebarTitle: USB 2.0 枚举流程
 ---
 
 # USB 2.0 典型枚举流程

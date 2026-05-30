@@ -1,6 +1,7 @@
 ﻿import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
 import GithubSlugger from 'github-slugger'
+import sidebar from './sidebar.generated'
 
 // 与 GitHub 渲染器相同的标题锚点算法，目录 `#...` 链接两边通用
 const githubSlugger = new GithubSlugger()
@@ -103,62 +104,7 @@ export default withMermaid(
       }
     ],
 
-    sidebar: {
-      '/notes/': [
-        {
-          text: 'RTOS',
-          items: [
-            { text: 'FreeRTOS 任务调度', link: '/notes/rtos/task-scheduling' }
-          ]
-        }
-      ],
-      '/analysis/': [
-        {
-          text: 'Linux 内核',
-          items: [
-            { text: '概览', link: '/analysis/kernel/' },
-            {
-              text: 'USB 子系统',
-              items: [
-                { text: 'USB 2.0 枚举流程', link: '/analysis/kernel/usb/usb-enumeration' },
-                { text: 'hub_port_init 调用链', link: '/analysis/kernel/usb/hub-port-init' },
-                { text: 'usb_get_descriptor 调用链', link: '/analysis/kernel/usb/get-descriptor-trace' },
-                { text: '枚举与两轮 Probe', link: '/analysis/kernel/usb/enumeration-and-probe' },
-                { text: 'UVC 驱动分析', link: '/analysis/kernel/usb/uvc-driver' }
-              ]
-            },
-            {
-              text: 'Pinctrl / GPIO 子系统',
-              items: [
-                { text: 'STM32 Pinctrl 分析', link: '/analysis/kernel/pinctrl/stm32-pinctrl' },
-                { text: 'STM32 GPIO 分析', link: '/analysis/kernel/gpio/stm32-gpio' }
-              ]
-            },
-            {
-              text: 'SPI 子系统',
-              items: [
-                { text: 'STM32MP157 SPI 子系统', link: '/analysis/kernel/spi/spi-sync-trace' }
-              ]
-            },
-            {
-              text: '调试与实践',
-              items: [
-                { text: '概览', link: '/analysis/kernel/debug/' },
-                { text: 'USB', link: '/analysis/kernel/debug/usb/' },
-                {
-                  text: 'Pinctrl / GPIO',
-                  items: [
-                    { text: '概览', link: '/analysis/kernel/debug/gpio/' },
-                    { text: 'IMX6ULL SPI 片选 GPIO 时好时坏', link: '/analysis/kernel/debug/gpio/imx6ull-spi-cs-gpio-runtime-pm' }
-                  ]
-                },
-                { text: '写作模板', link: '/analysis/kernel/debug/template' }
-              ]
-            }
-          ]
-        }
-      ]
-    },
+    sidebar,
 
     socialLinks: [
       { icon: 'github', link: 'https://github.com/dengtaowei/blogD' }

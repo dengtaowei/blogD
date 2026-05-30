@@ -1,5 +1,7 @@
 ---
 date: 2026-05-24
+sidebarOrder: 10
+sidebarTitle: STM32 Pinctrl 分析
 ---
 
 # STM32 Pinctrl：设备树解析与 set_mux

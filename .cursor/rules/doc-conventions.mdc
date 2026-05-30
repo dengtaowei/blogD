@@ -15,4 +15,5 @@ alwaysApply: false
 5. **图用 Mermaid**（`flowchart` / `sequenceDiagram`）；HTML 实体需转义，如 `&lt;&amp;gpioa 10&gt;`。
 6. **站内链接用绝对路径、无扩展名**，如 `/analysis/kernel/pinctrl/stm32-pinctrl`。
 7. **首页「最近更新」**：正文文章需有 frontmatter **`date`**，由 `npm run sync:dates` 从 **Git 首次提交日期** 自动写入（`docs:dev` / `docs:build` 前会自动跑）。可选 `homeTag`、`homeTitle`、`homeDesc`。索引页、模板设 `home: false`（不写 `date`）。
-8. 改完后用 `npm run docs:dev` 自查 Mermaid 渲染与锚点跳转是否正常。
+8. **侧边栏**：正文文章设 **`sidebarOrder`**（必填，排序）；可选 `sidebarTitle`、`sidebarHidden: true`。新子系统目录改 `docs/.vitepress/sidebar.meta.json`（见 `adding-docs.mdc`）。
+9. 改完后用 `npm run docs:dev` 自查 Mermaid 渲染与锚点跳转是否正常。
