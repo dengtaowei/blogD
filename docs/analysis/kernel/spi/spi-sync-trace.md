@@ -139,7 +139,7 @@ Device 驱动**不碰寄存器**；只组 message，由 core 回调 Controller �
 
 MP157 板级 DTS 中，SPI5 接 ICM20608（带 **`cs-gpios`**）：
 
-```dts
+```txt
 &spi5 {
     pinctrl-names = "default", "sleep";
     pinctrl-0 = <&spi5_pins_a>;
@@ -159,7 +159,7 @@ MP157 板级 DTS 中，SPI5 接 ICM20608（带 **`cs-gpios`**）：
 
 多从设备、多片选示例：
 
-```dts
+```txt
 &spi1 {
     pinctrl-0 = <&spi1_pins_a>;
     cs-gpios = <&gpioz 3 GPIO_ACTIVE_LOW>, <&gpioa 4 GPIO_ACTIVE_LOW>;
@@ -175,7 +175,7 @@ MP157 板级 DTS 中，SPI5 接 ICM20608（带 **`cs-gpios`**）：
 
 MP157 SoC 级 SPI1 节点（`stm32mp151.dtsi`）：
 
-```dts
+```txt
 spi1: spi@44004000 {
     compatible = "st,stm32h7-spi";
     reg = <0x44004000 0x400>;

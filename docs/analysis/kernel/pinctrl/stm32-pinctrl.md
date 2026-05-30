@@ -99,7 +99,7 @@ sequenceDiagram
 
 ### 2.1 设备树结构
 
-```dts
+```txt
 i2c1_pins_a: i2c1-0 {
     pins {
         pinmux = <STM32_PINMUX('F', 14, AF5)>,
