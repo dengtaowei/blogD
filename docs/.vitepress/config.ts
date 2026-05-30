@@ -144,6 +144,13 @@ export default withMermaid(
               items: [
                 { text: '概览', link: '/analysis/kernel/debug/' },
                 { text: 'USB', link: '/analysis/kernel/debug/usb/' },
+                {
+                  text: 'Pinctrl / GPIO',
+                  items: [
+                    { text: '概览', link: '/analysis/kernel/debug/gpio/' },
+                    { text: 'IMX6ULL SPI 片选 GPIO 时好时坏', link: '/analysis/kernel/debug/gpio/imx6ull-spi-cs-gpio-runtime-pm' }
+                  ]
+                },
                 { text: '写作模板', link: '/analysis/kernel/debug/template' }
               ]
             }

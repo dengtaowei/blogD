@@ -25,4 +25,5 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 - [概览与写作说明](/analysis/kernel/debug/)
 - [USB 调试记录](/analysis/kernel/debug/usb/)
+- [Pinctrl / GPIO 调试记录](/analysis/kernel/debug/gpio/)
 - [写作模板](/analysis/kernel/debug/template)
