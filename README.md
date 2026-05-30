@@ -66,7 +66,7 @@ npm run docs:preview
 
 ### 自动部署（推荐）
 
-推送到 `main` 分支后，由 GitHub Actions 构建并 rsync 到 VPS（见 `.github/workflows/deploy.yml`）。需在仓库 Settings → Secrets 配置：`SSH_PRIVATE_KEY`、`REMOTE_HOST`、`REMOTE_USER`、`REMOTE_PORT`。
+推送到 `main` 分支后，由 GitHub Actions（`.github/workflows/ci.yml`：`build` 构建 → `deploy` rsync）部署到 VPS。需在仓库 Settings → Secrets 配置：`SSH_PRIVATE_KEY`、`REMOTE_HOST`、`REMOTE_USER`、`REMOTE_PORT`。
 
 ### 手动部署
 
