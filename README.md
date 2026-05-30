@@ -70,9 +70,20 @@ npm run docs:preview
 
 ### 手动部署
 
-1. 修改部署脚本中的 VPS 地址、端口与目标路径：
-   - Windows：`scripts/deploy.ps1`
-   - Linux / macOS / Git Bash：`scripts/deploy.sh`
+仅在需要本机直传时使用（日常合入 `main` 走 Actions 即可，**无需配置**）。
+
+1. 复制部署配置模板并填写 VPS 信息（**每台要手动部署的机器做一次**，文件已 gitignore）：
+
+```bash
+cp scripts/deploy.example.env scripts/deploy.local.env
+```
+
+Windows（PowerShell）：
+
+```powershell
+Copy-Item scripts/deploy.example.env scripts/deploy.local.env
+```
+
 2. 确保本机已安装 [OpenSSH 客户端](https://learn.microsoft.com/zh-cn/windows-server/administration/openssh/openssh_install_firstuse)（Windows 10+ 可选功能）
 3. 执行部署：
 

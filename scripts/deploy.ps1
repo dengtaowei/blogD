@@ -1,16 +1,47 @@
 #Requires -Version 5.1
 $ErrorActionPreference = "Stop"
 
-# ========== VPS config ==========
-$RemoteUser = "root"
-$RemoteHost = "68.168.135.59"
-$RemotePort = 27361
-$RemoteDir  = "/var/www/linux-kernel-notes"
-# ================================
-
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectDir = Split-Path -Parent $ScriptDir
 $DistDir    = Join-Path $ProjectDir "docs\.vitepress\dist"
+$EnvFile    = Join-Path $ScriptDir "deploy.local.env"
+
+function Import-DeployEnv {
+    param([string]$Path)
+
+    if (-not (Test-Path $Path)) {
+        throw @"
+Missing deploy config: $Path
+Copy the template and edit your VPS settings:
+  Copy-Item scripts/deploy.example.env scripts/deploy.local.env
+"@
+    }
+
+    $vars = @{}
+    Get-Content -LiteralPath $Path | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -eq "" -or $line.StartsWith("#")) { return }
+        $eq = $line.IndexOf("=")
+        if ($eq -lt 1) { return }
+        $key = $line.Substring(0, $eq).Trim()
+        $val = $line.Substring($eq + 1).Trim()
+        $vars[$key] = $val
+    }
+
+    foreach ($name in @("REMOTE_USER", "REMOTE_HOST", "REMOTE_PORT", "REMOTE_DIR")) {
+        if (-not $vars.ContainsKey($name) -or [string]::IsNullOrWhiteSpace($vars[$name])) {
+            throw "deploy.local.env missing required key: $name"
+        }
+    }
+
+    return $vars
+}
+
+$env = Import-DeployEnv -Path $EnvFile
+$RemoteUser = $env["REMOTE_USER"]
+$RemoteHost = $env["REMOTE_HOST"]
+$RemotePort = $env["REMOTE_PORT"]
+$RemoteDir  = $env["REMOTE_DIR"]
 
 Set-Location $ProjectDir
 

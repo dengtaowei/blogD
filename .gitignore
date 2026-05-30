@@ -2,6 +2,9 @@ node_modules/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 
+# 手动部署本地配置（从 scripts/deploy.example.env 复制）
+scripts/deploy.local.env
+
 # 构建产物
 *.o
 *.elf
