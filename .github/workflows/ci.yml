@@ -4,7 +4,9 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
+    # 功能分支 push 即跑 CI（无需先开 PR）；main 上 push 在 merge 后跑 deploy
+    branches:
+      - '**'
 
 jobs:
   commit-msg:
@@ -44,7 +46,7 @@ jobs:
       - run: npm run docs:build
 
       - name: 上传构建产物
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: vitepress-dist
@@ -53,7 +55,7 @@ jobs:
 
   deploy:
     name: deploy
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     concurrency:

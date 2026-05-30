@@ -17,8 +17,8 @@ alwaysApply: true
 
 1. 从最新 `main` 建功能分支：`git checkout main && git pull && git checkout -b <分支名>`
 2. 改代码、commit（遵循本规范）
-3. `git push -u origin <分支名>`，在 GitHub 开 PR → `main`
-4. 等 CI 通过：`commit-msg`、`build`
+3. `git push -u origin <分支名>`，**push 后 CI 自动跑**；再在 GitHub 开 PR → `main`
+4. 等 `commit-msg`、`build` 通过（通常 push 后已在跑）
 5. Merge；`deploy` job 自动 rsync 到 VPS
 6. **删除已 merge 的功能分支**（本地 + 远端）；可开 GitHub「Automatically delete head branches」
 
