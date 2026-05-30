@@ -42,3 +42,37 @@ jobs:
 
       - run: npm ci
       - run: npm run docs:build
+
+      - name: 上传构建产物
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitepress-dist
+          path: docs/.vitepress/dist/
+          retention-days: 1
+
+  deploy:
+    name: deploy
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-main
+      cancel-in-progress: true
+    steps:
+      - name: 下载构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: vitepress-dist
+          path: docs/.vitepress/dist/
+
+      - name: Deploy via rsync
+        uses: easingthemes/ssh-deploy@v6.0.2
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
+          SOURCE: docs/.vitepress/dist/
+          TARGET: /var/www/linux-kernel-notes/
+          ARGS: -avz --delete
