@@ -5,15 +5,19 @@
 ## 目录结构
 
 ```
-├── docs/           # VitePress 文档与博客内容
-├── code/           # 文章配套示例源码
-└── scripts/        # 部署脚本
+├── docs/              # VitePress 文档与博客内容
+│   └── .vitepress/    # 站点配置、主题、侧边栏
+├── code/              # 文章配套示例源码
+├── scripts/           # 部署与 Git 钩子安装脚本
+├── .cursor/rules/     # 协作规范（写作约定、提交规范等）
+└── .github/workflows/ # GitHub Actions 自动部署
 ```
 
 ## 环境要求
 
 - **Node.js >= 18**（推荐 20 LTS 或 22）
 - 检查版本：`node -v`
+- CI 固定使用 `.node-version` 指定的版本（当前 22）
 
 若 `npm run docs:dev` 报 `Unexpected token '??='`，说明当前 npm 脚本用的是旧版 Node（例如 v14）。请从 [nodejs.org](https://nodejs.org/) 安装新版 Node.js，安装后重新打开终端。
 
@@ -47,6 +51,12 @@ npm run docs:preview
 
 ## 部署到 VPS
 
+### 自动部署（推荐）
+
+推送到 `main` 分支后，由 GitHub Actions 构建并 rsync 到 VPS（见 `.github/workflows/deploy.yml`）。需在仓库 Settings → Secrets 配置：`SSH_PRIVATE_KEY`、`REMOTE_HOST`、`REMOTE_USER`、`REMOTE_PORT`。
+
+### 手动部署
+
 1. 修改部署脚本中的 VPS 地址、端口与目标路径：
    - Windows：`scripts/deploy.ps1`
    - Linux / macOS / Git Bash：`scripts/deploy.sh`
@@ -65,4 +75,4 @@ npm run docs:deploy
 bash scripts/deploy.sh
 ```
 
-或使用 GitHub Actions 自动部署（需配置 Secrets）。
+> 部署脚本只负责把构建产物 rsync 到 VPS 的目标目录，**不管 nginx 的域名 / 端口 / HTTPS 证书**，这些需在服务器上单独配置。
