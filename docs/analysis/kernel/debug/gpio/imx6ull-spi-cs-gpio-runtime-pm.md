@@ -1,3 +1,10 @@
+---
+date: 2026-05-30
+homeTag: 调试 · GPIO
+homeTitle: IMX6ULL SPI 片选 GPIO 时好时坏
+homeDesc: gpio-mxc runtime PM 在 request 时 resume，覆盖 spi-imx 先设的 CS output。
+---
+
 # IMX6ULL SPI 片选 GPIO「时好时坏」问题分析
 
 > **环境**：NXP BSP linux-4.9.88（`gpio-mxc` 带 runtime PM）· IMX6ULL · SPI 接 DAC  

@@ -71,6 +71,16 @@
   margin-bottom: 0.25rem;
 }
 
+.home-recent-empty {
+  color: var(--vp-c-text-2);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.home-recent-empty code {
+  font-size: 0.85em;
+}
+
 /* Custom home sections */
 .home-content {
   max-width: 960px;

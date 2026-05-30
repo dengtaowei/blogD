@@ -1,3 +1,7 @@
+---
+date: 2026-05-24
+---
+
 # STM32 Pinctrl：设备树解析与 set_mux
 
 > Linux 6.8 · `drivers/pinctrl/stm32/pinctrl-stm32.c`  

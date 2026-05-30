@@ -7,6 +7,7 @@ alwaysApply: false
 # 新增 / 移动文档
 
 - **新增文档必须同步更新 `docs/.vitepress/config.ts` 的 `sidebar`**，否则不会出现在导航中。
+- 正文文章首次 push 后 **`date` 由 `npm run sync:dates` 按 Git 首次提交日自动同步**（构建前已自动执行）；可选 `homeTag` / `homeTitle` / `homeDesc`。索引页 / 模板设 **`home: false`**（见 `doc-conventions.mdc`）。
 - 文件名用 **kebab-case**（如 `hub-port-init.md`），放入对应子系统目录（`usb/` `pinctrl/` `gpio/` `spi/` `debug/` 等）。
 - 新建调试笔记可复制 `docs/analysis/kernel/debug/template.md`。
 - 站内链接、`nav`、`sidebar` 中的 `link` 均用**绝对路径、无扩展名**。

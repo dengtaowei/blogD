@@ -1,3 +1,8 @@
+---
+date: 2026-05-24
+homeDesc: 设备树、驱动模型到 spi_sync 的完整调用链。
+---
+
 # STM32MP157 SPI 子系统分析
 
 > Linux 6.8 · `drivers/spi/spi.c` + `drivers/spi/spi-stm32.c`  

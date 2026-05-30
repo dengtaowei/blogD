@@ -1,4 +1,8 @@
-﻿# USB 设备枚举与两轮 Probe
+---
+date: 2026-05-24
+---
+
+# USB 设备枚举与两轮 Probe
 
 > Linux 6.8 · 源码路径 `drivers/usb/core/`  
 > **Linux 内核 · USB 子系统**：[① 协议枚举](/analysis/kernel/usb/usb-enumeration) → [② hub_port_init](/analysis/kernel/usb/hub-port-init) → [③ usb_get_descriptor](/analysis/kernel/usb/get-descriptor-trace) → **④ 本文**

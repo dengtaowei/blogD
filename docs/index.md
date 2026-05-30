@@ -91,40 +91,6 @@ features:
   </div>
 </section>
 
-<section class="home-section">
-  <h2 class="home-section-title">最近更新</h2>
-  <div class="home-grid">
-    <a class="home-card" href="/analysis/kernel/usb/enumeration-and-probe">
-      <span class="home-card-tag">USB · 内核</span>
-      <p class="home-card-title">枚举与两轮 Probe</p>
-      <p class="home-card-desc">USB core 设备注册与 interface 驱动绑定机制。</p>
-    </a>
-    <a class="home-card" href="/analysis/kernel/usb/hub-port-init">
-      <span class="home-card-tag">USB · 内核</span>
-      <p class="home-card-title">hub_port_init 调用链</p>
-      <p class="home-card-desc">插盘检测、端口复位到设备地址分配的实现路径。</p>
-    </a>
-    <a class="home-card" href="/analysis/kernel/usb/usb-enumeration">
-      <span class="home-card-tag">USB · 协议</span>
-      <p class="home-card-title">USB 2.0 枚举流程</p>
-      <p class="home-card-desc">典型控制传输与描述符读取的协议层时序。</p>
-    </a>
-    <a class="home-card" href="/analysis/kernel/pinctrl/stm32-pinctrl">
-      <span class="home-card-tag">Pinctrl</span>
-      <p class="home-card-title">STM32 Pinctrl 分析</p>
-      <p class="home-card-desc">设备树 pinmux 到 set_mux 写 GPIO 寄存器。</p>
-    </a>
-    <a class="home-card" href="/analysis/kernel/gpio/stm32-gpio">
-      <span class="home-card-tag">GPIO · 内核</span>
-      <p class="home-card-title">STM32 GPIO 分析</p>
-      <p class="home-card-desc">gpiochip 注册、gpio-ranges 与外设驱动消费路径。</p>
-    </a>
-    <a class="home-card" href="/analysis/kernel/usb/uvc-driver">
-      <span class="home-card-tag">USB · 驱动</span>
-      <p class="home-card-title">UVC 驱动分析</p>
-      <p class="home-card-desc">Linux uvcvideo 驱动结构与加载流程。</p>
-    </a>
-  </div>
-</section>
+<RecentPosts :limit="6" />
 
 </div>
