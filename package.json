@@ -7,8 +7,9 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
+    "sync:dates": "node scripts/sync-article-dates.mjs",
+    "docs:dev": "npm run sync:dates && vitepress dev docs",
+    "docs:build": "npm run sync:dates && vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "docs:deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1",
     "hooks:install": "bash ./scripts/install-hooks.sh"

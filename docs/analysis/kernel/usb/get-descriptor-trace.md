@@ -1,4 +1,8 @@
-﻿# `usb_get_descriptor` 调用链
+---
+date: 2026-05-24
+---
+
+# `usb_get_descriptor` 调用链
 
 > Linux 6.8 · `drivers/usb/core/message.c`  
 > **Linux 内核 · USB 子系统**（Linux 6.8）  

@@ -1,3 +1,7 @@
+---
+home: false
+---
+
 # Linux 内核
 
 Linux 内核子系统源码分析（Linux 6.8）。

@@ -1,3 +1,7 @@
+---
+home: false
+---
+
 # Pinctrl / GPIO · 调试与实践
 
 GPIO / Pinctrl 子系统相关的具体问题排查与实验记录。

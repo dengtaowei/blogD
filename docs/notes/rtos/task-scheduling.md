@@ -1,3 +1,8 @@
+---
+date: 2026-05-23
+homeTag: RTOS · 笔记
+---
+
 # FreeRTOS 任务调度
 
 ## 背景

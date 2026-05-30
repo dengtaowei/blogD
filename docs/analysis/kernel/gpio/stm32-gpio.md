@@ -1,3 +1,7 @@
+---
+date: 2026-05-24
+---
+
 # STM32 GPIO：设备树、gpiochip 注册与驱动消费
 
 > Linux 6.8 · `drivers/pinctrl/stm32/pinctrl-stm32.c`  
