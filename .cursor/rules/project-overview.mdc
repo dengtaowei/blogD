@@ -35,3 +35,8 @@ npm run docs:preview   # 预览构建产物
 ```
 
 改动较大时跑一次 `npm run docs:build` 确认无死链 / 构建错误。仅在用户明确要求时创建 git 提交。
+
+## 合入与部署
+
+- **`main` 不可直接 push**，改动经功能分支 + PR 合入（详见 `commit-convention.mdc`）。
+- 合入后 CI 的 `deploy` job 自动部署；手动部署见 `deployment.mdc`。

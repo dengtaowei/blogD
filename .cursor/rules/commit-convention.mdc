@@ -7,9 +7,24 @@ alwaysApply: true
 
 格式：`<类型>(<范围>): <简述>`，全中文、动作开头、不加句号，简述 ≤ 50 字。
 正文可选，空一行后写「为什么改 / 影响」；一次提交只做一件事。
-**`main` 分支 push 即触发自动部署**，提交前确保 `npm run docs:build` 通过。
+**合入 `main` 后触发自动部署**（经 PR merge），提交前确保 `npm run docs:build` 通过。
 
-格式由 `commit-msg` 钩子（本地）与 CI 任务 `commit-msg`（PR / push 到 `main`）共同校验，逻辑在 `scripts/validate-commit-subject.sh`。换机器 / 重新 clone 后执行一次 `npm run hooks:install` 启用本地钩子。
+格式由 `commit-msg` 钩子（本地）与 CI 任务 `commit-msg`（PR / push 到 `main`）共同校验，逻辑在 `scripts/validate-commit-subject.sh`。换机器 / 重新 clone 后执行一次 `npm run hooks:install` 启用本地钩子（Windows 需 Git Bash / WSL）。
+
+## 合入流程（PR）
+
+`main` 受分支保护，**不可直接 push**。日常改动：
+
+1. 从最新 `main` 建功能分支：`git checkout main && git pull && git checkout -b <分支名>`
+2. 改代码、commit（遵循本规范）
+3. `git push -u origin <分支名>`，在 GitHub 开 PR → `main`
+4. 等 CI 通过：`commit-msg`、`build`
+5. Merge；`deploy` job 自动 rsync 到 VPS
+6. **删除已 merge 的功能分支**（本地 + 远端）；可开 GitHub「Automatically delete head branches」
+
+### 分支命名
+
+与 commit 类型对齐，kebab-case：`fix/dts-txt`、`post/debug/gpio`、`chore/deploy-env`、`site/sidebar`。一个 PR 对应一个分支，同一任务可多次 commit。
 
 ## 类型
 
