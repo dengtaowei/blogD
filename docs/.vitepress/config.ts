@@ -14,6 +14,7 @@ export default withMermaid(
   description: 'Linux 内核源码阅读与子系统分析 · USB / 设备模型 / 驱动 · 调用链梳理与调试实践',
   lang: 'zh-CN',
   base: '/',
+  lastUpdated: true,
 
   markdown: {
     anchor: {
@@ -170,7 +171,20 @@ export default withMermaid(
 
     search: {
       provider: 'local'
-    }
+    },
+
+    editLink: {
+      pattern: 'https://github.com/dengtaowei/blogD/edit/main/docs/:path',
+      text: '在 GitHub 上编辑此页',
+    },
+
+    lastUpdated: {
+      text: '最后更新于',
+      formatOptions: {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      },
+    },
   }
   })
 )
