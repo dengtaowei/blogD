@@ -8,6 +8,11 @@ on:
     branches:
       - '**'
 
+# push 与 pull_request 共用分支名作为 group，取消进行中的重复 run
+concurrency:
+  group: ci-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   commit-msg:
     name: commit-msg
