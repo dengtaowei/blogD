@@ -47,9 +47,10 @@ git checkout -b fix/简述    # 或 post/、chore/、site/ 等，见 commit 规�
 ```
 
 2. 改代码、commit（提交前建议本地 `npm run docs:build`）
-3. `git push -u origin <分支名>`，在 GitHub 开 PR → `main`
-4. 等 CI 通过：`commit-msg`、`build`
+3. `git push -u origin <分支名>` → **CI 自动跑**（无需先开 PR）
+4. 在 GitHub 开 PR → `main`（push 后检查已绿则可直接 Merge）
 5. Merge；push 到 `main` 后触发 `deploy`（见下表）
+6. 删除已 merge 的功能分支
 
 ### 本地校验
 
@@ -65,12 +66,12 @@ npm run hooks:install
 
 工作流见 `.github/workflows/ci.yml`。
 
-**PR 阶段**（`commit-msg` 与 `build` 并行）：
+**功能分支 push**（`commit-msg` 与 `build` 并行，**push 后即跑，不必先开 PR**）：
 
 | 任务 | 检查内容 |
 |------|----------|
-| `commit-msg` | PR 内每条 commit 标题是否符合规范 |
-| `build` | `npm ci` + `npm run docs:build`，确认站点能成功构建 |
+| `commit-msg` | 本次 push 新增 commit 标题是否符合规范 |
+| `build` | `npm ci` + `npm run docs:build` |
 
 **合入 `main` 后**（push 到 `main` 时，`build` 上传产物 → `deploy` rsync）：
 
