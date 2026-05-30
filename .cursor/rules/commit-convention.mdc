@@ -9,7 +9,7 @@ alwaysApply: true
 正文可选，空一行后写「为什么改 / 影响」；一次提交只做一件事。
 **`main` 分支 push 即触发自动部署**，提交前确保 `npm run docs:build` 通过。
 
-格式由 `commit-msg` 钩子校验（脚本在 `scripts/git-hooks/`）。换机器 / 重新 clone 后执行一次 `npm run hooks:install` 启用。
+格式由 `commit-msg` 钩子（本地）与 CI 任务 `commit-msg`（PR / push 到 `main`）共同校验，逻辑在 `scripts/validate-commit-subject.sh`。换机器 / 重新 clone 后执行一次 `npm run hooks:install` 启用本地钩子。
 
 ## 类型
 

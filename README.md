@@ -10,7 +10,7 @@
 ├── code/              # 文章配套示例源码
 ├── scripts/           # 部署与 Git 钩子安装脚本
 ├── .cursor/rules/     # 协作规范（写作约定、提交规范等）
-└── .github/workflows/ # GitHub Actions 自动部署
+└── .github/workflows/ # GitHub Actions：CI 检查 + 自动部署
 ```
 
 ## 环境要求
@@ -30,15 +30,30 @@ npm run docs:dev
 
 浏览器访问 http://localhost:5173
 
-## 提交规范
+## 提交规范与 CI
 
 提交信息遵循 `<类型>(<范围>): <简述>`（详见 `.cursor/rules/commit-convention.mdc`）。
 
-由 `commit-msg` 钩子自动校验格式。Git 钩子不随仓库 clone，**首次克隆或换机器后执行一次**即可启用：
+### 本地校验
+
+`commit-msg` 钩子在 `git commit` 时检查标题格式。Git 钩子不随仓库 clone，**首次克隆或换机器后执行一次**：
 
 ```bash
 npm run hooks:install
 ```
+
+逻辑与 CI 共用 `scripts/validate-commit-subject.sh`。
+
+### GitHub Actions（合入前检查）
+
+`.github/workflows/ci.yml` 在 **PR 合入 `main`** 或 **push 到 `main`** 时自动运行，包含两个并行任务：
+
+| 任务 | 检查内容 |
+|------|----------|
+| `commit-msg` | PR / 本次 push 中每条 commit 标题是否符合规范 |
+| `build` | `npm ci` + `npm run docs:build`，确认站点能成功构建 |
+
+Merge 到 `main` 后，`.github/workflows/deploy.yml` 会再次构建并 rsync 部署到 VPS（见下方「部署」）。
 
 ## 构建与预览
 
