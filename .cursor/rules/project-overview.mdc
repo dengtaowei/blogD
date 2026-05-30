@@ -1,0 +1,37 @@
+---
+description: 工程总览、技术栈与常用命令
+alwaysApply: true
+---
+
+# 工程总览
+
+个人技术博客，基于 **VitePress** 构建，内容以 **Linux 内核源码阅读与子系统分析**为主（中文，`zh-CN`），辅以 RTOS 等学习笔记。纯文档项目，**无测试、无 lint**，正确性靠本地预览与源码核对。
+
+## 技术栈
+
+- **VitePress 1.x** + **Node.js >= 18**（CI 按 `.node-version`，推荐 20/22 LTS）
+- **Mermaid**（`vitepress-plugin-mermaid`）画流程图 / 时序图
+- 标题锚点用 **github-slugger**，与 GitHub 渲染算法一致
+
+## 目录结构
+
+```
+docs/                    # 站点内容（index.md / about.md）
+  analysis/kernel/       # 内核分析（核心）：usb/ pinctrl/ gpio/ spi/ debug/
+  notes/                 # 学习笔记（rtos/ 等）
+  .vitepress/config.ts   # 站点配置 + 侧边栏
+  .vitepress/theme/      # 自定义主题、样式、mermaid 缩放
+code/                    # 文章配套示例源码
+scripts/                 # 部署脚本
+```
+
+## 常用命令
+
+```bash
+npm install            # 安装依赖
+npm run docs:dev       # 本地预览 http://localhost:5173
+npm run docs:build     # 构建到 docs/.vitepress/dist/
+npm run docs:preview   # 预览构建产物
+```
+
+改动较大时跑一次 `npm run docs:build` 确认无死链 / 构建错误。仅在用户明确要求时创建 git 提交。

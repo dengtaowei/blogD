@@ -1,0 +1,15 @@
+---
+description: 部署流程与密钥注意事项
+globs: scripts/**,.github/workflows/**
+alwaysApply: false
+---
+
+# 部署
+
+- `main` 分支 push 后由 **GitHub Actions**（`.github/workflows/deploy.yml`）构建并 rsync 到 VPS，依赖仓库 Secrets。
+- 手动部署：`scripts/deploy.sh`（Linux/macOS）或 `npm run docs:deploy`（Windows）。脚本顶部含 VPS 地址等配置。
+- 构建产物为 `docs/.vitepress/dist/`，rsync 时带 `--delete`。
+
+## 密钥
+
+- **不要提交任何密钥**；部署凭据（`SSH_PRIVATE_KEY`、`REMOTE_HOST` 等）走 GitHub Secrets，勿写入仓库。
