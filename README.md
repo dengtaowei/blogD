@@ -53,8 +53,6 @@ npm run hooks:install
 | `commit-msg` | PR / 本次 push 中每条 commit 标题是否符合规范 |
 | `build` | `npm ci` + `npm run docs:build`，确认站点能成功构建 |
 
-Merge 到 `main` 后，`.github/workflows/deploy.yml` 会再次构建并 rsync 部署到 VPS（见下方「部署」）。
-
 ## 构建与预览
 
 ```bash
