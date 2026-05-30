@@ -11,7 +11,7 @@ alwaysApply: false
 1. **开头元信息**：`#` 标题后紧跟一段引用块，注明内核版本、子系统、一句话摘要、关联文档链接。
 2. **内核版本以 Linux 6.8 为基准**；引用源码写明文件路径与函数名，例如 `drivers/gpio/gpiolib-of.c` — `of_gpiochip_add_pin_range`。
 3. **正文用 `## 编号 标题`**，配 `## 目录` 锚点链接；惯用附录：`附录 A 端到端数据对照`、`附录 B 源码索引`、`附录 C 要点速记`。
-4. **调用链用 ` ```text ` 代码块**，树形缩进展示；大量使用表格做字段 / 寄存器对照。
+4. **调用链用 ` ```text ` 代码块**，树形缩进展示；**设备树（DTS）片段也用 ` ```txt `**（VitePress/Shiki 不支持 `dts` 高亮）；大量使用表格做字段 / 寄存器对照。
 5. **图用 Mermaid**（`flowchart` / `sequenceDiagram`）；HTML 实体需转义，如 `&lt;&amp;gpioa 10&gt;`。
 6. **站内链接用绝对路径、无扩展名**，如 `/analysis/kernel/pinctrl/stm32-pinctrl`。
 7. 改完后用 `npm run docs:dev` 自查 Mermaid 渲染与锚点跳转是否正常。
