@@ -30,9 +30,26 @@ npm run docs:dev
 
 浏览器访问 http://localhost:5173
 
-## 提交规范与 CI
+## 提交规范与合入
 
 提交信息遵循 `<类型>(<范围>): <简述>`（详见 `.cursor/rules/commit-convention.mdc`）。
+
+**`main` 受分支保护，不可直接 push。** 改动经 PR 合入后，`deploy` job 自动部署到 VPS。
+
+### 合入流程（PR）
+
+1. 从最新 `main` 建功能分支：
+
+```bash
+git checkout main
+git pull
+git checkout -b fix/简述    # 或 post/、chore/、site/ 等，见 commit 规范
+```
+
+2. 改代码、commit（提交前建议本地 `npm run docs:build`）
+3. `git push -u origin <分支名>`，在 GitHub 开 PR → `main`
+4. 等 CI 通过：`commit-msg`、`build`
+5. Merge；push 到 `main` 后触发 `deploy`（见下表）
 
 ### 本地校验
 
@@ -42,16 +59,28 @@ npm run docs:dev
 npm run hooks:install
 ```
 
-逻辑与 CI 共用 `scripts/validate-commit-subject.sh`。
+逻辑与 CI 共用 `scripts/validate-commit-subject.sh`（Windows 需 Git Bash / WSL）。
 
-### GitHub Actions（合入前检查）
+### GitHub Actions
 
-`.github/workflows/ci.yml` 在 **PR 合入 `main`** 或 **push 到 `main`** 时自动运行，包含两个并行任务：
+工作流见 `.github/workflows/ci.yml`。
+
+**PR 阶段**（`commit-msg` 与 `build` 并行）：
 
 | 任务 | 检查内容 |
 |------|----------|
-| `commit-msg` | PR / 本次 push 中每条 commit 标题是否符合规范 |
+| `commit-msg` | PR 内每条 commit 标题是否符合规范 |
 | `build` | `npm ci` + `npm run docs:build`，确认站点能成功构建 |
+
+**合入 `main` 后**（push 到 `main` 时，`build` 上传产物 → `deploy` rsync）：
+
+| 任务 | 说明 |
+|------|------|
+| `commit-msg` | 本次 push 新增 commit 标题校验 |
+| `build` | 构建站点并上传 artifact |
+| `deploy` | 复用 `build` 产物 rsync 到 VPS（需 Secrets，见下文） |
+
+PR 门禁只需 `commit-msg` 与 `build` 通过即可 Merge；`deploy` 在 Merge 之后自动执行。
 
 ## 构建与预览
 
@@ -66,7 +95,18 @@ npm run docs:preview
 
 ### 自动部署（推荐）
 
-推送到 `main` 分支后，由 GitHub Actions（`.github/workflows/ci.yml`：`build` 构建 → `deploy` rsync）部署到 VPS。需在仓库 Settings → Secrets 配置：`SSH_PRIVATE_KEY`、`REMOTE_HOST`、`REMOTE_USER`、`REMOTE_PORT`。
+日常只需 **PR → Merge**，无需本机配置。Merge 后 push 到 `main` 触发 CI 的 `deploy` job（复用同次 `build` 产物 rsync）。
+
+需在仓库 **Settings → Secrets** 配置：
+
+| Secret | 用途 |
+|--------|------|
+| `SSH_PRIVATE_KEY` | VPS SSH 私钥 |
+| `REMOTE_HOST` | 主机地址 |
+| `REMOTE_USER` | SSH 用户名 |
+| `REMOTE_PORT` | SSH 端口 |
+
+目标目录等工作流内配置见 `.github/workflows/ci.yml` 的 `deploy` job。
 
 ### 手动部署
 
