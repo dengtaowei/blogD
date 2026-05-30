@@ -85,3 +85,65 @@ jobs:
           SOURCE: docs/.vitepress/dist/
           TARGET: /var/www/linux-kernel-notes/
           ARGS: -avz --delete
+
+  notify-failure:
+    name: notify-failure
+    needs: [build, deploy]
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      (needs.build.result == 'failure' || needs.deploy.result == 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: 创建或更新失败通知 Issue
+        uses: actions/github-script@v7
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+        with:
+          script: |
+            const shortSha = context.sha.slice(0, 7)
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const title = `[CI] main 构建/部署失败 (${shortSha})`
+            const body = [
+              '## 失败摘要',
+              '',
+              '| Job | 结果 |',
+              '|-----|------|',
+              `| build | ${process.env.BUILD_RESULT} |`,
+              `| deploy | ${process.env.DEPLOY_RESULT} |`,
+              '',
+              `- **Commit**: \`${context.sha}\``,
+              `- **Workflow run**: ${runUrl}`,
+              '',
+              '修复后重新 push 到 `main` 或关闭本 Issue。',
+            ].join('\n')
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            })
+            const existing = issues.find((i) => i.title.startsWith('[CI] main 构建/部署失败'))
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body: `再次失败（${shortSha}）\n\n${body}`,
+              })
+              core.info(`Updated issue #${existing.number}`)
+            } else {
+              const { data: issue } = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              })
+              core.info(`Created issue #${issue.number}`)
+            }
