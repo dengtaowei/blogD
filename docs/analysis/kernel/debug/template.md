@@ -3,6 +3,8 @@ home: false
 homeTag: 示例
 homeTitle: 首页卡片标题（可选）
 homeDesc: 首页卡片摘要（可选，不填则尝试从引用块提取）
+sidebarOrder: 99
+sidebarTitle: 侧边栏标题（可选）
 ---
 
 # 标题：简短描述问题（例如 UVC open 失败 / 枚举超时）

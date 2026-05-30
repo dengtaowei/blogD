@@ -1,0 +1,45 @@
+{
+  "sections": {
+    "/notes/": [
+      {
+        "text": "RTOS",
+        "dir": "notes/rtos"
+      }
+    ],
+    "/analysis/": [
+      {
+        "text": "Linux 内核",
+        "items": [
+          { "index": "analysis/kernel", "text": "概览" },
+          { "text": "USB 子系统", "dir": "analysis/kernel/usb" },
+          {
+            "text": "Pinctrl / GPIO 子系统",
+            "dirs": ["analysis/kernel/pinctrl", "analysis/kernel/gpio"]
+          },
+          { "text": "SPI 子系统", "dir": "analysis/kernel/spi" },
+          {
+            "text": "调试与实践",
+            "items": [
+              { "index": "analysis/kernel/debug", "text": "概览" },
+              { "index": "analysis/kernel/debug/usb", "text": "USB" },
+              {
+                "text": "Pinctrl / GPIO",
+                "items": [
+                  { "index": "analysis/kernel/debug/gpio", "text": "概览" },
+                  {
+                    "dir": "analysis/kernel/debug/gpio",
+                    "skipIndex": true
+                  }
+                ]
+              },
+              {
+                "file": "analysis/kernel/debug/template.md",
+                "text": "写作模板"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

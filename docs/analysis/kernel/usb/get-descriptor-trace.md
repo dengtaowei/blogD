@@ -1,5 +1,7 @@
 ---
 date: 2026-05-24
+sidebarOrder: 30
+sidebarTitle: usb_get_descriptor 调用链
 ---
 
 # `usb_get_descriptor` 调用链

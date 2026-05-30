@@ -1,5 +1,7 @@
 ---
 date: 2026-05-24
+sidebarOrder: 40
+sidebarTitle: 枚举与两轮 Probe
 ---
 
 # USB 设备枚举与两轮 Probe

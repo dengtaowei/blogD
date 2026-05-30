@@ -1,5 +1,7 @@
 ---
 date: 2026-05-24
+sidebarOrder: 20
+sidebarTitle: STM32 GPIO 分析
 ---
 
 # STM32 GPIO：设备树、gpiochip 注册与驱动消费

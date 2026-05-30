@@ -1,6 +1,8 @@
 ---
 date: 2026-05-24
 homeTag: USB · 驱动
+sidebarOrder: 50
+sidebarTitle: UVC 驱动分析
 ---
 
 # UVC 驱动分析

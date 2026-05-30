@@ -1,6 +1,8 @@
 ---
 date: 2026-05-24
 homeDesc: 设备树、驱动模型到 spi_sync 的完整调用链。
+sidebarOrder: 10
+sidebarTitle: STM32MP157 SPI 子系统
 ---
 
 # STM32MP157 SPI 子系统分析
