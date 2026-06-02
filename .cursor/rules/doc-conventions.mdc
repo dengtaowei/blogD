@@ -6,7 +6,7 @@ alwaysApply: false
 
 # 文档写作约定
 
-参考既有分析文（如 `docs/analysis/kernel/gpio/stm32-gpio.md`）的结构。全文**中文**，技术术语 / 标识符用反引号。
+参考既有分析文（如 `docs/analysis/kernel/gpio/stm32-gpio.md`）的结构。全文**中文**，技术术语 / 标识符用反引号。**用词严谨、符合规范**见 **`doc-wording.mdc`**（`alwaysApply: true`，书写或修改 `docs/**/*.md` 时必须遵守）。
 
 1. **开头元信息**：`#` 标题后紧跟一段引用块，注明内核版本、子系统、一句话摘要、关联文档链接。
 2. **内核版本以 Linux 6.8 为基准**；引用源码写明文件路径与函数名，例如 `drivers/gpio/gpiolib-of.c` — `of_gpiochip_add_pin_range`。
@@ -15,5 +15,11 @@ alwaysApply: false
 5. **图用 Mermaid**（`flowchart` / `sequenceDiagram`）；HTML 实体需转义，如 `&lt;&amp;gpioa 10&gt;`。
 6. **站内链接用绝对路径、无扩展名**，如 `/analysis/kernel/pinctrl/stm32-pinctrl`。
 7. **首页「最近更新」**：正文文章需有 frontmatter **`date`**，由 `npm run sync:dates` 从 **Git 首次提交日期** 自动写入（`docs:dev` / `docs:build` 前会自动跑）。可选 `homeTag`、`homeTitle`、`homeDesc`。索引页、模板设 `home: false`（不写 `date`）。
-8. **侧边栏**：正文文章设 **`sidebarOrder`**（必填，排序）；可选 `sidebarTitle`、`sidebarHidden: true`。新子系统目录改 `docs/.vitepress/sidebar.meta.json`（见 `adding-docs.mdc`）。
+8. **侧边栏**：正文文章设 **`sidebarOrder`**（必填，排序）；可选 **`sidebarTitle`**（侧栏显示名，默认取 `#` 标题）、`sidebarHidden: true`。新子系统目录改 `docs/.vitepress/sidebar.meta.json`（见 `adding-docs.mdc`）。
+   - 主题侧栏宽 **`--vp-sidebar-width: 328px`**（`docs/.vitepress/theme/github-doc.css`，默认 272px），字号仍为 VitePress 默认 **14px**，勿为防换行改小字号。
+   - **`sidebarTitle` 长度**（单行、不换行；混排按可见字符计，1 汉字 ≈ 2 英文字符/数字）：
+     - **3 级嵌套**（如 Linux 内核 → 调试与实践 → USB → 文章）：混排 **≤ 24～26 字**，纯中文 **≤ 16～18 字**。
+     - **2 级嵌套**：混排 **≤ 28～30 字**，纯中文 **≤ 20 字**。
+     - 若改回 **272px** 侧栏，上述各减约 **4～6** 混排字或 **2～3** 汉字。
+   - 侧栏可写短名，正文 `#` 标题可更长；超长标题优先缩短 `sidebarTitle` 或加宽侧栏，勿依赖缩小字号。
 9. 改完后用 `npm run docs:dev` 自查 Mermaid 渲染与锚点跳转是否正常。

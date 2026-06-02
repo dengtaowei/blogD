@@ -11,7 +11,7 @@ alwaysApply: false
 ## 新增文章（已有子系统目录）
 
 1. 在对应目录新建 `.md`（kebab-case）。
-2. frontmatter 加 **`sidebarOrder`**（数字，越小越靠前）；可选 **`sidebarTitle`**（侧边栏显示名，默认取 `#` 标题）、**`sidebarHidden: true`**（不进侧边栏）。
+2. frontmatter 加 **`sidebarOrder`**（数字，越小越靠前）；可选 **`sidebarTitle`**（侧栏显示名，默认取 `#` 标题）、**`sidebarHidden: true`**（不进侧边栏）。`sidebarTitle` 长度见 **`doc-conventions.mdc` §8**（当前 328px 侧栏下，3 级嵌套约混排 ≤24 字 / 纯中文 ≤18 字）。
 3. 本地 `npm run docs:dev` 或 `npm run sync:sidebar` 即可，**不必改 `config.ts`**。
 
 ## 新增子系统 / 调整分组
@@ -20,6 +20,7 @@ alwaysApply: false
 
 ## 其他约定
 
+- 正文与 `sidebarTitle` 用词见 **`doc-wording.mdc`**（必须遵守）。
 - 正文文章首次 push 后 **`date` 由 `sync:dates` 按 Git 首次提交日写入**；索引页 / 模板设 **`home: false`**（见 `doc-conventions.mdc`）。
 - 新建调试笔记可复制 `docs/analysis/kernel/debug/template.md`。
 - 站内链接、`nav` 中的 `link` 用**绝对路径、无扩展名**。
