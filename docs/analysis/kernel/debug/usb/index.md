@@ -12,9 +12,7 @@ USB 子系统相关的具体问题排查与实验记录。
 
 ## 记录
 
-<!-- 有新文章时在下方追加，按时间倒序或主题分组 -->
-
-_暂无条目。可参考 [写作模板](/analysis/kernel/debug/template) 新增。_
+- [DJI `2ca3:8004` id_table 与 UVC 枚举](/analysis/kernel/debug/usb/dji-osmo-uvc-uac2-id-table) — eCos 上 UAC2 probe 报 `invalid HEADER`，阻塞 UVC 接口继续 probe
 
 ---
 

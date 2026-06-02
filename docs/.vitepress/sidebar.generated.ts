@@ -77,7 +77,16 @@ const sidebar: DefaultTheme.Sidebar = {
             },
             {
               "text": "USB",
-              "link": "/analysis/kernel/debug/usb/"
+              "items": [
+                {
+                  "text": "概览",
+                  "link": "/analysis/kernel/debug/usb/"
+                },
+                {
+                  "text": "DJI UVC/UAC2 id_table 与枚举",
+                  "link": "/analysis/kernel/debug/usb/dji-osmo-uvc-uac2-id-table"
+                }
+              ]
             },
             {
               "text": "Pinctrl / GPIO",
