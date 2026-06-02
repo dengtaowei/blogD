@@ -28,3 +28,4 @@ home: false
 针对具体问题的排查与实验记录（非成体系流程文）。
 
 - [概览](/analysis/kernel/debug/) · [USB](/analysis/kernel/debug/usb/) · [写作模板](/analysis/kernel/debug/template)
+- [DJI Osmo UVC/UAC2 枚举排查](/analysis/kernel/debug/usb/dji-osmo-uvc-uac2-id-table) — eCos 上 `2ca3:8004` id_table 与 UAC2 probe 阻塞
