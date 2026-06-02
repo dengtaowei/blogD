@@ -4,41 +4,42 @@ homeTitle: DJI Osmo Action 6 在 eCos 上 UVC 枚举
 homeDesc: 2ca3:8004 的 id_table 匹配与 UAC2 probe 阻塞导致 UVC 接口无法继续 probe
 sidebarOrder: 10
 sidebarTitle: DJI UVC/UAC2 id_table 与枚举
+date: 2026-06-02
 ---
 
 # DJI `2ca3:8004` — id_table 匹配与枚举路径
 
-> **环境**：eCos USB Host（CSKY）· 大疆 Osmo Action 6（`VID:PID = 0x2ca3:0x8004`）· 参考 Linux `uvcvideo` / `snd-usb-audio` 的 id_table  
-> **关联**：[USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) · [枚举与 Probe](/analysis/kernel/usb/enumeration-and-probe)  
+> **环境**：eCos USB Host（CSKY）· 大疆 Osmo Action 6（`VID:PID = 0x2ca3:0x8004`）· 对照 Linux `uvcvideo` / `snd-usb-audio` 的 id_table（非同一运行环境）  
+> **关联**：[USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) · [枚举与 Probe](/analysis/kernel/usb/enumeration-and-probe) · [UVC 驱动分析](/analysis/kernel/usb/uvc-driver)  
 > **附件**：[USB 描述符 dump](/files/dji_descriptor.txt)（Linux `lsusb -v`，`2ca3:8004`）  
 > **状态**：进行中（根因：UAC2 AC HEADER 按 UAC1 解析）
 
 ---
 
-## 现象
+## 目录
 
-- 目标：主机侧正常枚举并出现 **`/dev/video0`**（UVC）
-- 参考：绿联 `1d6b:0102` 等 UVC 设备在 eCos 上已可用
-- 实际：`8004` 模式下接口描述符可读，但 **`1-2:1.1` 绑定 `snd-usb-audio` 后报 `invalid HEADER`**（按 UAC1 解析 UAC2 AC 头）
-- 影响：`usb_set_configuration` 按 If0→If4 顺序 `device_add`；**`1.1` 的 probe 阻塞或失败后，`1.2`～`1.4` 可能无法继续**，UVC（`1.3`/`1.4`）起不来
-
----
-
-## 问题背景
-
-在 eCos USB Host（CSKY）上接入大疆 Osmo Action 6，配置为 **UVC + UAC2** 复合设备（`DIAG_UAC2_UVC`，5 个接口）。
-
-| 对比项 | 说明 |
-|--------|------|
-| 参考设备 | 绿联 `1d6b:0102` 等 UVC 设备在 eCos 上已可用 |
-| 现象 | 见上 |
-| 本文目的 | 对照 `uvc_ids[]` / `usb_audio_ids[]` 说明各接口**能否 match**；结合日志与调用栈区分「描述符已解析」与「驱动未 probe」 |
-
-标准描述符（`2ca3:8004`）见 [dji_descriptor.txt](/files/dji_descriptor.txt)；下文 eCos 实测与 `2ca3:0025` vendor 模式对比来自板端 probe 日志整理。
+- [1. 现象与背景](#1-现象与背景)
+- [2. 设备概要](#2-设备概要)
+- [3. 接口描述符：标准预期与 eCos 两轮实测](#3-接口描述符标准预期与-ecos-两轮实测)
+- [4. 视频：uvc_ids 与 uvcvideo](#4-视频uvc_ids-与-uvcvideo)
+- [5. 音频：usb_audio_ids 与 snd-usb-audio](#5-音频usb_audio_ids-与-snd-usb-audio)
+- [6. 调用栈：配置描述符解析](#6-调用栈配置描述符解析)
+- [7. 调用栈：接口 device_add 与驱动 probe](#7-调用栈接口-device_add-与驱动-probe)
+- [8. 排查备忘](#8-排查备忘)
 
 ---
 
-## 设备概要
+## 1. 现象与背景
+
+在 eCos USB Host（CSKY）上接入大疆 Osmo Action 6（`VID:PID = 0x2ca3:0x8004`），配置为 **UVC + UAC2** 复合设备（`DIAG_UAC2_UVC`，5 个接口）。目标是主机侧正常枚举并出现 **`/dev/video0`**（UVC）；绿联 `1d6b:0102` 等 UVC 设备在 eCos 上已可用，可作对照。
+
+**实际**：`8004` 模式下接口描述符可读，但 **`1-2:1.1` 绑定 `snd-usb-audio` 后报 `invalid HEADER`**（按 UAC1 解析 UAC2 AC 头）。`usb_set_configuration` 按 If0→If4 顺序 `device_add`；**`1.1` 的 probe 阻塞或失败后，`1.2`～`1.4` 可能无法继续**，UVC（`1.3`/`1.4`）起不来。
+
+本文对照 Linux `uvc_ids[]` / `usb_audio_ids[]` 说明各接口**能否 match**，并结合 eCos 日志与调用栈区分「描述符已解析」与「驱动未 probe」。标准描述符见 [dji_descriptor.txt](/files/dji_descriptor.txt)；下文含 `2ca3:0025` vendor 模式与 `8004` 正常模式两轮实测摘要。
+
+---
+
+## 2. 设备概要
 
 | 项 | 值 |
 |----|-----|
@@ -51,33 +52,30 @@ sidebarTitle: DJI UVC/UAC2 id_table 与枚举
 
 ---
 
-## 接口一览（与 bus_id 对应）
+## 3. 接口描述符：标准预期与 eCos 两轮实测
 
-| bus_id | If | Class | SubClass | Protocol | 标准含义 |
-|--------|-----|-------|----------|----------|----------|
-| `1-2:1.0` | 0 | 255 | 255 | 48 | 厂商 DIAG（bulk） |
-| `1-2:1.1` | 1 | 1 | **1** | 32 | **UAC2 Audio Control**（`bcdADC 2.00`） |
-| `1-2:1.2` | 2 | 1 | **2** | 32 | UAC2 Audio Streaming |
-| `1-2:1.3` | 3 | 14 | **1** | 0 | **UVC Video Control**（`bcdUVC 1.50`） |
-| `1-2:1.4` | 4 | 14 | **2** | 0 | UVC Video Streaming |
+接入后 eCos 上会先枚举 **`2ca3:0025`**（vendor，`wTotalLength=124`），断开再以 **`2ca3:8004`** 进入 `DIAG_UAC2_UVC`（`wTotalLength=639`）。Linux 侧标准值见 [dji_descriptor.txt](/files/dji_descriptor.txt)。
 
----
+| 轮次 | VID:PID | 配置 | 类码（If0～If4，Class/Sub/Proto） |
+|------|---------|------|--------------------------------|
+| 第 1 次 | `2ca3:0025` | 124 B，5 接口 | `255/255/48`；`255/67/1`×4 |
+| 第 2 次 | `2ca3:8004` | 639 B，5 接口 | `255/255/48`；`1/1/32`；`1/2/32`；`14/1/0`；`14/2/0` |
 
-## 接口描述符：预期 vs eCos 实测
+各接口 `bInterfaceClass / SubClass / Protocol`（`ifdesc raw`）：
 
-| bus_id | 预期 (Class/Sub/Proto) | eCos #1 (addr 2) | eCos #2 (addr 3) |
-|--------|------------------------|------------------|------------------|
-| `1-2:1.0` | 255 / 255 / 48 | 255 / 255 / 48 | 255 / 255 / 48 |
-| `1-2:1.1` | 1 / 1 / 32 | 255 / 67 / 1 | 1 / 1 / 32 |
-| `1-2:1.2` | 1 / 2 / 32 | 255 / 67 / 1 | — |
-| `1-2:1.3` | 14 / 1 / 0 | 255 / 67 / 1 | — |
-| `1-2:1.4` | 14 / 2 / 0 | 255 / 67 / 1 | — |
+| bus_id | 预期 (Linux) | 标准含义 | 第 1 轮 `0025` | 第 2 轮 `8004` |
+|--------|--------------|----------|----------------|----------------|
+| `1-2:1.0` | 255 / 255 / 48 | 厂商 DIAG（bulk） | 255 / 255 / 48 | 255 / 255 / 48 |
+| `1-2:1.1` | 1 / 1 / 32 | **UAC2 Audio Control**（`bcdADC 2.00`） | 255 / 67 / 1 | 1 / 1 / 32 |
+| `1-2:1.2` | 1 / 2 / 32 | UAC2 Audio Streaming | 255 / 67 / 1 | 1 / 2 / 32 |
+| `1-2:1.3` | 14 / 1 / 0 | **UVC Video Control**（`bcdUVC 1.50`） | 255 / 67 / 1 | 14 / 1 / 0 |
+| `1-2:1.4` | 14 / 2 / 0 | UVC Video Streaming | 255 / 67 / 1 | 14 / 2 / 0 |
 
 ---
 
-## 一、视频：`uvc_ids[]`（`uvcvideo`）
+## 4. 视频：uvc_ids 与 uvcvideo
 
-### 表内相关通用项（表尾）
+### 4.1 表内相关通用项（表尾）
 
 ```c
 /* Generic USB Video Class */
@@ -108,7 +106,7 @@ sidebarTitle: DJI UVC/UAC2 id_table 与枚举
 | `bInterfaceSubClass` | 1（Video Control） |
 | `bInterfaceProtocol` | 见下表 |
 
-### 按接口是否 match
+### 4.2 接口是否 match
 
 | 接口 | 描述符 | 是否 match `uvc_ids` | 命中表项（`usb_match_id` 从前向后） |
 |------|--------|----------------------|-------------------------------------|
@@ -116,9 +114,11 @@ sidebarTitle: DJI UVC/UAC2 id_table 与枚举
 | **1.4** | 14 / 2 / 0 | **否** | 表项要求 SubClass=1；流接口为 SubClass=2 |
 | 1.0 / 1.1 / 1.2 | 非 Video | 否 | — |
 
-## 二、音频：`usb_audio_ids[]`（`snd-usb-audio`）
+---
 
-### 表内唯一有效项
+## 5. 音频：usb_audio_ids 与 snd-usb-audio
+
+### 5.1 表内唯一有效项
 
 ```c
 static struct usb_device_id usb_audio_ids[] = {
@@ -131,7 +131,7 @@ static struct usb_device_id usb_audio_ids[] = {
 
 **不检查** `bInterfaceProtocol`，故 Protocol=32（UAC2）**不影响 match**。
 
-### 按接口是否 match
+### 5.2 接口是否 match
 
 | 接口 | 描述符 | 是否 match `usb_audio_ids` | 说明 |
 |------|--------|--------------------------|------|
@@ -139,21 +139,10 @@ static struct usb_device_id usb_audio_ids[] = {
 | **1.2** | 1 / **2** / 32 | **否** | SubClass=2（Streaming），表项要求 SubClass=1 |
 | 1.0 / 1.3 / 1.4 | 非 Audio Control | 否 | — |
 
-## 三、`usb_set_configuration` 枚举顺序（message.c）
+---
 
-`device_add` 按接口号 **0 → 1 → 2 → 3 → 4** 顺序执行：
+## 6. 调用栈：配置描述符解析
 
-```text
-adding 1.0 → device_add  → 通常无 class 驱动
-adding 1.1 → device_add  → snd-usb-audio match → usb_audio_probe（可能卡住）
-adding 1.2 → device_add  → 仅当 1.1 的 device_add 返回后才执行
-adding 1.3 → device_add  → uvcvideo match → uvc_probe
-adding 1.4 → device_add  → 通常无单独 match
-```
-
-## 四、调用栈：获取接口描述符 → `device_add`
-
-eCos 路径：`gx/core/v3_0/src/`（config / hub / message / generic）、`gx/base/v3_0/src/`（core / bus / dd）。
 
 ```text
 hub 端口枚举完成
@@ -184,7 +173,7 @@ hub 端口枚举完成
                                                └─ for (i = 0; i < nintf; i++)
                                                     ├─ dev_dbg("adding %s")   // 日志 adding 1.x
                                                     └─ device_add(&intf->dev) [message.c]
-                                                         └─ bus_attach_device() …（见下节）
+                                                         └─ bus_attach_device() …（见 §7）
 ```
 
 要点：
@@ -193,7 +182,9 @@ hub 端口枚举完成
 - **`adding 1.x` 出现在 `usb_set_configuration` 的接口 `device_add`**，之前还有一次 **整机** `device_add(&udev->dev)` 触发 `generic_probe` → `set_configuration`。
 - `intf->cur_altsetting->desc` 即 `usb_match_id` / `uvc_ids` / `usb_audio_ids` 所用字段。
 
-## 五、调用栈：`device_add`（接口）→ 驱动 probe
+---
+
+## 7. 调用栈：接口 device_add 与驱动 probe
 
 ```text
 device_add(&intf->dev)                            [message.c] → [core.c]
@@ -212,33 +203,20 @@ device_add(&intf->dev)                            [message.c] → [core.c]
                       └─ up(parent->sem)
 ```
 
-## 六、DJI 两次枚举（eCos 实测）
-
-`2ca3:8004` 标准描述符见 [dji_descriptor.txt](/files/dji_descriptor.txt)；下表含 `2ca3:0025` vendor 模式与 `8004` 正常模式两轮 eCos 枚举摘要。
-
-| 枚举轮次 | VID:PID | 配置描述符 | 接口描述符摘要 | 当前支持结论 | 实际结果 |
-|---|---|---|---|---|---|
-| 第 1 次 | `2ca3:0025` | `wTotalLength=124`，5 接口 | If0=`ff/ff/30`，If1~If4=`ff/43/01` | 非标准 UVC/UAC，属于 vendor 模式 | 仅完成枚举与 `adding`，随后断开重枚举 |
-| 第 2 次 | `2ca3:8004` | `wTotalLength=639`，5 接口 | If0=`ff/ff/30`，If1=`01/01/20`，If2=`01/02/20`，If3=`0e/01/00`，If4=`0e/02/00` | 描述符解析与 UVC 条件均正常；UAC2 解析不完整 | `1.1` 命中 `snd-usb-audio` 后 `invalid HEADER`，阻塞后续接口 probe |
-
-## 七、支持矩阵（按描述符类型）
-
-| 项目 | `2ca3:0025` | `2ca3:8004` | 结论 |
-|---|---|---|---|
-| Device Descriptor | 正常 | 正常 | 支持 |
-| Config 读取 (`wTotalLength`) | 正常（124） | 正常（639） | 支持 |
-| Interface 解析 (`ifdesc raw`) | 正常（但全 vendor） | 正常（UAC2/UVC 都读对） | 支持 |
-| UVC 接口（14/1/0, 14/2/0） | 无 | 有 | 具备匹配条件 |
-| UAC1 | 无 | 无 | 不适用 |
-| UAC2 AC HEADER 解析 | 无 | 有 | 当前实现不完整（`invalid HEADER`） |
-
 ---
 
-## 结论与备忘
+## 8. 排查备忘
 
-**当前结论**：主阻塞点是 `snd-usb-audio` 对 UAC2 AC HEADER 的解析失败（`invalid HEADER`），不是 `config.c` 的接口描述符读取失败。UVC 接口 `1.3` 在 id_table 上可 match，但若 `1.1` probe 阻塞，可能永远走不到 `uvc_probe`。
+Osmo Action 6 在 eCos 上会先以 **`2ca3:0025`**（`wTotalLength=124`，全 vendor 类码）枚举一轮并断开，再以 **`2ca3:8004`**（639 B，`DIAG_UAC2_UVC`）进入正常类码；第 2 轮描述符与 [§3](#3-接口描述符标准预期与-ecos-两轮实测) 一致，但 **`1.1` 的 `usb_audio_probe` 报 `invalid HEADER`**（UAC2 头按 UAC1 解析），可能阻塞后续接口 probe，导致 `1.3` 走不到 `uvc_probe`。日志里务必用 **VID:PID / `wTotalLength`** 区分两轮。沿 [§6](#6-调用栈配置描述符解析)、[§7](#7-调用栈接口-device_add-与驱动-probe) 建议在下列函数加打印：
 
-**待试方向**：
-
-- 在 eCos 侧补齐 UAC2 AC HEADER 解析，或临时跳过/延迟 `1.1` 的 audio probe
-- 对照 Linux 主线 `sound/usb` UAC2 路径与当前移植差异
+| 函数 | 文件 | 建议打印 |
+|------|------|----------|
+| `usb_new_device` | `hub.c` | `idVendor:idProduct`、`devnum` |
+| `usb_get_descriptor`（CONFIG） | `config.c` | `wTotalLength` |
+| `usb_parse_interface` | `config.c` | `ifnum`、Class/Sub/Proto（`ifdesc raw`） |
+| `choose_configuration` | `generic.c` | 选中的 `bConfigurationValue` |
+| `usb_set_configuration` | `message.c` | `adding %s`、各接口 `bus_id` |
+| `device_add`（接口） | `message.c` | `bus_id` 进入/返回 |
+| `usb_match_one_id` | `driver.c` | 类码、命中的 `driver->name` |
+| `usb_probe_interface` | `driver.c` | `driver->name`、`intf`、返回值 |
+| `usb_audio_probe` / `uvc_probe` | 驱动 | `invalid HEADER` 前后、返回码 |
