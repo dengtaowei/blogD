@@ -9,8 +9,9 @@
   "scripts": {
     "sync:dates": "node scripts/sync-article-dates.mjs",
     "sync:sidebar": "node scripts/generate-sidebar.mjs",
-    "docs:dev": "npm run sync:dates && npm run sync:sidebar && vitepress dev docs",
-    "docs:build": "npm run sync:dates && npm run sync:sidebar && vitepress build docs",
+    "sync:sitemap": "node scripts/generate-sitemap.mjs",
+    "docs:dev": "npm run sync:dates && npm run sync:sidebar && npm run sync:sitemap && vitepress dev docs",
+    "docs:build": "npm run sync:dates && npm run sync:sidebar && npm run sync:sitemap && vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "docs:deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1",
     "hooks:install": "bash ./scripts/install-hooks.sh"

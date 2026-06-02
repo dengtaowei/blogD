@@ -31,8 +31,9 @@
 
 **补充笔记**（非主线）：[FreeRTOS 任务调度](/notes/rtos/task-scheduling)
 
-## 代码与仓库
+## 站点与仓库
 
+- **博客首页**：https://www.xvfex.com.cn
 - 博客源码：[github.com/dengtaowei/blogD](https://github.com/dengtaowei/blogD)
 - 文章配套示例：`code/` 目录（与文章同步维护）
 

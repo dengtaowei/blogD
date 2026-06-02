@@ -1,6 +1,8 @@
 # Linux 内核学习笔记
 
-基于 [VitePress](https://vitepress.dev/) 的个人博客，记录 Linux 内核源码阅读与子系统分析。
+**在线站点**：https://www.xvfex.com.cn
+
+基于 [VitePress](https://vitepress.dev/) 的个人博客，记录 Linux 内核源码阅读与子系统分析。源码仓库：[github.com/dengtaowei/blogD](https://github.com/dengtaowei/blogD)。
 
 ## 目录结构
 

@@ -1,7 +1,9 @@
 ﻿import { defineConfig } from 'vitepress'
+import type { HeadConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
 import GithubSlugger from 'github-slugger'
 import sidebar from './sidebar.generated'
+import { canonicalUrl } from './site-url'
 
 // 与 GitHub 渲染器相同的标题锚点算法，目录 `#...` 链接两边通用
 const githubSlugger = new GithubSlugger()
@@ -91,6 +93,15 @@ export default withMermaid(
   head: [
     ['link', { rel: 'icon', type: 'image/png', href: '/favicon.png' }],
   ],
+
+  transformHead({ pageData }) {
+    const canonical = canonicalUrl(pageData.relativePath)
+    const extra: HeadConfig[] = [
+      ['link', { rel: 'canonical', href: canonical }],
+      ['meta', { property: 'og:url', content: canonical }],
+    ]
+    return extra
+  },
 
   themeConfig: {
     nav: [

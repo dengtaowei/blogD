@@ -30,9 +30,11 @@ scripts/                 # 部署脚本
 ```bash
 npm install            # 安装依赖
 npm run docs:dev       # 本地预览 http://localhost:5173
-npm run docs:build     # 构建到 docs/.vitepress/dist/
+npm run docs:build     # 构建到 docs/.vitepress/dist/（含 sync:sitemap）
 npm run docs:preview   # 预览构建产物
 ```
+
+线上站点：https://www.xvfex.com.cn（`docs/public/robots.txt`、`sitemap.xml`）。
 
 改动较大时跑一次 `npm run docs:build` 确认无死链 / 构建错误。仅在用户明确要求时创建 git 提交。
 
