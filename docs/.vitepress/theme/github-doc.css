@@ -34,6 +34,15 @@
 :root {
   --vp-layout-max-width: 1680px;
   --vp-aside-width: 220px;
+  /* 略宽于默认 272px，长 sidebarTitle 单行显示 */
+  --vp-sidebar-width: 328px;
+}
+
+/* 二级侧栏项缩进略减，给长标题多留宽度（字号仍用 VitePress 默认 14px） */
+@media (min-width: 960px) {
+  .VPSidebar .group + .group .items .VPSidebarItem.level-1 {
+    padding-left: 12px;
+  }
 }
 
 @media (min-width: 960px) {
