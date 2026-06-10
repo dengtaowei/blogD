@@ -109,4 +109,4 @@ sudo make play
 
 ## 关联
 
-- 博客 V4L2 分析文章（撰写后在此补充链接）
+- [V4L2 ioctl 分发](/analysis/kernel/media/v4l2-ioctl-dispatch)

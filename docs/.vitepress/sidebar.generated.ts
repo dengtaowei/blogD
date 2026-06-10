@@ -69,6 +69,15 @@ const sidebar: DefaultTheme.Sidebar = {
           ]
         },
         {
+          "text": "Media / V4L2",
+          "items": [
+            {
+              "text": "V4L2 ioctl 分发",
+              "link": "/analysis/kernel/media/v4l2-ioctl-dispatch"
+            }
+          ]
+        },
+        {
           "text": "调试与实践",
           "items": [
             {

@@ -17,6 +17,7 @@
             "dirs": ["analysis/kernel/pinctrl", "analysis/kernel/gpio"]
           },
           { "text": "SPI 子系统", "dir": "analysis/kernel/spi" },
+          { "text": "Media / V4L2", "dir": "analysis/kernel/media" },
           {
             "text": "调试与实践",
             "items": [
