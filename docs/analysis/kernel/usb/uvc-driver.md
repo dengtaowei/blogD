@@ -46,6 +46,7 @@ struct uvc_streaming {
 - [ ] 控制请求（UVC Control Request）的处理路径
 - [ ] isochronous vs bulk 传输差异
 - [ ] 格式描述符（Format Descriptor）解析
+- [x] V4L2 ioctl 框架分发 → [V4L2 ioctl 分发](/analysis/kernel/media/v4l2-ioctl-dispatch)
 
 ## 相关代码
 
