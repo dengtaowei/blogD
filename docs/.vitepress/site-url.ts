@@ -1,5 +1,5 @@
 /** 线上站点根 URL（sitemap、canonical、robots 共用，勿末尾斜杠） */
-export const SITE_URL = 'https://www.xvfex.com.cn'
+export const SITE_URL = 'https://blog.xvfex.com.cn'
 
 export function pagePathFromRelative(relativePath: string): string {
   const norm = relativePath.replace(/\\/g, '/').replace(/\.md$/, '')

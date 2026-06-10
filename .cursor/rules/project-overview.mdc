@@ -34,7 +34,7 @@ npm run docs:build     # 构建到 docs/.vitepress/dist/（含 sync:sitemap）
 npm run docs:preview   # 预览构建产物
 ```
 
-线上站点：https://www.xvfex.com.cn（`docs/public/robots.txt`、`sitemap.xml`）。
+线上站点：https://blog.xvfex.com.cn（`docs/public/robots.txt`、`sitemap.xml`）。
 
 改动较大时跑一次 `npm run docs:build` 确认无死链 / 构建错误。仅在用户明确要求时创建 git 提交。
 
