@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
-const SITE_URL = (process.env.SITE_URL ?? 'https://www.xvfex.com.cn').replace(/\/$/, '')
+const SITE_URL = (process.env.SITE_URL ?? 'https://blog.xvfex.com.cn').replace(/\/$/, '')
 const ROOT = join(import.meta.dirname, '..')
 const DOCS = join(ROOT, 'docs')
 const OUT = join(DOCS, 'public', 'sitemap.xml')

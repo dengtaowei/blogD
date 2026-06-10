@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.xvfex.com.cn/sitemap.xml
+Sitemap: https://blog.xvfex.com.cn/sitemap.xml

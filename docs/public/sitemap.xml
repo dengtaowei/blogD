@@ -1,83 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://www.xvfex.com.cn/</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/about</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/about</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/debug/</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/debug/</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/debug/gpio/</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/debug/gpio/</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/debug/gpio/imx6ull-spi-cs-gpio-runtime-pm</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/debug/gpio/imx6ull-spi-cs-gpio-runtime-pm</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/debug/template</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/debug/template</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/debug/usb/</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/debug/usb/</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/debug/usb/dji-osmo-uvc-uac2-id-table</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/debug/usb/dji-osmo-uvc-uac2-id-table</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/gpio/stm32-gpio</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/gpio/stm32-gpio</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/pinctrl/stm32-pinctrl</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/pinctrl/stm32-pinctrl</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/spi/spi-sync-trace</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/spi/spi-sync-trace</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/usb/enumeration-and-probe</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/usb/enumeration-and-probe</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/usb/get-descriptor-trace</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/usb/get-descriptor-trace</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/usb/hub-port-init</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/usb/hub-port-init</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/usb/usb-enumeration</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/usb/usb-enumeration</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/analysis/kernel/usb/uvc-driver</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/usb/uvc-driver</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/notes/</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/notes/</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
   <url>
-    <loc>https://www.xvfex.com.cn/notes/rtos/task-scheduling</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://blog.xvfex.com.cn/notes/rtos/task-scheduling</loc>
+    <lastmod>2026-06-10</lastmod>
   </url>
 </urlset>

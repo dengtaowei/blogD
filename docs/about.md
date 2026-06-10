@@ -33,7 +33,7 @@
 
 ## 站点与仓库
 
-- **博客首页**：https://www.xvfex.com.cn
+- **博客首页**：https://blog.xvfex.com.cn
 - 博客源码：[github.com/dengtaowei/blogD](https://github.com/dengtaowei/blogD)
 - 文章配套示例：`code/` 目录（与文章同步维护）
 
