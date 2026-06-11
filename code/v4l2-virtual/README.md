@@ -111,3 +111,4 @@ sudo make play
 
 - [V4L2 设备注册与 video 节点](/analysis/kernel/media/v4l2-device-registration)
 - [V4L2 ioctl 分发](/analysis/kernel/media/v4l2-ioctl-dispatch)
+- [videobuffer2：Buffer 状态机与双链表](/analysis/kernel/media/v4l2-vb2-queue)

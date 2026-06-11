@@ -78,6 +78,10 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               "text": "V4L2 ioctl 分发",
               "link": "/analysis/kernel/media/v4l2-ioctl-dispatch"
+            },
+            {
+              "text": "V4L2 vb2 队列",
+              "link": "/analysis/kernel/media/v4l2-vb2-queue"
             }
           ]
         },
