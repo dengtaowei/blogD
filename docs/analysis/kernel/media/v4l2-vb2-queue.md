@@ -2,6 +2,7 @@
 sidebarOrder: 15
 sidebarTitle: V4L2 vb2 队列
 homeTag: Media · V4L2
+date: 2026-06-11
 ---
 
 # videobuffer2：Buffer 状态机与双链表
