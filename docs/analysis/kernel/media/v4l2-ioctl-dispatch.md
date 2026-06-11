@@ -2,6 +2,7 @@
 sidebarOrder: 10
 sidebarTitle: V4L2 ioctl 分发
 homeTag: Media · V4L2
+date: 2026-06-11
 ---
 
 # V4L2 ioctl 分发：从系统调用到 vidioc_xxx
@@ -9,7 +10,8 @@ homeTag: Media · V4L2
 > Linux 6.8 · `drivers/media/v4l2-core/v4l2-ioctl.c` — `__video_do_ioctl`  
 > **Linux 内核 · Media / V4L2 子系统**  
 > 梳理 `ioctl(fd, VIDIOC_xxx, &arg)` 经 VFS、V4L2 框架查表到驱动 `vidioc_xxx` 的路径；以 UVC（`uvcvideo`）为例。  
-> 后续可读 [UVC 驱动分析](/analysis/kernel/usb/uvc-driver)；实验代码见 [`code/v4l2-virtual/`](https://github.com/dengtaowei/blogD/tree/main/code/v4l2-virtual)。
+> 前置：[V4L2 设备注册与 video 节点](/analysis/kernel/media/v4l2-device-registration)。  
+> 关联 [UVC 驱动分析](/analysis/kernel/usb/uvc-driver)；实验代码见 [`code/v4l2-virtual/`](https://github.com/dengtaowei/blogD/tree/main/code/v4l2-virtual)。
 
 ---
 
@@ -26,7 +28,7 @@ homeTag: Media · V4L2
 
 ## 1. 总览
 
-用户程序对 `/dev/video0` 调用 `ioctl(fd, VIDIOC_xxx, &arg)` 时，内核主路径如下。
+注册与 `open` 上下文见 [V4L2 设备注册与 video 节点](/analysis/kernel/media/v4l2-device-registration)。下文从用户程序对 `/dev/video0` 调用 `ioctl(fd, VIDIOC_xxx, &arg)` 起，梳理内核主路径。
 
 | 阶段 | 位置 | 关键函数 |
 |:----:|------|----------|
