@@ -11,6 +11,7 @@ date: 2026-06-11
 > **Linux 内核 · Media / V4L2 子系统**  
 > 梳理 `ioctl(fd, VIDIOC_xxx, &arg)` 经 VFS、V4L2 框架查表到驱动 `vidioc_xxx` 的路径；以 UVC（`uvcvideo`）为例。  
 > 前置：[V4L2 设备注册与 video 节点](/analysis/kernel/media/v4l2-device-registration)。  
+> 后续：[videobuffer2：Buffer 状态机与双链表](/analysis/kernel/media/v4l2-vb2-queue)。  
 > 关联 [UVC 驱动分析](/analysis/kernel/usb/uvc-driver)；实验代码见 [`code/v4l2-virtual/`](https://github.com/dengtaowei/blogD/tree/main/code/v4l2-virtual)。
 
 ---
@@ -299,6 +300,8 @@ ioctl(fd, VIDIOC_STREAMON, &type)
 ```
 
 **ops 层数**：① → ② → ③。
+
+`vidioc_streamon` 进入 vb2 的 `start_streaming` 与 buffer 状态机，详见 [videobuffer2：Buffer 状态机与双链表](/analysis/kernel/media/v4l2-vb2-queue)。
 
 ---
 

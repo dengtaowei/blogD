@@ -18,6 +18,7 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 - [V4L2 设备注册与 video 节点](/analysis/kernel/media/v4l2-device-registration)
 - [V4L2 ioctl 分发](/analysis/kernel/media/v4l2-ioctl-dispatch)
+- [videobuffer2：Buffer 状态机与双链表](/analysis/kernel/media/v4l2-vb2-queue)
 
 ## Pinctrl / GPIO 子系统
 

@@ -39,7 +39,7 @@ struct uvc_streaming {
 1. USB 子系统匹配 UVC 设备（VID/PID 或 Interface Class）
 2. `uvc_probe()` 解析设备描述符与格式
 3. 注册 V4L2 设备节点（如 `/dev/video0`）→ 详见 [V4L2 设备注册与 video 节点](/analysis/kernel/media/v4l2-device-registration)
-4. 用户空间通过 `VIDIOC_STREAMON` 启动视频流
+4. 用户空间通过 `VIDIOC_STREAMON` 启动视频流 → 详见 [videobuffer2：Buffer 状态机与双链表](/analysis/kernel/media/v4l2-vb2-queue)
 
 ## 待深入
 
@@ -48,6 +48,7 @@ struct uvc_streaming {
 - [ ] 格式描述符（Format Descriptor）解析
 - [x] V4L2 设备注册与 `/dev/videoX` → [V4L2 设备注册与 video 节点](/analysis/kernel/media/v4l2-device-registration)
 - [x] V4L2 ioctl 框架分发 → [V4L2 ioctl 分发](/analysis/kernel/media/v4l2-ioctl-dispatch)
+- [x] vb2 buffer 流转（QBUF / STREAMON / DQBUF）→ [videobuffer2：Buffer 状态机与双链表](/analysis/kernel/media/v4l2-vb2-queue)
 
 ## 相关代码
 
