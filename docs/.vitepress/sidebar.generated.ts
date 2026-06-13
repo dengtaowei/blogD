@@ -43,6 +43,10 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               "text": "UVC 驱动分析",
               "link": "/analysis/kernel/usb/uvc-driver"
+            },
+            {
+              "text": "Gadget CDC ACM 串口实践",
+              "link": "/analysis/kernel/usb/gadget-cdc-acm"
             }
           ]
         },
