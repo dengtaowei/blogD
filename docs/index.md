@@ -83,6 +83,15 @@ features:
           </span>
         </a>
       </li>
+      <li>
+        <a href="/analysis/kernel/usb/gadget-cdc-acm">
+          <span class="home-step-num">6</span>
+          <span class="home-step-text">
+            <strong>Gadget CDC ACM 串口实践</strong>
+            <span>configfs、`ttyGS0` 与 Host `cdc_acm`</span>
+          </span>
+        </a>
+      </li>
     </ul>
     <div class="home-links">
       <a class="home-link-btn" href="/analysis/kernel/">查看内核概览 →</a>

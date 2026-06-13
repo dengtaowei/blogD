@@ -13,6 +13,7 @@ Linux 内核子系统源码分析（Linux 6.8）。
 3. [usb_get_descriptor 调用链](/analysis/kernel/usb/get-descriptor-trace)
 4. [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)
 5. [UVC 驱动分析](/analysis/kernel/usb/uvc-driver)
+6. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0` / Host `cdc_acm`
 
 ## Media / V4L2 子系统
 

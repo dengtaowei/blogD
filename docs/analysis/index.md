@@ -17,6 +17,7 @@ home: false
 3. [usb_get_descriptor 调用链](/analysis/kernel/usb/get-descriptor-trace) — core 到 xHCI 的 URB 路径
 4. [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe) — `usb_new_device` 与驱动绑定
 5. [UVC 驱动分析](/analysis/kernel/usb/uvc-driver) — USB Video Class 类驱动结构
+6. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — Device 侧 configfs + `ttyGS0`
 
 ### Pinctrl / GPIO 子系统
 
