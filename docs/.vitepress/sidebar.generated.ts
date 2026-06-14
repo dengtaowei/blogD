@@ -53,6 +53,10 @@ const sidebar: DefaultTheme.Sidebar = {
               "link": "/analysis/kernel/usb/gadget-configfs-assembly"
             },
             {
+              "text": "Gadget 内核参考",
+              "link": "/analysis/kernel/usb/gadget-kernel-reference"
+            },
+            {
               "text": "Gadget CDC ACM 串口实践",
               "link": "/analysis/kernel/usb/gadget-cdc-acm"
             }

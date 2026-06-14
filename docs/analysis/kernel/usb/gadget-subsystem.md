@@ -11,7 +11,7 @@ date: 2026-06-14
 
 > **内核**：Linux 5.4 源码（dwc2 dual-role 平台对照）；路径与 Linux 6.8 同源，差异处另行注明  
 > **子系统**：USB Gadget（Device 侧）· UDC / composite / configfs  
-> **关联**：[USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) · [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)（Host 侧对照）· [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
+> **关联**：[USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) · [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)（Host 侧对照）· [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) · [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
 
 ---
 
@@ -297,6 +297,7 @@ Host IN/OUT
 | 文档 | 内容 |
 |---|---|
 | [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) | `gadget_info` / `cdev` / `composite` 脚本拼装与 bind |
+| [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) | 结构体、回调与脚本映射速查 |
 | [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) | configfs ACM、`ttyGS0` 与 Host `cdc_acm` |
 | dwc2 OTG 深读（待迁入） | dwc2 probe、时钟、DRD、role-switch |
 | dwc2_gadget_control_write_analysis（待迁入） | EP0 Control Write/Read、Setup/Data/Status |

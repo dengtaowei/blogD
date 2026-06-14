@@ -19,7 +19,8 @@ home: false
 5. [UVC 驱动分析](/analysis/kernel/usb/uvc-driver) — USB Video Class 类驱动结构
 6. [Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) — Device 侧 UDC / composite / configfs
 7. [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) — `gadget_info` / `cdev` 拼装与 bind
-8. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0`
+8. [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) — 结构体、回调速查
+9. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0`
 
 ### Pinctrl / GPIO 子系统
 
