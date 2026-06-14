@@ -84,8 +84,17 @@ features:
         </a>
       </li>
       <li>
-        <a href="/analysis/kernel/usb/gadget-cdc-acm">
+        <a href="/analysis/kernel/usb/gadget-subsystem">
           <span class="home-step-num">6</span>
+          <span class="home-step-text">
+            <strong>Gadget 子系统概览</strong>
+            <span>UDC / composite / configfs 四层架构</span>
+          </span>
+        </a>
+      </li>
+      <li>
+        <a href="/analysis/kernel/usb/gadget-cdc-acm">
+          <span class="home-step-num">7</span>
           <span class="home-step-text">
             <strong>Gadget CDC ACM 串口实践</strong>
             <span>configfs、`ttyGS0` 与 Host `cdc_acm`</span>

@@ -4,13 +4,13 @@ homeTitle: USB Gadget CDC ACM 串口实践
 homeDesc: configfs 配置 ACM，板子 ttyGS0 与 PC cdc_acm 对接
 sidebarOrder: 55
 sidebarTitle: Gadget CDC ACM 串口实践
-date: 2026-06-03
+date: 2026-06-13
 ---
 
 # USB Gadget 模拟串口（CDC ACM）实践
 
 > **环境**：Linux 内核 · dwc2 dual-role · configfs composite  
-> **关联**：[USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration)（Host 侧对照）· [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)  
+> **关联**：[Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) · [USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration)（Host 侧对照）· [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)  
 > **脚本**：[code/gadget-cdc-acm/deferred_fb_serial.sh](https://github.com/dengtaowei/blogD/blob/main/code/gadget-cdc-acm/deferred_fb_serial.sh)  
 > **状态**：已在板子 + Host PC 验证 `ttyGS0` / `cdc_acm`
 
