@@ -15,11 +15,10 @@ Linux 内核子系统源码分析（Linux 6.8）。
 5. [UVC 驱动分析](/analysis/kernel/usb/uvc-driver)
 6. [Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) — UDC / composite / configfs 四层架构
 7. [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) — `gadget_info` / `cdev` 脚本拼装与 bind
-8. [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) — 结构体、回调与脚本映射速查
-9. [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) — `udc_bind_to_driver`、pending、pullup
-10. [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) — `composite_setup`、`SET_CONFIGURATION`
-11. [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) — `f_acm.c`、`gserial_connect` 与 ttyGS
-12. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0` / Host `cdc_acm`
+8. [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) — `udc_bind_to_driver`、pending、pullup
+9. [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) — `composite_setup`、`SET_CONFIGURATION`
+10. [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) — `f_acm.c`、`gserial_connect` 与 ttyGS
+11. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0` / Host `cdc_acm`
 
 ## Media / V4L2 子系统
 

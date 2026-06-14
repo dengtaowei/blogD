@@ -102,17 +102,8 @@ features:
         </a>
       </li>
       <li>
-        <a href="/analysis/kernel/usb/gadget-kernel-reference">
-          <span class="home-step-num">8</span>
-          <span class="home-step-text">
-            <strong>Gadget 内核参考</strong>
-            <span>结构体、回调与脚本映射速查</span>
-          </span>
-        </a>
-      </li>
-      <li>
         <a href="/analysis/kernel/usb/gadget-udc-core-bind">
-          <span class="home-step-num">9</span>
+          <span class="home-step-num">8</span>
           <span class="home-step-text">
             <strong>UDC bind 分析</strong>
             <span>`udc_bind_to_driver`、pending、pullup</span>
@@ -121,7 +112,7 @@ features:
       </li>
       <li>
         <a href="/analysis/kernel/usb/gadget-composite-ep0">
-          <span class="home-step-num">10</span>
+          <span class="home-step-num">9</span>
           <span class="home-step-text">
             <strong>Composite EP0 枚举</strong>
             <span>`composite_setup`、`SET_CONFIGURATION`</span>
@@ -130,7 +121,7 @@ features:
       </li>
       <li>
         <a href="/analysis/kernel/usb/gadget-function-acm">
-          <span class="home-step-num">11</span>
+          <span class="home-step-num">10</span>
           <span class="home-step-text">
             <strong>ACM Function 路径</strong>
             <span>`f_acm.c`、`gserial_connect` 与 ttyGS</span>
@@ -139,7 +130,7 @@ features:
       </li>
       <li>
         <a href="/analysis/kernel/usb/gadget-cdc-acm">
-          <span class="home-step-num">12</span>
+          <span class="home-step-num">11</span>
           <span class="home-step-text">
             <strong>Gadget CDC ACM 串口实践</strong>
             <span>configfs、`ttyGS0` 与 Host `cdc_acm`</span>

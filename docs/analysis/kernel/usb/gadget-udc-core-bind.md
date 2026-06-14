@@ -2,7 +2,7 @@
 homeTag: USB · Gadget
 homeTitle: Gadget UDC bind 与 connect
 homeDesc: udc/core 配对、bind 链、pending 与 pullup
-sidebarOrder: 55
+sidebarOrder: 54
 sidebarTitle: UDC bind 分析
 date: 2026-06-14
 ---
@@ -11,7 +11,7 @@ date: 2026-06-14
 
 > **层**：UDC core（`drivers/usb/gadget/udc/core.c`）  
 > **内核**：Linux 5.4 源码（dwc2 dual-role 平台对照）；路径与 Linux 6.8 同源，差异处另行注明  
-> **关联**：[Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) · [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) · [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)  
+> **关联**：[Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) · [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)  
 > **说明**：硬件寄存器细节见 dwc2 soft_connect（待迁入）；configfs 组装内容见 [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) §5
 
 ---
@@ -126,7 +126,7 @@ usb_udc_connect_control(udc);                /* ③ pullup 决策 */
 | ② | `usb_gadget_udc_start` | 启动 UDC 硬件侧 gadget 模式 | dwc2 `dwc2_hsotg_udc_start`（待迁入） |
 | ③ | `usb_udc_connect_control` | 若 `udc->vbus` 则 pullup | `usb_gadget_connect` → dwc2 soft_connect（待迁入） |
 
-**注意**：`composite->bind`（`usb_composite_driver` 层）在 configfs 下为 **`configfs_do_nothing`**，不被调用；组装全在 ① 完成。两层 `bind` 对比见 [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) §3。
+**注意**：`composite->bind`（`usb_composite_driver` 层）在 configfs 下为 **`configfs_do_nothing`**，不被调用；组装全在 ① 完成。两层 `bind` 对比见 [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) §4。
 
 ### 4.4 `usb_udc_connect_control()`
 
@@ -182,7 +182,7 @@ else
 | `suspend` / `resume` | `configfs_composite_*` | USB 挂起/恢复 |
 | `unbind` | `configfs_composite_unbind` | `echo "" > UDC` |
 
-dwc2 EP0 中断最终调 **`hsotg->driver->setup()`**（dwc2 EP0 控制传输，待迁入）。回调表见 [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) §4。
+dwc2 EP0 中断最终调 **`hsotg->driver->setup()`**（dwc2 EP0 控制传输，待迁入）。`setup` 回调见 [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) §4、[Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) §2。
 
 ## 9. 与锚点的对应
 
@@ -214,8 +214,8 @@ T1 之后 Host **可以** 开始枚举（读描述符）；T2 之后 ACM **数�
 | 文档 | 内容 |
 |------|------|
 | [Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) | 四层架构、两阶段生命周期、pending 列表 |
-| [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) | `echo UDC` 时 `configfs_composite_bind` 焊合内容 |
-| [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) | 结构体、两层 bind、回调速查 |
+| [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) | `echo UDC` 时 `configfs_composite_bind` finalize 描述符并关联 gadget |
+| [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) | 两层 `bind`、`gadget_driver` 回调 |
 | [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) | 脚本实操与 Host 侧验证 |
 | [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) | `composite_setup` 与 Host 标准请求 |
 | [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) | `acm_set_alt`、`gserial_connect` |
