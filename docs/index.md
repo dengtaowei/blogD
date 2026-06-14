@@ -93,8 +93,17 @@ features:
         </a>
       </li>
       <li>
-        <a href="/analysis/kernel/usb/gadget-cdc-acm">
+        <a href="/analysis/kernel/usb/gadget-configfs-assembly">
           <span class="home-step-num">7</span>
+          <span class="home-step-text">
+            <strong>Configfs 组装分析</strong>
+            <span>`gadget_info` / `cdev` 脚本拼装与 bind</span>
+          </span>
+        </a>
+      </li>
+      <li>
+        <a href="/analysis/kernel/usb/gadget-cdc-acm">
+          <span class="home-step-num">8</span>
           <span class="home-step-text">
             <strong>Gadget CDC ACM 串口实践</strong>
             <span>configfs、`ttyGS0` 与 Host `cdc_acm`</span>

@@ -14,7 +14,8 @@ Linux 内核子系统源码分析（Linux 6.8）。
 4. [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)
 5. [UVC 驱动分析](/analysis/kernel/usb/uvc-driver)
 6. [Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) — UDC / composite / configfs 四层架构
-7. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0` / Host `cdc_acm`
+7. [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) — `gadget_info` / `cdev` 脚本拼装与 bind
+8. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0` / Host `cdc_acm`
 
 ## Media / V4L2 子系统
 

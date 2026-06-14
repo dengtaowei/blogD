@@ -1,6 +1,6 @@
 # Gadget CDC ACM 串口（configfs）
 
-配套文章：[USB Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
+配套文章：[USB Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) · [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly)
 
 ```bash
 chmod +x deferred_fb_serial.sh
