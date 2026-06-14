@@ -25,7 +25,10 @@
 4. [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe) — 设备注册与驱动绑定
 5. [UVC 驱动分析](/analysis/kernel/usb/uvc-driver) — USB Video Class 类驱动
 
-**Device 侧（Gadget）**：[Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs、`/dev/ttyGS0` 与 Host `cdc_acm`
+**Device 侧（Gadget）**：
+
+1. [Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) — 四层架构、两阶段生命周期、configfs 设计
+2. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs、`/dev/ttyGS0` 与 Host `cdc_acm`
 
 **其他内核专题**：[STM32 Pinctrl](/analysis/kernel/pinctrl/stm32-pinctrl) · [STM32 GPIO](/analysis/kernel/gpio/stm32-gpio)
 
