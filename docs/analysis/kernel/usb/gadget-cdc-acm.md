@@ -78,7 +78,7 @@ ACM 为虚拟串口，**波特率多为形式参数**（应用可设 115200，�
 
 ```bash
 ls /sys/class/udc/
-# 期望：49000000.usb-otg（名称以实际为准）
+# 期望出现本机 UDC 名（如 dwc2 平台常为 `xxxx.usb-otg`，以 `ls /sys/class/udc/` 为准）
 ```
 
 ### 4.2 configfs 挂载
@@ -168,7 +168,7 @@ esac
 | 命令 | 作用 | 内核侧 |
 |------|------|--------|
 | `G=.../deferred_fb_serial` | gadget 路径变量 | — |
-| `UDC=$(ls /sys/class/udc \| head -1)` | 取 UDC 名（如 `49000000.usb-otg`） | `usb_add_gadget_udc()` 注册的设备 |
+| `UDC=$(ls /sys/class/udc \| head -1)` | 取本机 UDC 名 | `usb_add_gadget_udc()` 注册的设备 |
 | `modprobe libcomposite` | 加载 composite 模块（若未编进内核） | configfs gadget 依赖 |
 | `mkdir -p $G` | 创建 gadget | `gadgets_make()` → 分配 `gadget_info` |
 | `echo 0x1d6b > idVendor` | 厂商 ID | `gi->cdev.desc.idVendor` |
