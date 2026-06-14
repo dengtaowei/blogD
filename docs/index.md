@@ -111,8 +111,17 @@ features:
         </a>
       </li>
       <li>
-        <a href="/analysis/kernel/usb/gadget-cdc-acm">
+        <a href="/analysis/kernel/usb/gadget-udc-core-bind">
           <span class="home-step-num">9</span>
+          <span class="home-step-text">
+            <strong>UDC bind 分析</strong>
+            <span>`udc_bind_to_driver`、pending、pullup</span>
+          </span>
+        </a>
+      </li>
+      <li>
+        <a href="/analysis/kernel/usb/gadget-cdc-acm">
+          <span class="home-step-num">10</span>
           <span class="home-step-text">
             <strong>Gadget CDC ACM 串口实践</strong>
             <span>configfs、`ttyGS0` 与 Host `cdc_acm`</span>

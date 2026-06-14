@@ -30,7 +30,8 @@
 1. [Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) — 四层架构、两阶段生命周期、configfs 设计
 2. [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) — `gadget_info`、`cdev` 与 `composite` 如何由脚本拼装
 3. [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) — 结构体、回调与脚本映射速查
-4. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs、`/dev/ttyGS0` 与 Host `cdc_acm`
+4. [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) — `udc_bind_to_driver`、pending、pullup
+5. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs、`/dev/ttyGS0` 与 Host `cdc_acm`
 
 **其他内核专题**：[STM32 Pinctrl](/analysis/kernel/pinctrl/stm32-pinctrl) · [STM32 GPIO](/analysis/kernel/gpio/stm32-gpio)
 

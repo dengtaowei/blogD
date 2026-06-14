@@ -20,7 +20,8 @@ home: false
 6. [Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) — Device 侧 UDC / composite / configfs
 7. [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) — `gadget_info` / `cdev` 拼装与 bind
 8. [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) — 结构体、回调速查
-9. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0`
+9. [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) — `udc/core` 配对与 pullup
+10. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0`
 
 ### Pinctrl / GPIO 子系统
 

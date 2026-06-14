@@ -4,6 +4,7 @@ homeTitle: Gadget 内核结构体与回调参考
 homeDesc: gadget_info、cdev、回调与脚本映射速查
 sidebarOrder: 54
 sidebarTitle: Gadget 内核参考
+date: 2026-06-14
 ---
 
 # Gadget 内核结构体与回调参考
@@ -309,5 +310,7 @@ gi->composite.resume  = NULL;
 |------|------|
 | [Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) | 四层架构、两阶段生命周期 |
 | [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) | 脚本逐步拼装 `cdev` / `composite` |
+| [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) | 结构体、两层 bind、回调速查 |
+| [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) | `udc/core` 配对、bind 链与 pullup |
 | [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) | 脚本实操、`ttyGS0` 与 Host `cdc_acm` |
-| UDC core bind 深读（待迁入） | `udc_bind_to_driver` 逐步展开 |
+| composite EP0 枚举（待迁入） | `composite_setup` 与 Host 标准请求 |
