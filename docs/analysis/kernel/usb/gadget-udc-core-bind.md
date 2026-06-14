@@ -4,6 +4,7 @@ homeTitle: Gadget UDC bind 与 connect
 homeDesc: udc/core 配对、bind 链、pending 与 pullup
 sidebarOrder: 55
 sidebarTitle: UDC bind 分析
+date: 2026-06-14
 ---
 
 # Gadget UDC bind 与 connect
@@ -176,7 +177,7 @@ else
 
 | 回调 | configfs 实现 | 何时 |
 |------|---------------|------|
-| `setup` | `configfs_composite_setup` → `composite_setup` | Host EP0；composite EP0 枚举（待迁入） |
+| `setup` | `configfs_composite_setup` → `composite_setup` | Host EP0；见 [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) |
 | `disconnect` / `reset` | `configfs_composite_disconnect` | 拔线、总线复位 |
 | `suspend` / `resume` | `configfs_composite_*` | USB 挂起/恢复 |
 | `unbind` | `configfs_composite_unbind` | `echo "" > UDC` |
@@ -216,5 +217,5 @@ T1 之后 Host **可以** 开始枚举（读描述符）；T2 之后 ACM **数�
 | [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) | `echo UDC` 时 `configfs_composite_bind` 焊合内容 |
 | [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) | 结构体、两层 bind、回调速查 |
 | [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) | 脚本实操与 Host 侧验证 |
-| composite EP0 枚举（待迁入） | `composite_setup` 与 Host 标准请求 |
+| [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) | `composite_setup` 与 Host 标准请求 |
 | dwc2 soft_connect / role-switch（待迁入） | pullup 寄存器与 OTG 切换 |

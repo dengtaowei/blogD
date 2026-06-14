@@ -313,4 +313,4 @@ gi->composite.resume  = NULL;
 | [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) | 结构体、两层 bind、回调速查 |
 | [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) | `udc/core` 配对、bind 链与 pullup |
 | [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) | 脚本实操、`ttyGS0` 与 Host `cdc_acm` |
-| composite EP0 枚举（待迁入） | `composite_setup` 与 Host 标准请求 |
+| [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) | `composite_setup` 与 Host 标准请求 |

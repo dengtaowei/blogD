@@ -61,6 +61,10 @@ const sidebar: DefaultTheme.Sidebar = {
               "link": "/analysis/kernel/usb/gadget-udc-core-bind"
             },
             {
+              "text": "Composite EP0 枚举",
+              "link": "/analysis/kernel/usb/gadget-composite-ep0"
+            },
+            {
               "text": "Gadget CDC ACM 串口实践",
               "link": "/analysis/kernel/usb/gadget-cdc-acm"
             }

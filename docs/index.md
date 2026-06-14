@@ -120,8 +120,17 @@ features:
         </a>
       </li>
       <li>
-        <a href="/analysis/kernel/usb/gadget-cdc-acm">
+        <a href="/analysis/kernel/usb/gadget-composite-ep0">
           <span class="home-step-num">10</span>
+          <span class="home-step-text">
+            <strong>Composite EP0 枚举</strong>
+            <span>`composite_setup`、`SET_CONFIGURATION`</span>
+          </span>
+        </a>
+      </li>
+      <li>
+        <a href="/analysis/kernel/usb/gadget-cdc-acm">
+          <span class="home-step-num">11</span>
           <span class="home-step-text">
             <strong>Gadget CDC ACM 串口实践</strong>
             <span>configfs、`ttyGS0` 与 Host `cdc_acm`</span>
