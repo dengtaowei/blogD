@@ -4,13 +4,14 @@ homeTitle: USB Gadget 子系统概览
 homeDesc: 四层架构、UDC/composite/configfs 与两阶段生命周期
 sidebarOrder: 52
 sidebarTitle: Gadget 子系统概览
+date: 2026-06-14
 ---
 
 # Linux USB Gadget 子系统概览
 
 > **内核**：Linux 5.4 源码（dwc2 dual-role 平台对照）；路径与 Linux 6.8 同源，差异处另行注明  
 > **子系统**：USB Gadget（Device 侧）· UDC / composite / configfs  
-> **关联**：[USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) · [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)（Host 侧对照）· [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)（续篇实践）
+> **关联**：[USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) · [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)（Host 侧对照）· [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) · [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) · [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
 
 ---
 
@@ -295,6 +296,10 @@ Host IN/OUT
 
 | 文档 | 内容 |
 |---|---|
+| [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) | `gadget_info` / `cdev` / `composite` 脚本拼装与 bind |
+| [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) | `udc_bind_to_driver`、pending、pullup |
+| [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) | `composite_setup`、`SET_CONFIGURATION` |
+| [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) | `f_acm.c`、`gserial_connect` 与 ttyGS |
 | [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) | configfs ACM、`ttyGS0` 与 Host `cdc_acm` |
 | dwc2 OTG 深读（待迁入） | dwc2 probe、时钟、DRD、role-switch |
 | dwc2_gadget_control_write_analysis（待迁入） | EP0 Control Write/Read、Setup/Data/Status |

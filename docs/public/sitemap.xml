@@ -73,7 +73,23 @@
     <lastmod>2026-06-14</lastmod>
   </url>
   <url>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/usb/gadget-composite-ep0</loc>
+    <lastmod>2026-06-14</lastmod>
+  </url>
+  <url>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/usb/gadget-configfs-assembly</loc>
+    <lastmod>2026-06-14</lastmod>
+  </url>
+  <url>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/usb/gadget-function-acm</loc>
+    <lastmod>2026-06-14</lastmod>
+  </url>
+  <url>
     <loc>https://blog.xvfex.com.cn/analysis/kernel/usb/gadget-subsystem</loc>
+    <lastmod>2026-06-14</lastmod>
+  </url>
+  <url>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/usb/gadget-udc-core-bind</loc>
     <lastmod>2026-06-14</lastmod>
   </url>
   <url>

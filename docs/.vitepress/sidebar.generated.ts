@@ -49,6 +49,22 @@ const sidebar: DefaultTheme.Sidebar = {
               "link": "/analysis/kernel/usb/gadget-subsystem"
             },
             {
+              "text": "Configfs 组装分析",
+              "link": "/analysis/kernel/usb/gadget-configfs-assembly"
+            },
+            {
+              "text": "UDC bind 分析",
+              "link": "/analysis/kernel/usb/gadget-udc-core-bind"
+            },
+            {
+              "text": "Composite EP0 枚举",
+              "link": "/analysis/kernel/usb/gadget-composite-ep0"
+            },
+            {
+              "text": "ACM Function 路径",
+              "link": "/analysis/kernel/usb/gadget-function-acm"
+            },
+            {
               "text": "Gadget CDC ACM 串口实践",
               "link": "/analysis/kernel/usb/gadget-cdc-acm"
             }

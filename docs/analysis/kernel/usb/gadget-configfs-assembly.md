@@ -1,0 +1,295 @@
+---
+homeTag: USB · Gadget
+homeTitle: Gadget configfs 组装分析
+homeDesc: gadget_info、cdev 与 composite 如何由脚本拼装并 bind
+sidebarOrder: 53
+sidebarTitle: Configfs 组装分析
+date: 2026-06-14
+---
+
+# Gadget configfs 组装分析
+
+> **内核**：Linux 5.4 源码（dwc2 dual-role 平台对照）；路径与 Linux 6.8 同源，差异处另行注明  
+> **示例**：`deferred_fb_serial` + `functions/acm.0`（脚本见 [code/gadget-cdc-acm/deferred_fb_serial.sh](https://github.com/dengtaowei/blogD/blob/main/code/gadget-cdc-acm/deferred_fb_serial.sh)）  
+> **关联**：[Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) · [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) · [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
+
+---
+
+## 目录
+
+- [1. 概述](#1-概述)
+- [2. 结构体层次](#2-结构体层次)
+- [3. 组装 cdev](#3-组装-cdev设备体)
+- [4. 组装 composite](#4-组装-composite驱动壳)
+- [5. 提交组装结果](#5-提交组装结果--echo-udc--udc)
+- [6. Host 枚举](#6-host-枚举--运行时激活非-configfs-组装)
+- [7. 脚本 → 结构体速查表](#7-脚本--结构体-速查表)
+- [8. 与 legacy composite 的对应](#8-与-legacy-composite-的对应)
+- [9. 总图](#9-总图)
+- [10. 源码索引](#10-源码索引)
+
+---
+
+## 1. 概述
+
+```text
+用户空间 create()
+    = 往 gadget_info 里拼装 cdev（设备长什么样）
+    + 配置 composite（谁驱动这台设备）
+    → echo UDC = 组装完成，注册到 UDC、pullup
+    → Host 枚举 = 对外呈现 USB 设备
+```
+
+**最重要的两个成员：**
+
+```c
+struct gadget_info {
+    ...
+    struct usb_composite_driver composite;  /* 驱动壳 → 挂 UDC */
+    struct usb_composite_dev    cdev;       /* 设备体 → 描述符 + 配置 + 功能 */
+    ...
+};
+```
+
+定义于 `drivers/usb/gadget/configfs.c`。
+
+## 2. 结构体层次
+
+```text
+gadget_info                          ← mkdir deferred_fb_serial 分配
+├── cdev                             ← 设备本体（Host 看到的「东西」）
+│   ├── desc                         ← Device Descriptor（VID/PID/字符串索引…）
+│   ├── configs ──→ config_usb_cfg   ← 每个 mkdir configs/c.N
+│   │                 ├── c          ← usb_configuration（MaxPower、iConfiguration…）
+│   │                 ├── string_list → configuration 字符串
+│   │                 └── func_list  → usb_function（acm）
+│   └── gstrings / string_list       ← 设备级 manufacturer/product/serial
+│
+├── composite                        ← 驱动壳
+│   ├── bind = configfs_do_nothing   ← composite 层；configfs 下不调用
+│   └── gadget_driver                ← UDC 注册这一层
+│       ├── bind = configfs_composite_bind
+│       ├── setup = configfs_composite_setup
+│       └── udc_name                 ← echo UDC 写入
+│
+├── available_func                   ← mkdir functions/acm.0 的实例
+└── string_list                      ← mkdir strings/0x409
+```
+
+辅助结构（零件，最终都汇入 `cdev` 或 `composite`）：
+
+| 结构体 | 脚本操作 | 汇入 |
+|--------|----------|------|
+| `gadget_strings` | `strings/0x409` + echo | `cdev` 设备字符串 |
+| `config_usb_cfg` | `configs/c.1` | `cdev.configs` |
+| `gadget_config_name` | `configs/c.1/strings/0x409` | `usb_configuration.iConfiguration` |
+| `usb_function_instance` | `functions/acm.0` | `available_func` |
+| `usb_function` | `ln acm.0 → configs/c.1/` | `cfg->func_list` → bind 时 `usb_add_function` |
+
+## 3. 组装 `cdev`（设备体）
+
+### 3.1 分配与初始化 — `mkdir deferred_fb_serial`
+
+`gadgets_make()`：
+
+```c
+gi = kzalloc(sizeof(*gi), ...);
+composite_init_dev(&gi->cdev);           /* configs、gstrings 空链表 */
+gi->cdev.desc.bLength = USB_DT_DEVICE_SIZE;
+gi->cdev.desc.bDescriptorType = USB_DT_DEVICE;
+gi->cdev.desc.bcdDevice = default;
+```
+
+此时 `cdev` 只有**空的设备壳**，无 configuration、无 function。
+
+### 3.2 填 Device Descriptor — `echo idVendor / idProduct / …`
+
+| 脚本 | 写入 |
+|------|------|
+| `idVendor` | `gi->cdev.desc.idVendor` |
+| `idProduct` | `gi->cdev.desc.idProduct` |
+| `bcdDevice` | `gi->cdev.desc.bcdDevice` |
+| `bcdUSB` | `gi->cdev.desc.bcdUSB` |
+
+**仅写入内核 `cdev.desc`**，尚未 `echo UDC`、未注册到硬件，Host 不可见。`iManufacturer` / `iProduct` / `iSerialNumber` 此时仍为 0，待 `configfs_composite_bind` 里 `usb_gstrings_attach()` 后再填（见 §3.3）。
+
+### 3.3 填设备字符串 — `strings/0x409`
+
+```text
+mkdir strings/0x409
+  → gadget_strings 入 gi->string_list
+  → gs->stringtab_dev.language = 0x0409
+
+echo → manufacturer / product / serialnumber
+  → kstrdup 到 gs->manufacturer 等（尚未挂到 cdev.desc 索引）
+```
+
+**bind 时**（`configfs_composite_bind`）才完成：
+
+```c
+gs->strings[USB_GADGET_MANUFACTURER_IDX].s = gs->manufacturer;
+...
+usb_gstrings_attach(&gi->cdev, gi->gstrings, ...);
+gi->cdev.desc.iManufacturer = s[0].id;   /* 通常 = 1 */
+gi->cdev.desc.iProduct      = s[1].id;   /* 通常 = 2 */
+gi->cdev.desc.iSerialNumber = s[2].id;   /* 通常 = 3 */
+```
+
+### 3.4 填 Configuration — `configs/c.1`
+
+```text
+mkdir configs/c.1
+  → config_usb_cfg
+  → cfg->c.bConfigurationValue = 1
+  → cfg->c.label = "c"
+  → usb_add_config_only(&gi->cdev, &cfg->c)   /* 链入 cdev.configs */
+
+echo 250 > MaxPower  → cfg->c.MaxPower = 250
+mkdir configs/c.1/strings/0x409
+echo "CDC ACM Config" > configuration
+  → 配置字符串，bind 时 → c->iConfiguration
+```
+
+此时 `cdev.configs` 里有一个 configuration，但 **还没有 interface**（func_list 为空）。
+
+### 3.5 填 Function — `functions/acm.0` + symlink
+
+**实例（零件仓库）：**
+
+```text
+mkdir functions/acm.0
+  → usb_function_instance 入 gi->available_func
+  → gserial_alloc_line() → port_num = 0  →  /dev/ttyGS0 节点
+```
+
+**装入 configuration（组装）：**
+
+```text
+ln -s functions/acm.0 configs/c.1/
+  → config_usb_cfg_link()
+  → acm_alloc_func() → usb_function
+  → 入 cfg->func_list（仍非 cdev 正式成员，待 bind）
+```
+
+`cdev` 在 bind 前：**有 config 骨架 + func_list 里的 acm，描述符尚未生成。**
+
+## 4. 组装 `composite`（驱动壳）
+
+`mkdir` 时一并初始化：
+
+```c
+gi->composite.bind    = configfs_do_nothing;
+gi->composite.unbind  = configfs_do_nothing;
+gi->composite.gadget_driver = configfs_driver_template;
+gi->composite.gadget_driver.function = "deferred_fb_serial";
+/* gadget_driver.bind = configfs_composite_bind，来自模板，非 composite.bind */
+```
+
+| 字段 | 含义 | 何时确定 |
+|------|------|----------|
+| `composite.bind` | composite 层回调；configfs 下为 **`configfs_do_nothing`**，**不调用** | `gadgets_make` |
+| `composite.gadget_driver.bind` | finalize `cdev` 内 configs/functions/strings，并关联到 `usb_gadget`（`cdev->gadget`、端点 autoconfig） | `echo UDC` |
+| `composite.gadget_driver.setup` | EP0 控制传输 → `composite_setup()` | 模板固定 |
+| `composite.gadget_driver.udc_name` | 绑哪颗 UDC | `echo UDC` 写入 |
+
+**`composite` 自己不存 VID/PID**；finalize 逻辑在 **`gadget_driver->bind`**（`configfs_composite_bind`）里操作同一 `gadget_info` 里的 `cdev`。两层 `bind` 对比见上文 §4 字段表与 §5 调用链。
+
+## 5. 提交组装结果 — `echo UDC > UDC`
+
+```c
+gadget_dev_desc_UDC_store()
+  → gi->composite.gadget_driver.udc_name = "<udc-name>"
+  → usb_gadget_probe_driver(&gi->composite.gadget_driver)
+       → udc_bind_to_driver()
+            → gadget_driver->bind(gadget, driver)   /* configfs_composite_bind */
+            → usb_gadget_udc_start()                /* dwc2 启动 */
+            → pullup                                /* Host 可发现 */
+```
+
+### `configfs_composite_bind()` 如何 finalize 并关联 `cdev` 与 `usb_gadget`
+
+| 步骤 | 对 `cdev` / composite 的作用 |
+|------|-------------------------------|
+| `composite_dev_prepare()` | `cdev->gadget = dwc2` |
+| `usb_gstrings_attach()` | 设备字符串 ID → `cdev.desc.i*` |
+| 配置字符串 attach | `c->iConfiguration` |
+| `usb_add_function(c, f)` | acm 生成 **2 interface + 3 endpoint** 描述符，挂到 configuration |
+| OTG 描述符（若适用） | 附加到 configuration |
+
+**组装完成标志：** `cdev` 具备完整 Device + Configuration + Interface 描述符树，`cdev->gadget` 已指向 UDC，端点号已 autoconfig。
+
+## 6. Host 枚举 — 运行时激活（非 configfs 组装）
+
+configfs 组装的是**静态描述符与 function 对象**；Host 插线后（协议层见 [USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration)）：
+
+```text
+GET_DESCRIPTOR(DEVICE)     ← 读 cdev.desc
+GET_DESCRIPTOR(CONFIG)     ← 读 cdev.configs + acm 描述符
+SET_CONFIGURATION(1)
+  → acm_enable()
+  → gserial_connect()      ← USB bulk 与 ttyGS0 数据路径打通
+```
+
+**`gserial_connect` 不属于 configfs 组装**，是 Host 选中 configuration 后的运行时步骤。
+
+## 7. 脚本 → 结构体 速查表
+
+| 脚本 | 组装的结构 / 字段 |
+|------|-------------------|
+| `modprobe libcomposite` | 注册 configfs `usb_gadget` 子系统 |
+| `mkdir deferred_fb_serial` | `gadget_info`；初始化 `cdev`、`composite` 骨架 |
+| `echo … > idVendor` 等 | `cdev.desc.*` |
+| `mkdir strings/0x409` + echo | `gadget_strings` → `gi->string_list` |
+| `mkdir configs/c.1` | `config_usb_cfg` → `cdev.configs` |
+| `echo MaxPower / configuration` | `cfg->c.*`、`gadget_config_name` |
+| `mkdir functions/acm.0` | `usb_function_instance` → `available_func` |
+| `ln acm.0 configs/c.1/` | `usb_function` → `cfg->func_list` |
+| `echo UDC` | `composite.gadget_driver.udc_name`；执行 bind，finalize 并关联 `cdev` 与 `gadget` |
+
+## 8. 与 legacy composite 的对应
+
+| Legacy（代码写死） | Configfs（脚本组装） |
+|--------------------|----------------------|
+| 静态 `usb_composite_driver` | `gi->composite` + 模板 |
+| 静态 `device_desc` | `gi->cdev.desc`（echo 填写） |
+| `usb_add_config()` in module init | `mkdir configs` + `usb_add_config_only` |
+| `usb_add_function()` in bind | `ln` + bind 时 `usb_add_function` |
+| `usb_composite_probe()` | `echo UDC` → `usb_gadget_probe_driver` |
+
+**本质相同：** 都是填满 `usb_composite_dev` + 注册 `usb_composite_driver`；configfs 把「写结构体」暴露成 sysfs。
+
+## 9. 总图
+
+```text
+                    ┌─────────────────────────────────────┐
+                    │         struct gadget_info          │
+                    │  ┌───────────────────────────────┐  │
+  strings/0x409 ──→ │  │    usb_composite_dev cdev     │  │
+  configs/c.1    ──→ │  │  desc / configs / gstrings    │  │
+  ln acm.0       ──→ │  └───────────────────────────────┘  │
+                    │  ┌───────────────────────────────┐  │
+  echo UDC       ──→ │  │ usb_composite_driver composite│──┼──→ UDC (dwc2)
+                    │  │  gadget_driver.bind()         │  │
+                    │  │  (configfs_composite_bind)    │  │
+                    │  └───────────────────────────────┘  │
+                    └─────────────────────────────────────┘
+                                      │
+                              Host GET_DESCRIPTOR
+                                      ▼
+                              lsusb / ttyACM0 / COM
+                              板子 /dev/ttyGS0（SET_CONFIGURATION 后通）
+```
+
+## 10. 源码索引
+
+| 主题 | 文件 |
+|------|------|
+| `gadget_info`、`gadgets_make` | `drivers/usb/gadget/configfs.c` |
+| `configfs_composite_bind` | 同上 |
+| `usb_composite_dev` / `usb_composite_driver` 定义 | `include/linux/usb/composite.h` |
+| EP0 读描述符 | `drivers/usb/gadget/composite.c` |
+| ACM function | `drivers/usb/gadget/function/f_acm.c` |
+| ttyGS | `drivers/usb/gadget/function/u_serial.c` |
+| UDC bind | `drivers/usb/gadget/udc/core.c` |
+
+结构体层次见 §2；`echo UDC` 后 L3 bind 链见 [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind)。
