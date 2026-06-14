@@ -8,7 +8,7 @@ sidebarTitle: Gadget 子系统概览
 
 # Linux USB Gadget 子系统概览
 
-> **内核**：以 Linux 5.4 百问板（STM32MP157 + dwc2）实践为主；路径与 Linux 6.8 同源，差异处另行注明  
+> **内核**：Linux 5.4 源码（dwc2 dual-role 平台对照）；路径与 Linux 6.8 同源，差异处另行注明  
 > **子系统**：USB Gadget（Device 侧）· UDC / composite / configfs  
 > **关联**：[USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) · [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)（Host 侧对照）· [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)（续篇实践）
 
@@ -21,16 +21,14 @@ sidebarTitle: Gadget 子系统概览
 - [3. 四个关键对象](#3-四个关键对象)
 - [4. 两阶段生命周期](#4-两阶段生命周期)
 - [5. 三条「绑定链」](#5-三条绑定链勿混为一谈)
-- [6. dr_mode 的确定](#6-dr_mode-的确定与运行角色区分)
-- [7. configfs 与 gadget_info](#7-configfs-与-struct-gadget_info)
-- [8. 控制面 vs 数据面](#8-控制面-vs-数据面)
-- [9. 与 Host 侧的对称](#9-与-host-侧hcd的对称)
-- [10. 百问板典型时序](#10-百问板典型时序configfs-u-盘)
-- [11. 源码阅读顺序](#11-源码阅读顺序按设计非按目录)
-- [12. 关键函数速查](#12-关键函数速查)
-- [13. 总览图](#13-总览图)
-- [14. 三句话总结](#14-三句话总结)
-- [15. 关联文档](#15-关联文档)
+- [6. configfs 与 gadget_info](#6-configfs-与-struct-gadget_info)
+- [7. 控制面 vs 数据面](#7-控制面-vs-数据面)
+- [8. 与 Host 侧的对称](#8-与-host-侧hcd的对称)
+- [9. 源码阅读顺序](#9-源码阅读顺序按设计非按目录)
+- [10. 关键函数速查](#10-关键函数速查)
+- [11. 总览图](#11-总览图)
+- [12. 三句话总结](#12-三句话总结)
+- [13. 关联文档](#13-关联文档)
 
 ---
 
@@ -122,12 +120,12 @@ dwc2_driver_probe()                    // platform.c
 
 此时：**有控制器抽象，无 USB 设备功能**，通常尚未 pullup。
 
-百问板：`dr_mode = "otg"`（`stm32mp151.dtsi`）→ Gadget 与 HCD **均初始化**；实际 Host/Device 角色由 `usb-role-switch` + Type-C extcon 切换（`drd.c`）。
+双角色 OTG：`dr_mode = "otg"` 时 Gadget 与 HCD **均初始化**；运行期 Host/Device 切换由 `usb-role-switch`（及 extcon 等）完成（`drd.c`）。
 
 ### 4.2 阶段 B：功能绑定（用户写 UDC / insmod）
 
 ```text
-echo "49000000.usb-otg" > .../UDC       // configfs
+echo "<udc-name>" > .../UDC              // configfs；名见 /sys/class/udc/
   gadget_dev_desc_UDC_store()           // configfs.c
     usb_gadget_probe_driver(&gi->composite.gadget_driver)
       udc_bind_to_driver(udc, driver)   // udc/core.c
@@ -165,27 +163,11 @@ echo "49000000.usb-otg" > .../UDC       // configfs
 ④ pullup（物理可见）—— 在 ②③ 之后
 ```
 
-## 6. `dr_mode` 的确定（与运行角色区分）
-
-**配置能力**（probe 时一次确定）：
-
-```text
-usb_get_dr_mode(dev)          // DTS dr_mode 属性
-  缺省 → USB_DR_MODE_OTG
-× dwc2_hw_is_host/device()    // GHWCFG2.OTG_MODE
-× Kconfig                     // DUAL_ROLE / HOST / PERIPHERAL
-→ hsotg->dr_mode
-```
-
-百问板典型结果：`dr_mode = OTG`（DTS `"otg"` + `CONFIG_USB_DWC2_DUAL_ROLE`）。
-
-**运行角色**（运行时切换）：`dwc2_drd_init()` + `usb-role-switch`，与 `dr_mode` 不同——`dr_mode=otg` 表示 **能力**，非当前是 Host 还是 Device。
-
-## 7. configfs 与 `struct gadget_info`
+## 6. configfs 与 `struct gadget_info`
 
 configfs 是功能层的 **动态配置前端**，不是硬件层。
 
-### 7.1 目录与内核对象
+### 6.1 目录与内核对象
 
 ```text
 /sys/kernel/config/usb_gadget/g1/
@@ -205,7 +187,7 @@ configfs 是功能层的 **动态配置前端**，不是硬件层。
 - 内嵌 `usb_composite_dev cdev`、`usb_composite_driver composite`
 - 写 UDC 时用 `composite.gadget_driver`（模板 `configfs_driver_template`）注册
 
-### 7.2 `gi->cdev.configs` 从哪来
+### 6.2 `gi->cdev.configs` 从哪来
 
 | 操作 | 内核路径 |
 |---|---|
@@ -213,16 +195,16 @@ configfs 是功能层的 **动态配置前端**，不是硬件层。
 | `ln -s …/functions/xxx configs/c.1/` | `config_usb_cfg_link()` → `cfg->func_list` |
 | 写 UDC | `configfs_composite_bind()` → `usb_add_function()` → 各 `function->bind()` |
 
-### 7.3 UDC 文件：启停开关
+### 6.3 UDC 文件：启停开关
 
 `gadget_dev_desc_UDC_store()`（写 `/UDC` 时）：
 
 - 非空 UDC 名 → `usb_gadget_probe_driver()` → 整条 bind 链
 - 空字符串 → `usb_gadget_unregister_driver()` → 解绑
 
-## 8. 控制面 vs 数据面
+## 7. 控制面 vs 数据面
 
-### 8.1 控制面（枚举，EP0）
+### 7.1 控制面（枚举，EP0）
 
 ```text
 Host Setup Token
@@ -235,7 +217,7 @@ Host Setup Token
 
 EP0 Control Write/Read 阶段机（Setup / Data / Status）待单独成文迁入。
 
-### 8.2 数据面（bulk / interrupt / isoch）
+### 7.2 数据面（bulk / interrupt / isoch）
 
 ```text
 Host IN/OUT
@@ -244,7 +226,7 @@ Host IN/OUT
   → f_mass_storage / f_acm 等业务逻辑
 ```
 
-## 9. 与 Host 侧（HCD）的对称
+## 8. 与 Host 侧（HCD）的对称
 
 | | Host 侧 | Device 侧（Gadget） |
 |---|---|---|
@@ -256,26 +238,7 @@ Host IN/OUT
 
 同一块 DWC2：`dr_mode=otg` 时两套栈均初始化，role-switch 切换。
 
-## 10. 百问板典型时序（configfs U 盘）
-
-```text
-[内核启动]
-  dwc2 probe → usb_add_gadget_udc → /sys/class/udc/49000000.usb-otg
-
-[用户空间]
-  mkdir /sys/kernel/config/usb_gadget/g1
-  echo 0x1234 > idVendor; echo 0x5678 > idProduct
-  mkdir functions/mass_storage.0
-  echo /dev/mmcblk0 > functions/mass_storage.0/lun.0/file
-  mkdir configs/c.1
-  ln -s functions/mass_storage.0 configs/c.1/
-  echo 49000000.usb-otg > UDC          ← bind + pullup
-
-[Host]
-  枚举 → SET_CONFIGURATION → bulk 读写 LUN
-```
-
-## 11. 源码阅读顺序（按设计，非按目录）
+## 9. 源码阅读顺序（按设计，非按目录）
 
 | 顺序 | 文件 | 关注点 |
 |---|---|---|
@@ -287,7 +250,7 @@ Host IN/OUT
 | 6 | `drivers/usb/dwc2/platform.c` | probe 中 Gadget/HCD/DRD 分支 |
 | 7 | `drivers/usb/gadget/function/f_mass_storage.c` | 单一 function 示例 |
 
-## 12. 关键函数速查
+## 10. 关键函数速查
 
 | 函数 | 文件 | 作用 |
 |---|---|---|
@@ -302,7 +265,7 @@ Host IN/OUT
 | `composite_setup()` | `composite.c` | EP0 标准请求分发 |
 | `dwc2_hsotg_ep0_setup()` | `dwc2/gadget.c` | 硬件 EP0 → `driver->setup()` |
 
-## 13. 总览图
+## 11. 总览图
 
 ```text
 [用户] configfs 配置 + echo UDC
@@ -320,7 +283,7 @@ Host IN/OUT
 [Host 数据] ──bulk/int──► dwc2 EP ──request──► function
 ```
 
-## 14. 三句话总结
+## 12. 三句话总结
 
 1. **硬件与功能解耦**：UDC 驱动只提供 `usb_gadget`；U 盘/串口由 function 决定。
 2. **注册与绑定分离**：`usb_add_gadget_udc` 先注册硬件；`bind` 后装配软件；pullup 最后。
@@ -328,12 +291,12 @@ Host IN/OUT
 
 `gadget_info`、`gadget_driver_pending_list`、`dr_mode` 等均服务于 **动态配置、probe 顺序无关、双角色**，宜在此框架下理解，而非孤立记 API。
 
-## 15. 关联文档
+## 13. 关联文档
 
 | 文档 | 内容 |
 |---|---|
 | [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) | configfs ACM、`ttyGS0` 与 Host `cdc_acm` |
-| stm32mp157_dwc2_usb_analysis（待迁入） | dwc2 probe、时钟、DRD、role-switch |
+| dwc2 OTG 深读（待迁入） | dwc2 probe、时钟、DRD、role-switch |
 | dwc2_gadget_control_write_analysis（待迁入） | EP0 Control Write/Read、Setup/Data/Status |
 | dwc2_gadget_dma_analysis（待迁入） | Buffer DMA、DxEPDMA |
 | dwc2_gadget_soft_connect_analysis（待迁入） | soft_connect、DCTL.SFTDISCON |
