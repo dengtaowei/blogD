@@ -65,6 +65,10 @@ const sidebar: DefaultTheme.Sidebar = {
               "link": "/analysis/kernel/usb/gadget-composite-ep0"
             },
             {
+              "text": "ACM Function 路径",
+              "link": "/analysis/kernel/usb/gadget-function-acm"
+            },
+            {
               "text": "Gadget CDC ACM 串口实践",
               "link": "/analysis/kernel/usb/gadget-cdc-acm"
             }

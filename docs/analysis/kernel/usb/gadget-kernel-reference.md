@@ -314,3 +314,4 @@ gi->composite.resume  = NULL;
 | [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) | `udc/core` 配对、bind 链与 pullup |
 | [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) | 脚本实操、`ttyGS0` 与 Host `cdc_acm` |
 | [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) | `composite_setup` 与 Host 标准请求 |
+| [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) | `acm_bind`、`gserial_connect` 与 ttyGS |

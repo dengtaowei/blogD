@@ -32,7 +32,8 @@
 3. [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) — 结构体、回调与脚本映射速查
 4. [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) — `udc_bind_to_driver`、pending、pullup
 5. [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) — Host EP0、`composite_setup` 与 T1/T2
-6. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs、`/dev/ttyGS0` 与 Host `cdc_acm`
+6. [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) — `f_acm.c`、`gserial_connect` 与 ttyGS
+7. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs、`/dev/ttyGS0` 与 Host `cdc_acm`
 
 **其他内核专题**：[STM32 Pinctrl](/analysis/kernel/pinctrl/stm32-pinctrl) · [STM32 GPIO](/analysis/kernel/gpio/stm32-gpio)
 

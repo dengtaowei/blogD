@@ -129,8 +129,17 @@ features:
         </a>
       </li>
       <li>
-        <a href="/analysis/kernel/usb/gadget-cdc-acm">
+        <a href="/analysis/kernel/usb/gadget-function-acm">
           <span class="home-step-num">11</span>
+          <span class="home-step-text">
+            <strong>ACM Function 路径</strong>
+            <span>`f_acm.c`、`gserial_connect` 与 ttyGS</span>
+          </span>
+        </a>
+      </li>
+      <li>
+        <a href="/analysis/kernel/usb/gadget-cdc-acm">
+          <span class="home-step-num">12</span>
           <span class="home-step-text">
             <strong>Gadget CDC ACM 串口实践</strong>
             <span>configfs、`ttyGS0` 与 Host `cdc_acm`</span>

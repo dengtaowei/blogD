@@ -192,7 +192,7 @@ dwc2 EP0 中断最终调 **`hsotg->driver->setup()`**（dwc2 EP0 控制传输，
 | **T1** | `usb_gadget_probe_driver` → **`udc_bind_to_driver` 完整链** → pullup |
 | **T2** | 不在 L3；Host `SET_CONFIGURATION` 在 composite 层 |
 
-T1 之后 Host **可以** 开始枚举（读描述符）；T2 之后 ACM **数据面** 才通（见 [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)）。
+T1 之后 Host **可以** 开始枚举（读描述符）；T2 之后 ACM **数据面** 才通（见 [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)）。
 
 ## 10. 源码索引
 
@@ -218,4 +218,5 @@ T1 之后 Host **可以** 开始枚举（读描述符）；T2 之后 ACM **数�
 | [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) | 结构体、两层 bind、回调速查 |
 | [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) | 脚本实操与 Host 侧验证 |
 | [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) | `composite_setup` 与 Host 标准请求 |
+| [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) | `acm_set_alt`、`gserial_connect` |
 | dwc2 soft_connect / role-switch（待迁入） | pullup 寄存器与 OTG 切换 |

@@ -11,7 +11,7 @@ date: 2026-06-14
 
 > **内核**：Linux 5.4 源码（dwc2 dual-role 平台对照）；路径与 Linux 6.8 同源，差异处另行注明  
 > **示例**：`deferred_fb_serial` + `functions/acm.0`（脚本见 [code/gadget-cdc-acm/deferred_fb_serial.sh](https://github.com/dengtaowei/blogD/blob/main/code/gadget-cdc-acm/deferred_fb_serial.sh)）  
-> **关联**：[Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) · [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) · [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
+> **关联**：[Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) · [Gadget 内核参考](/analysis/kernel/usb/gadget-kernel-reference) · [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) · [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
 
 ---
 
