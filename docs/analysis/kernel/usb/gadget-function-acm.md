@@ -2,7 +2,7 @@
 homeTag: USB · Gadget
 homeTitle: Gadget ACM Function 路径
 homeDesc: f_acm.c 与 u_serial.c 的 bind、set_alt 与 ttyGS 数据面
-sidebarOrder: 56
+sidebarOrder: 57
 sidebarTitle: ACM Function 路径
 date: 2026-06-14
 ---
@@ -12,8 +12,8 @@ date: 2026-06-14
 > **层**：Function（`f_acm.c` + `u_serial.c`）  
 > **深度**：T2 专深（`SET_CONFIGURATION` 之后数据面）  
 > **内核**：Linux 5.4 源码（dwc2 dual-role 平台对照）；路径与 Linux 6.8 同源，差异处另行注明  
-> **关联**：[Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) · [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) · [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)  
-> **说明**：bulk DMA 硬件细节见 dwc2 buffer DMA（待迁入）；实践脚本见 [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
+> **关联**：[Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) · [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) · [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) · [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)  
+> **说明**：bulk `usb_ep_queue` 见 [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) §3.4；实践脚本见 [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
 
 ---
 
@@ -147,7 +147,7 @@ Host 侧打开 `/dev/ttyACM0` 并配置 line coding；Device 侧若已 `gserial_
 | Host → Device | bulk **OUT** | read `ttyGS0` |
 | Device → Host | bulk **IN** | write `ttyGS0` |
 
-底层 **`usb_ep_queue`** 由 UDC（dwc2）完成；硬件 DMA 见 dwc2 buffer DMA（待迁入）。
+底层 **`usb_ep_queue`** 由 UDC（dwc2）完成，经 `ep_ops.queue`（[DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) §3.4）；`DxEPDMA` 详读见 dwc2 Buffer DMA（待迁入）。
 
 ### 6.3 CDC class EP0（并行）
 
@@ -232,4 +232,5 @@ Teardown  echo "" > UDC / disconnect
 | [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) | `echo UDC`、pullup 与 T1 |
 | [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) | `mkdir acm.0`、`gadget_info` 拼装 |
 | [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) | 脚本实操、`lsusb` 与 Host `cdc_acm` |
-| dwc2 buffer DMA（待迁入） | bulk 端点 `usb_ep_queue` 硬件路径 |
+| [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) | `ep_ops.queue` 与 bulk 硬件路径 |
+| dwc2 Buffer DMA（待迁入） | `DxEPDMA`、`start_req` 详读 |

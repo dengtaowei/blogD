@@ -57,6 +57,10 @@ const sidebar: DefaultTheme.Sidebar = {
               "link": "/analysis/kernel/usb/gadget-udc-core-bind"
             },
             {
+              "text": "DWC2 接口总览",
+              "link": "/analysis/kernel/usb/gadget-dwc2-interface"
+            },
+            {
               "text": "Composite EP0 枚举",
               "link": "/analysis/kernel/usb/gadget-composite-ep0"
             },

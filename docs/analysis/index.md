@@ -20,9 +20,10 @@ home: false
 6. [Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) — Device 侧 UDC / composite / configfs
 7. [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) — `gadget_info` / `cdev` 拼装与 bind
 8. [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) — `udc/core` 配对与 pullup
-9. [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) — `composite_setup`、SET_CONFIGURATION
-10. [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) — bind、`set_alt` 与 ttyGS 数据面
-11. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0`
+9. [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) — `gadget_ops`、`ep_ops` 交付边界
+10. [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) — `composite_setup`、SET_CONFIGURATION
+11. [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) — bind、`set_alt` 与 ttyGS 数据面
+12. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0`
 
 ### Pinctrl / GPIO 子系统
 
