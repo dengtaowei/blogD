@@ -2,7 +2,7 @@
 homeTag: USB · Gadget
 homeTitle: Gadget composite EP0 与枚举
 homeDesc: composite_setup、GET_DESCRIPTOR 与 SET_CONFIGURATION
-sidebarOrder: 55
+sidebarOrder: 56
 sidebarTitle: Composite EP0 枚举
 date: 2026-06-14
 ---
@@ -11,8 +11,8 @@ date: 2026-06-14
 
 > **层**：Composite（`drivers/usb/gadget/composite.c`）  
 > **内核**：Linux 5.4 源码（dwc2 dual-role 平台对照）；路径与 Linux 6.8 同源，差异处另行注明  
-> **关联**：[UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) · [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)  
-> **说明**：dwc2 EP0 硬件/DMA 见 dwc2 EP0 控制传输（待迁入）；configfs 描述符组装见 [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly)
+> **关联**：[UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) · [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) · [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)  
+> **说明**：dwc2 EP0 硬件阶段机见 dwc2 EP0 控制传输（待迁入）；`setup` 下发见 [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) §4.2
 
 ---
 
@@ -53,6 +53,8 @@ Host 标准请求 (EP0)
                     SET_CONFIGURATION → set_config()
                         对每个 function: f->set_alt(f, intf, 0)
 ```
+
+dwc2 侧 `setup` 下发见 [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) §4.2。
 
 `configfs_composite_setup` 在持 `gi->spinlock` 下调用 `composite_setup`，防止 unbind 竞态（`gi->unbind` 时直接返回 0）。
 
@@ -196,8 +198,8 @@ Host 侧协议对照见 [USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumerat
 | 文档 | 内容 |
 |------|------|
 | [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) | bind 后 `setup` 挂接、pullup |
-| [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) | T0 描述符写入 `cdev` |
-| [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) | `gadget_driver.setup` 与描述符组装 |
+| [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) | dwc2 `setup` 与 `gadget_driver` 回调 |
+| [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) | T0 描述符、`gadget_driver.setup` |
 | [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) | `acm_set_alt`、`gserial_connect` 详读 |
 | [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) | lsusb 实测、`ttyGS0` / `cdc_acm` |
 | dwc2 EP0 控制传输（待迁入） | dwc2 EP0 硬件阶段机 |

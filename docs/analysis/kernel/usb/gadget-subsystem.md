@@ -11,7 +11,7 @@ date: 2026-06-14
 
 > **内核**：Linux 5.4 源码（dwc2 dual-role 平台对照）；路径与 Linux 6.8 同源，差异处另行注明  
 > **子系统**：USB Gadget（Device 侧）· UDC / composite / configfs  
-> **关联**：[USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) · [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)（Host 侧对照）· [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) · [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) · [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
+> **关联**：[USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration) · [枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe)（Host 侧对照）· [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) · [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) · [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) · [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
 
 ---
 
@@ -298,10 +298,10 @@ Host IN/OUT
 |---|---|
 | [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) | `gadget_info` / `cdev` / `composite` 脚本拼装与 bind |
 | [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) | `udc_bind_to_driver`、pending、pullup |
+| [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) | `gadget_ops`、`ep_ops` 与框架交付边界 |
 | [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) | `composite_setup`、`SET_CONFIGURATION` |
 | [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) | `f_acm.c`、`gserial_connect` 与 ttyGS |
 | [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) | configfs ACM、`ttyGS0` 与 Host `cdc_acm` |
-| dwc2 OTG 深读（待迁入） | dwc2 probe、时钟、DRD、role-switch |
-| dwc2_gadget_control_write_analysis（待迁入） | EP0 Control Write/Read、Setup/Data/Status |
-| dwc2_gadget_dma_analysis（待迁入） | Buffer DMA、DxEPDMA |
-| dwc2_gadget_soft_connect_analysis（待迁入） | soft_connect、DCTL.SFTDISCON |
+| dwc2 probe / DRD（待迁入） | `platform.c`、时钟、role-switch |
+| dwc2 EP0 控制传输（待迁入） | EP0 Setup/Data/Status 阶段机 |
+| dwc2 Buffer DMA（待迁入） | `DxEPDMA`、`start_req` 详读 |

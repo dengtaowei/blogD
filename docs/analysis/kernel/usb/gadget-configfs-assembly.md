@@ -11,7 +11,7 @@ date: 2026-06-14
 
 > **内核**：Linux 5.4 源码（dwc2 dual-role 平台对照）；路径与 Linux 6.8 同源，差异处另行注明  
 > **示例**：`deferred_fb_serial` + `functions/acm.0`（脚本见 [code/gadget-cdc-acm/deferred_fb_serial.sh](https://github.com/dengtaowei/blogD/blob/main/code/gadget-cdc-acm/deferred_fb_serial.sh)）  
-> **关联**：[Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) · [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) · [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
+> **关联**：[Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) · [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) · [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) · [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) · [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm)
 
 ---
 
@@ -202,7 +202,7 @@ gadget_dev_desc_UDC_store()
   → usb_gadget_probe_driver(&gi->composite.gadget_driver)
        → udc_bind_to_driver()
             → gadget_driver->bind(gadget, driver)   /* configfs_composite_bind */
-            → usb_gadget_udc_start()                /* dwc2 启动 */
+            → usb_gadget_udc_start()                /* dwc2 udc_start，见 DWC2 接口总览 §3.2 */
             → pullup                                /* Host 可发现 */
 ```
 
@@ -292,4 +292,4 @@ SET_CONFIGURATION(1)
 | ttyGS | `drivers/usb/gadget/function/u_serial.c` |
 | UDC bind | `drivers/usb/gadget/udc/core.c` |
 
-结构体层次见 §2；`echo UDC` 后 L3 bind 链见 [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind)。
+结构体层次见 §2；`udc_start` / `pullup` 见 [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface)；`echo UDC` 后 L3 bind 链见 [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind)。
