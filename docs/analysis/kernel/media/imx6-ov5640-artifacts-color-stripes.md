@@ -4,6 +4,7 @@ homeTitle: OV5640 横纹与偏色排查
 homeDesc: CSI 同步极性 vs ffplay 像素格式
 sidebarOrder: 2
 sidebarTitle: OV5640 横纹与偏色
+date: 2026-06-29
 ---
 
 # OV5640 图像问题实录：横纹是驱动，偏色是播放格式
