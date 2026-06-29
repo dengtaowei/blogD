@@ -306,6 +306,7 @@ ls -l /tmp/test.yuv
 
 | 文档 | 内容 |
 |------|------|
+| [OV5640 横纹与偏色](/analysis/kernel/media/imx6-ov5640-artifacts-color-stripes) | CSI 极性 patch 与 PC 回放格式 |
 | [V4L2 设备注册](/analysis/kernel/media/v4l2-device-registration) | `video_register_device` 与 `/dev/video*` 框架语义 |
 | [V4L2 ioctl 分发](/analysis/kernel/media/v4l2-ioctl-dispatch) | `v4l2-ctl` 底层 ioctl 路径 |
 | [videobuffer2 队列](/analysis/kernel/media/v4l2-vb2-queue) | `--stream-mmap` 与 buffer 状态机 |

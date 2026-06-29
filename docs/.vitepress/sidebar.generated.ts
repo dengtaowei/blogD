@@ -104,6 +104,10 @@ const sidebar: DefaultTheme.Sidebar = {
               "link": "/analysis/kernel/media/imx6-ov5640-dts-video"
             },
             {
+              "text": "OV5640 横纹与偏色",
+              "link": "/analysis/kernel/media/imx6-ov5640-artifacts-color-stripes"
+            },
+            {
               "text": "V4L2 设备注册",
               "link": "/analysis/kernel/media/v4l2-device-registration"
             },
