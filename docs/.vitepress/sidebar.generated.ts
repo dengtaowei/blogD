@@ -108,6 +108,14 @@ const sidebar: DefaultTheme.Sidebar = {
               "link": "/analysis/kernel/media/imx6-ov5640-artifacts-color-stripes"
             },
             {
+              "text": "PXP PRIMARY 直写 fb0",
+              "link": "/analysis/kernel/media/imx6-pxp-display-fb0"
+            },
+            {
+              "text": "PXP USERPTR 零拷贝",
+              "link": "/analysis/kernel/media/imx6-pxp-userptr-zero-copy"
+            },
+            {
               "text": "V4L2 设备注册",
               "link": "/analysis/kernel/media/v4l2-device-registration"
             },
