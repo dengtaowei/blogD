@@ -11,6 +11,7 @@ date: 2026-06-11
 > **Linux 内核 · Media / V4L2 子系统**  
 > 从 `uvc_probe` 到 `/dev/video0` 出现，以及 `open` 如何建立后续 `ioctl` 所需的上下文；以 UVC 为例。  
 > 前置：[枚举与两轮 Probe](/analysis/kernel/usb/enumeration-and-probe) → [UVC 驱动分析](/analysis/kernel/usb/uvc-driver)。  
+> 实践：[i.MX6ULL OV5640 DTS 与 video 节点](/analysis/kernel/media/imx6-ov5640-dts-video)（4.9.88 BSP `mx6s_capture` 注册 `/dev/video1`）。  
 > 后续：[V4L2 ioctl 分发](/analysis/kernel/media/v4l2-ioctl-dispatch) → [videobuffer2：Buffer 状态机与双链表](/analysis/kernel/media/v4l2-vb2-queue)。  
 > 实验：[`code/v4l2-virtual/`](https://github.com/dengtaowei/blogD/tree/main/code/v4l2-virtual)（`virtual_video_init` 同样走 `v4l2_device_register` + `video_register_device`）。
 

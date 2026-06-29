@@ -100,6 +100,10 @@ const sidebar: DefaultTheme.Sidebar = {
           "text": "Media / V4L2",
           "items": [
             {
+              "text": "OV5640 DTS 与 video",
+              "link": "/analysis/kernel/media/imx6-ov5640-dts-video"
+            },
+            {
               "text": "V4L2 设备注册",
               "link": "/analysis/kernel/media/v4l2-device-registration"
             },
