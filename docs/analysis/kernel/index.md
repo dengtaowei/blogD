@@ -36,6 +36,15 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 - [STM32MP157 SPI 子系统](/analysis/kernel/spi/spi-sync-trace)
 
+## BPF / kprobe
+
+对照内核以 Ubuntu HWE **5.15** 为主（文首已注明；与上方多数 6.8 文不同）。
+
+1. [eBPF kprobe：load / attach / 命中](/analysis/kernel/bpf/ebpf-kprobe-load-attach) — PROG_LOAD / 插桩 / LINK / 多 BPF 分发
+2. [kprobe-on-ftrace 插桩实测](/analysis/kernel/bpf/kprobe-on-ftrace-lab) — 入口 NOP↔CALL 与 handler 上下文
+
+系列概览：[BPF / kprobe](/analysis/kernel/bpf/)
+
 ## 调试与实践
 
 针对具体问题的排查记录与实验笔记（与上方流程分析互补）。

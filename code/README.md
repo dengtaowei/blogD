@@ -9,6 +9,7 @@
 | `v4l2-virtual/` | 最小虚拟 V4L2 采集驱动与用户态 mmap 示例 |
 | `gadget-cdc-acm/` | configfs CDC ACM 串口 gadget 启停脚本 |
 | `uvc-capture/` | UVC 相关实验与分析代码（待补充） |
+| `kprobe-bytes-demo/` | kprobe-on-ftrace 入口改码教学模块（配合 BPF / kprobe 文） |
 
 ## 约定
 

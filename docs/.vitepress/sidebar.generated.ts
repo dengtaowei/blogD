@@ -114,6 +114,23 @@ const sidebar: DefaultTheme.Sidebar = {
           ]
         },
         {
+          "text": "BPF / kprobe",
+          "items": [
+            {
+              "text": "概览",
+              "link": "/analysis/kernel/bpf/"
+            },
+            {
+              "text": "eBPF kprobe 路径",
+              "link": "/analysis/kernel/bpf/ebpf-kprobe-load-attach"
+            },
+            {
+              "text": "ftrace 插桩实测",
+              "link": "/analysis/kernel/bpf/kprobe-on-ftrace-lab"
+            }
+          ]
+        },
+        {
           "text": "调试与实践",
           "items": [
             {
