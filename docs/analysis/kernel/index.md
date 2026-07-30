@@ -23,6 +23,10 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 ## Media / V4L2 子系统
 
+- [i.MX6ULL OV5640：设备树到 /dev/video](/analysis/kernel/media/imx6-ov5640-dts-video) — DVP DTS、引脚冲突与 mx6s 出现 video 节点（Linux 4.9.88 BSP）
+- [OV5640 横纹与偏色](/analysis/kernel/media/imx6-ov5640-artifacts-color-stripes) — CSI 同步极性 vs ffplay 像素格式（Linux 4.9.88 BSP）
+- [PXP PRIMARY 直写 fb0](/analysis/kernel/media/imx6-pxp-display-fb0) — YUYV→RGB 硬件显示与内核 patch（Linux 4.9.88 BSP）
+- [PXP USERPTR 零拷贝](/analysis/kernel/media/imx6-pxp-userptr-zero-copy) — CSI 缓冲直交 PXP，降低 CPU 占用（Linux 4.9.88 BSP）
 - [V4L2 设备注册与 video 节点](/analysis/kernel/media/v4l2-device-registration)
 - [V4L2 ioctl 分发](/analysis/kernel/media/v4l2-ioctl-dispatch)
 - [videobuffer2：Buffer 状态机与双链表](/analysis/kernel/media/v4l2-vb2-queue)
