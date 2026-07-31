@@ -30,6 +30,12 @@ home: false
 - [STM32 Pinctrl 分析](/analysis/kernel/pinctrl/stm32-pinctrl) — 设备树 pinmux 到 `set_mux` 写寄存器
 - [STM32 GPIO 分析](/analysis/kernel/gpio/stm32-gpio) — 设备树 gpiochip 注册到外设 `led-gpios` 消费
 
+### BPF / kprobe
+
+- [系列概览](/analysis/kernel/bpf/)
+- [eBPF kprobe：load / attach / 命中](/analysis/kernel/bpf/ebpf-kprobe-load-attach) — 5.15 源码路径
+- [kprobe-on-ftrace 插桩实测](/analysis/kernel/bpf/kprobe-on-ftrace-lab) — NOP↔CALL 实验
+
 ### 调试与实践
 
 针对具体问题的排查与实验记录（非成体系流程文）。
