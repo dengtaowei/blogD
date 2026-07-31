@@ -8,9 +8,9 @@ on:
     branches:
       - '**'
 
-# push 与 pull_request 共用分支名作为 group，取消进行中的重复 run
+# 同一分支上 push 与 pull_request 分开，避免互相 cancel（否则 required 的 push 检查会被取消）
 concurrency:
-  group: ci-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: ci-${{ github.event.pull_request.head.ref || github.ref_name }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
