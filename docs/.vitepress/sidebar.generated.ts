@@ -143,6 +143,10 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               "text": "播放路径与调用栈",
               "link": "/analysis/kernel/sound/imx6ull-audio-playback-flow"
+            },
+            {
+              "text": "录音路径与调用栈",
+              "link": "/analysis/kernel/sound/imx6ull-audio-capture-flow"
             }
           ]
         },
