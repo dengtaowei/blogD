@@ -40,6 +40,15 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 - [STM32MP157 SPI 子系统](/analysis/kernel/spi/spi-sync-trace)
 
+## Sound / ALSA
+
+对照内核以百问 **Linux 4.9.88 BSP** 为主（文首已注明；与上方多数 6.8 文不同）。
+
+1. [i.MX6ULL `/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) — `controlC0` / `pcmC0D0`·`D1`、`dai_link` 与 `file_operations`
+2. [i.MX6ULL 声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) — `aplay` → SDMA / SAI / WM8960 与调用栈
+
+系列概览：[Sound / ALSA](/analysis/kernel/sound/)
+
 ## BPF / kprobe
 
 对照内核以 Ubuntu HWE **5.15** 为主（文首已注明；与上方多数 6.8 文不同）。

@@ -19,6 +19,16 @@
           { "text": "SPI 子系统", "dir": "analysis/kernel/spi" },
           { "text": "Media / V4L2", "dir": "analysis/kernel/media" },
           {
+            "text": "Sound / ALSA",
+            "items": [
+              { "index": "analysis/kernel/sound", "text": "概览" },
+              {
+                "dir": "analysis/kernel/sound",
+                "skipIndex": true
+              }
+            ]
+          },
+          {
             "text": "BPF / kprobe",
             "items": [
               { "index": "analysis/kernel/bpf", "text": "概览" },
