@@ -36,6 +36,7 @@ home: false
 - [i.MX6ULL `/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) — Linux 4.9.88 BSP
 - [i.MX6ULL 声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) — 播放分层与调用栈
 - [i.MX6ULL 声卡录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) — 录音与播放对称差异
+- [ALSA PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) — 状态变迁与缓冲欠载/过载
 
 ### BPF / kprobe
 

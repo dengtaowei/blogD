@@ -4,13 +4,14 @@ homeTitle: i.MX6ULL 声卡录音路径
 homeDesc: arecord 到 SDMA/SAI/WM8960 分层与调用栈
 sidebarOrder: 3
 sidebarTitle: 录音路径与调用栈
+date: 2026-08-01
 ---
 
 # i.MX6ULL 声卡录音路径
 
 > **平台**：100ask i.MX6ULL Pro（SAI2 + WM8960）作对照实例  
 > **内核**：NXP BSP **Linux 4.9.88**；ALSA / ASoC 调用链与主流内核同构，换板时改的主要是 Machine / Codec / 模拟路由  
-> **关联**：[播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) · [`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices)  
+> **关联**：[播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) · [`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) · [PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun)  
 > **本文**：`arecord` 录音的分层路径、HiFi（`pcmC0D0c`）内核调用栈，以及与播放的对称差异
 
 ---
