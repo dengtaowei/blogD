@@ -4,13 +4,14 @@ homeTitle: i.MX6ULL /dev/snd 设备节点
 homeDesc: controlC0 / pcmC0D0·D1、dai_link 与 file_operations
 sidebarOrder: 1
 sidebarTitle: /dev/snd 节点
+date: 2026-08-01
 ---
 
 # i.MX6ULL `/dev/snd` 设备节点
 
 > **平台**：100ask i.MX6ULL Pro（`wm8960-audio`，SAI2 + WM8960）  
 > **内核**：NXP BSP **Linux 4.9.88**（`imx-wm8960` / `fsl_sai` / `wm8960`）；与站点多数 6.8 文路径不同，差异处另行注明  
-> **关联**：[声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow)  
+> **关联**：[播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) · [录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow)  
 > **本文**：板上 `/dev/snd` 节点含义、与 `dai_link` 对应、创建路径与 `file_operations`
 
 ---

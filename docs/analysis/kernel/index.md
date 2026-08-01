@@ -46,6 +46,7 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 1. [i.MX6ULL `/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) — `controlC0` / `pcmC0D0`·`D1`、`dai_link` 与 `file_operations`
 2. [i.MX6ULL 声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) — `aplay` → SDMA / SAI / WM8960 与调用栈
+3. [i.MX6ULL 声卡录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) — `arecord` / `read` / `DEV_TO_MEM` / SAI RX
 
 系列概览：[Sound / ALSA](/analysis/kernel/sound/)
 

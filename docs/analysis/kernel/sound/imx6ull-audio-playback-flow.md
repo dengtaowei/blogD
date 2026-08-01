@@ -4,13 +4,14 @@ homeTitle: i.MX6ULL 声卡播放路径
 homeDesc: aplay 到 SDMA/SAI/WM8960 分层与调用栈
 sidebarOrder: 2
 sidebarTitle: 播放路径与调用栈
+date: 2026-08-01
 ---
 
 # i.MX6ULL 声卡播放路径
 
 > **平台**：100ask i.MX6ULL Pro（SAI2 + WM8960）  
 > **内核**：NXP BSP **Linux 4.9.88**（`imx-wm8960` / `fsl_sai` / `imx-pcm-dma` / `wm8960`）；与站点多数 6.8 文路径不同，差异处另行注明  
-> **关联**：[`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices)  
+> **关联**：[`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) · [录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow)  
 > **本文**：`aplay` 播放的七层路径、HiFi（`pcmC0D0p`）内核调用栈、关键源文件
 
 ---
@@ -173,70 +174,58 @@ write 热路径:
 
 ## 4. 分层流程图
 
+软件调用链与硬件数据通路是两件事，分开看更清楚：前者是 `write` 这次系统调用做了什么，后者是数据实际怎么流动。
+
+### 4.1 调用流程（软件，一次 `write`）
+
 ```mermaid
 flowchart TB
-  subgraph L1["① 应用层"]
-    A["aplay / 播放器<br/>snd_pcm_writei / write()"]
-  end
+  A["aplay<br/>write() / snd_pcm_writei()"]
+  B["snd_pcm_f_ops[0].write<br/>snd_pcm_write()"]
+  C1["snd_pcm_lib_write()<br/>snd_pcm_lib_write1()"]
+  C2{"环形缓冲有空位？"}
+  C3["wait_for_avail()<br/>阻塞等待 DMA 消费"]
+  C4["snd_pcm_lib_write_transfer()<br/>copy_from_user 到 dma_area"]
+  C5{"状态 PREPARED 且<br/>已写够 start_threshold？"}
+  C6["本次 write 返回<br/>DMA 继续按采样率消费"]
 
-  subgraph L2["② ALSA 设备接口"]
-    B["/dev/snd/pcmC0D0p<br/>snd_pcm_f_ops[0]"]
-    B1["ioctl: hw_params / prepare / start"]
-    B2["write → snd_pcm_write()"]
-  end
+  D0["snd_pcm_start()<br/>snd_pcm_do_start()"]
+  D1["soc_pcm_trigger(START)"]
+  D2["Codec trigger<br/>WM8960 未实现，跳过"]
+  D3["Platform trigger<br/>snd_dmaengine_pcm_trigger()"]
+  D4["CPU DAI trigger<br/>fsl_sai_trigger()"]
+  E1["prep_dma_cyclic + submit<br/>dma_async_issue_pending()"]
+  F1["置 SAI2 发送使能<br/>FRDE / TERE"]
+  Z["状态 RUNNING"]
 
-  subgraph L3["③ ALSA PCM 核心"]
-    C1["snd_pcm_lib_write()"]
-    C2["snd_pcm_lib_write1()<br/>环形缓冲管理 / 满则阻塞"]
-    C3["snd_pcm_lib_write_transfer()<br/>copy_from_user → dma_area"]
-    C4["凑够 start_threshold<br/>→ snd_pcm_start()"]
-  end
-
-  subgraph L4["④ ASoC 汇总"]
-    D0["snd_pcm_action_start<br/>→ do_start → ops->trigger"]
-    D1["soc_pcm_trigger()"]
-    D2["① Codec trigger<br/>WM8960: 无，跳过"]
-    D3["② Platform trigger"]
-    D4["③ CPU DAI trigger"]
-    D5["④ Machine trigger<br/>通常无，跳过"]
-  end
-
-  subgraph L5["⑤ DMA 平台"]
-    E1["snd_dmaengine_pcm_trigger()"]
-    E2["dmaengine_pcm_prepare_and_submit()<br/>prep_dma_cyclic + submit"]
-    E3["dma_async_issue_pending()<br/>真正启动 SDMA"]
-    E4["period 完成回调<br/>imx_pcm_dma_complete<br/>→ 唤醒阻塞的 write"]
-  end
-
-  subgraph L6["⑥ CPU DAI / Codec"]
-    F1["fsl_sai_trigger()<br/>开 SAI FRDE/TERE"]
-    F2["WM8960<br/>DAC + DAPM 通路<br/>I2C 配置 / I2S 收数"]
-  end
-
-  subgraph L7["⑦ 硬件"]
-    G1["内存环形缓冲"]
-    G2["SDMA"]
-    G3["SAI2 FIFO"]
-    G4["I2S 总线"]
-    G5["耳机 / 喇叭"]
-  end
-
-  A --> B
-  B --> B1
-  B --> B2
-  B2 --> C1 --> C2 --> C3
-  C2 --> C4 --> D0 --> D1
+  A --> B --> C1 --> C2
+  C2 -->|否| C3 --> C2
+  C2 -->|是| C4 --> C5
+  C5 -->|"否：已在 RUNNING"| C6
+  C5 -->|"是：首次启动"| D0 --> D1
   D1 --> D2
-  D1 --> D3 --> E1 --> E2 --> E3
-  D1 --> D4 --> F1
-  D1 --> D5
+  D1 --> D3 --> E1 --> Z
+  D1 --> D4 --> F1 --> Z
+  Z --> C6
+```
 
-  C3 -.-> G1
-  E3 --> G2
-  G1 --> G2 --> G3
-  F1 --> G3
-  G3 --> G4 --> F2 --> G5
-  G2 -.-> E4 -.-> C2
+### 4.2 数据通路（硬件）
+
+```mermaid
+flowchart LR
+  U["用户缓冲区"]
+  R["内核环形缓冲<br/>runtime 的 dma_area"]
+  S["SDMA<br/>cyclic，内存到外设"]
+  F["SAI2 TX FIFO"]
+  C["WM8960 DAC"]
+  O["耳机 / 喇叭"]
+  P["imx_pcm_dma_complete()<br/>snd_pcm_period_elapsed()"]
+
+  U -->|copy_from_user| R
+  R --> S --> F
+  F -->|"I2S：BCLK / LRCLK / DATA"| C --> O
+  S -.->|"每个 period 完成"| P
+  P -.->|"唤醒阻塞的 write"| U
 ```
 
 ---
