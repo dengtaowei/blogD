@@ -4,6 +4,7 @@ homeTitle: PXP USERPTR 双零拷贝
 homeDesc: CSI 缓冲直交 PXP，CPU 降至约 15%
 sidebarOrder: 4
 sidebarTitle: PXP USERPTR 零拷贝
+date: 2026-06-30
 ---
 
 # 双零拷贝：USERPTR + 直写 fb0

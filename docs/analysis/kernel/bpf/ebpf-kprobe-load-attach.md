@@ -3,6 +3,7 @@ homeTag: BPF · kprobe
 homeDesc: load / open / link / 命中，以及同函数多 BPF 的 aggr 分发。
 sidebarOrder: 10
 sidebarTitle: eBPF kprobe 路径
+date: 2026-07-30
 ---
 
 # eBPF kprobe：load / attach / 命中

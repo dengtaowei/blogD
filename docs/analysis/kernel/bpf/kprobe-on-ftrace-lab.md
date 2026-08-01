@@ -3,6 +3,7 @@ homeTag: BPF · kprobe
 homeDesc: 入口 NOP↔CALL、trampoline 与 handler 上下文实测。
 sidebarOrder: 20
 sidebarTitle: ftrace 插桩实测
+date: 2026-07-30
 ---
 
 # kprobe-on-ftrace 插桩实测

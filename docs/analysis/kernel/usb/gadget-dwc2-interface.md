@@ -4,6 +4,7 @@ homeTitle: DWC2 Gadget 三层接口总览
 homeDesc: gadget_ops、ep_ops 与 usb_gadget_driver 交付边界
 sidebarOrder: 55
 sidebarTitle: DWC2 接口总览
+date: 2026-06-15
 ---
 
 # DWC2 Gadget 三层接口总览

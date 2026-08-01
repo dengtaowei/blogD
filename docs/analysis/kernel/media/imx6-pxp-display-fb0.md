@@ -4,6 +4,7 @@ homeTitle: PXP PRIMARY 直写 fb0
 homeDesc: YUYV→RGB 硬件显示与内核 patch
 sidebarOrder: 3
 sidebarTitle: PXP PRIMARY 直写 fb0
+date: 2026-06-30
 ---
 
 # PXP 硬件显示：PRIMARY 直写 fb0

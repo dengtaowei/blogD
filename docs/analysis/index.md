@@ -30,6 +30,12 @@ home: false
 - [STM32 Pinctrl 分析](/analysis/kernel/pinctrl/stm32-pinctrl) — 设备树 pinmux 到 `set_mux` 写寄存器
 - [STM32 GPIO 分析](/analysis/kernel/gpio/stm32-gpio) — 设备树 gpiochip 注册到外设 `led-gpios` 消费
 
+### Sound / ALSA
+
+- [系列概览](/analysis/kernel/sound/)
+- [i.MX6ULL `/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) — Linux 4.9.88 BSP
+- [i.MX6ULL 声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) — 播放分层与调用栈
+
 ### BPF / kprobe
 
 - [系列概览](/analysis/kernel/bpf/)

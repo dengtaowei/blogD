@@ -130,6 +130,23 @@ const sidebar: DefaultTheme.Sidebar = {
           ]
         },
         {
+          "text": "Sound / ALSA",
+          "items": [
+            {
+              "text": "概览",
+              "link": "/analysis/kernel/sound/"
+            },
+            {
+              "text": "/dev/snd 节点",
+              "link": "/analysis/kernel/sound/imx6ull-snd-devices"
+            },
+            {
+              "text": "播放路径与调用栈",
+              "link": "/analysis/kernel/sound/imx6ull-audio-playback-flow"
+            }
+          ]
+        },
+        {
           "text": "BPF / kprobe",
           "items": [
             {
