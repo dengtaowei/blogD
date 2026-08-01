@@ -147,6 +147,10 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               "text": "录音路径与调用栈",
               "link": "/analysis/kernel/sound/imx6ull-audio-capture-flow"
+            },
+            {
+              "text": "PCM 状态机与 XRUN",
+              "link": "/analysis/kernel/sound/alsa-pcm-state-xrun"
             }
           ]
         },
