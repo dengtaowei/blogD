@@ -103,7 +103,7 @@ sys_open("/dev/snd/pcmC0D0c")
           → substream->ops->open
               → soc_pcm_open
                   → fsl_sai_startup               // CPU DAI
-                  → dmaengine_pcm_open            // 申请 RX DMA 通道
+                  → imx_pcm_open                  // Platform（RX / SDMA）
                   → imx_hifi_startup              // Machine
 ```
 
