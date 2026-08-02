@@ -1,7 +1,7 @@
 ---
 homeTag: Sound · ALSA
 homeTitle: i.MX6ULL /dev/snd 设备节点
-homeDesc: controlC0 / pcmC0D0·D1、dai_link 与 file_operations
+homeDesc: controlC0 / pcm 节点、fops 与 open→soc_pcm_open
 sidebarOrder: 1
 sidebarTitle: /dev/snd 节点
 date: 2026-08-01
@@ -12,7 +12,7 @@ date: 2026-08-01
 > **平台**：100ask i.MX6ULL Pro（`wm8960-audio`，SAI2 + WM8960）  
 > **内核**：NXP BSP **Linux 4.9.88**（`imx-wm8960` / `fsl_sai` / `wm8960`）；与站点多数 6.8 文路径不同，差异处另行注明  
 > **关联**：[播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) · [录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow)  
-> **本文**：板上 `/dev/snd` 节点含义、与 `dai_link` 对应、创建路径与 `file_operations`
+> **本文**：板上 `/dev/snd` 节点含义、与 `dai_link` 对应、创建路径、`file_operations`，以及 PCM 节点 `open` 如何进到 `soc_pcm_open`
 
 ---
 
@@ -24,15 +24,14 @@ date: 2026-08-01
 - [4. 与三条 dai_link 的关系](#4-与三条-dai_link-的关系)
 - [5. 内核如何创建这些节点](#5-内核如何创建这些节点)
 - [6. 对应的 file_operations](#6-对应的-file_operations)
-- [7. 小结](#7-小结)
+- [7. PCM 节点 open 与 soc_pcm_open](#7-pcm-节点-open-与-soc_pcm_open)
+- [8. 小结](#8-小结)
 
 ---
 
 ## 1. 本文要回答什么
 
-> **板上 `/dev/snd` 里每个节点对应什么能力？和 Machine 的三条 `dai_link`、打开时的 `file_operations` 如何对应？**
-
-播放数据面调用链见 [声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow)。
+> **板上 `/dev/snd` 里每个节点对应什么能力？和 Machine 的三条 `dai_link`、打开时的 `file_operations` 如何对应？`open(pcm…)` 之后 ASoC 做了什么？**
 
 ---
 
@@ -186,8 +185,70 @@ snd_register_device(SNDRV_DEVICE_TYPE_CONTROL, card, -1,
 
 ---
 
-## 7. 小结
+## 7. PCM 节点 open 与 `soc_pcm_open`
+
+§5.2 / §6 说到首次 `open` 会换成 `snd_pcm_playback_open` / `snd_pcm_capture_open`。对 **HiFi（`pcmC0D0p` / `pcmC0D0c`）**，真正把 ASoC 各层拉起来的是 `substream->ops->open` → **`soc_pcm_open`**（`sound/soc/soc-pcm.c`）。建 PCM 时在 `soc_new_pcm` 里写入：`rtd->ops.open = soc_pcm_open`（`dynamic` 的 ASRC-FE 则是 `dpcm_fe_dai_open`，见下）。
+
+### 7.1 从节点到 `soc_pcm_open`
+
+以打开 `pcmC0D0p` 为例（录音把 `playback` 换成 `capture` / `f_ops[1]` 即可）：
+
+```text
+open("/dev/snd/pcmC0D0p")
+  → snd_open → replace_fops → snd_pcm_f_ops[0]
+  → snd_pcm_playback_open
+      → snd_pcm_open(..., PLAYBACK)          // pcm_native.c：卡引用、open_mutex、忙则等待
+          → snd_pcm_open_file
+              → snd_pcm_open_substream
+                  → attach substream、hw 约束初值
+                  → substream->ops->open
+                      → soc_pcm_open         // 本板 HiFi
+```
+
+`snd_pcm_open` 负责「这个 PCM 设备能不能被占上」；`soc_pcm_open` 负责「这条 `rtd` 上的 CPU DAI / Platform / Codec / Machine 如何 startup」。
+
+### 7.2 `soc_pcm_open` 在做什么（本板）
+
+`substream->private_data` 即绑卡得到的 **`rtd`（`snd_soc_pcm_runtime`）**，其上已挂好 `cpu_dai` / `platform` / `codec_dai`。函数大致分四段：
+
+```text
+soc_pcm_open(substream)
+  │
+  ├─ 1. pinctrl 默认态 + pm_runtime_get（CPU DAI / Codec / Platform 设备）
+  ├─ 2. 持 rtd->pcm_mutex，按序 startup / open
+  │     → cpu_dai->ops->startup     → fsl_sai_startup
+  │     → platform->ops->open       → imx_pcm_open（imx-pcm-dma-v2）
+  │     → codec_dai->ops->startup   → WM8960 通常无，跳过
+  │     → dai_link->ops->startup    → imx_hifi_startup
+  ├─ 3. 非 DPCM：soc_pcm_init_runtime_hw（CPU/Codec 能力求交 → runtime->hw）
+  │     检查 rates / formats / channels；对称率等
+  └─ 4. snd_soc_runtime_activate；失败则反向 shutdown / close + runtime_put
+```
+
+本板各回调侧重点：
+
+| 调用 | 文件 | open 阶段做什么 |
+|------|------|-----------------|
+| `fsl_sai_startup` | `fsl_sai.c` | 占住该方向流；加速率等 hw 约束 |
+| `imx_pcm_open` | `imx-pcm-dma-v2.c` | 按 `"tx"`/`"rx"` 申请 SDMA 通道，设 PCM hardware |
+| `imx_hifi_startup` | `imx-wm8960.c` | 与 SAI 流占用对齐；非 codec-master 时再加板级速率约束 |
+
+此阶段 **一般不** 配具体采样率、不开环形 DMA 传数；那些在后续 `hw_params` / `prepare` / `trigger`（见播/录路径文）。
+
+### 7.3 D0 与 D1 的差别
+
+| 节点 | `dai_link` | `substream->ops->open` |
+|------|------------|-------------------------|
+| `pcmC0D0*` | HiFi（直连） | **`soc_pcm_open`** |
+| `pcmC0D1*` | HiFi-ASRC-FE（`dynamic`） | **`dpcm_fe_dai_open`**（内部再挂 BE，BE 侧仍会走到类似 `soc_pcm_open` 的路径） |
+
+日常 `hw:0,0` 只关心 D0 / `soc_pcm_open` 即可。
+
+---
+
+## 8. 小结
 
 - 日常播/录用 **D0（HiFi）**；D1 走 ASRC 前端；BE 无独立节点。
 - 节点在 `snd_card_register` → `snd_register_device` 后出现在 `/dev/snd`。
 - 首次 `open` 经 `snd_open` 再 `replace_fops` 到 control / PCM 各自的 `file_operations`。
+- PCM 节点再经 `snd_pcm_open` → **`soc_pcm_open`**（D0）：拉起 SAI / `imx_pcm` / Machine，并求交 `runtime->hw`；D1 走 DPCM 前端 open。
