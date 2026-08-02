@@ -4,6 +4,7 @@ homeTitle: ALSA PCM 状态机与 XRUN
 homeDesc: OPEN→RUNNING、阈值与 underrun/overrun 恢复
 sidebarOrder: 4
 sidebarTitle: PCM 状态机与 XRUN
+date: 2026-08-01
 ---
 
 # ALSA PCM 状态机与 XRUN

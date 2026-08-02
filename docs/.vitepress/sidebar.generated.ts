@@ -137,6 +137,10 @@ const sidebar: DefaultTheme.Sidebar = {
               "link": "/analysis/kernel/sound/"
             },
             {
+              "text": "ASoC 四层架构",
+              "link": "/analysis/kernel/sound/imx6ull-asoc-layers"
+            },
+            {
               "text": "/dev/snd 节点",
               "link": "/analysis/kernel/sound/imx6ull-snd-devices"
             },
