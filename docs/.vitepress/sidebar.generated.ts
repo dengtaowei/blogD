@@ -155,6 +155,10 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               "text": "PCM 状态机与 XRUN",
               "link": "/analysis/kernel/sound/alsa-pcm-state-xrun"
+            },
+            {
+              "text": "WM8960 kcontrol",
+              "link": "/analysis/kernel/sound/wm8960-kcontrol"
             }
           ]
         },
