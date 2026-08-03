@@ -15,3 +15,4 @@ i.MX6ULL（SAI + WM8960）作对照：ASoC 分层、`/dev/snd` 节点与播/录�
 - [i.MX6ULL 声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) — `aplay` → 环形缓冲 → SDMA / SAI / WM8960，以及 HiFi 播放调用栈
 - [i.MX6ULL 声卡录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) — `arecord` 与播放对称：`read` / `DEV_TO_MEM` / SAI RX
 - [ALSA PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) — 状态变迁、`start`/`stop` 时机、underrun/overrun 与恢复
+- [WM8960 kcontrol 构造与使用](/analysis/kernel/sound/wm8960-kcontrol) — `SOC_*` 宏、注册到 `controlC0`、读写到寄存器
