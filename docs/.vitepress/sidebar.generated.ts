@@ -159,6 +159,10 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               "text": "WM8960 kcontrol",
               "link": "/analysis/kernel/sound/wm8960-kcontrol"
+            },
+            {
+              "text": "WM8960 DAPM 路由",
+              "link": "/analysis/kernel/sound/wm8960-dapm-routes"
             }
           ]
         },
