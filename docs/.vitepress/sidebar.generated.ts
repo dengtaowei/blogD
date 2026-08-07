@@ -163,6 +163,10 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               "text": "WM8960 DAPM 路由",
               "link": "/analysis/kernel/sound/wm8960-dapm-routes"
+            },
+            {
+              "text": "DAPM widget 上电",
+              "link": "/analysis/kernel/sound/dapm-widget-power"
             }
           ]
         },
