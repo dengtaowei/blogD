@@ -234,15 +234,25 @@
   font-weight: 600;
 }
 
-/* 图片 — 与 GitHub blob 预览一致 */
+/* 图片 — 与 GitHub blob 预览一致；点击可由 medium-zoom 放大 */
 .vp-doc img {
   max-width: 100%;
   box-sizing: content-box;
   background-color: var(--gh-bg-default);
+  cursor: zoom-in;
 }
 
 .vp-doc img:not([src*='#']) {
   border-radius: 6px;
+}
+
+.medium-zoom-overlay {
+  z-index: 100;
+}
+
+.medium-zoom-image--opened {
+  z-index: 101;
+  cursor: zoom-out;
 }
 
 .vp-doc figure {

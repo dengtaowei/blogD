@@ -4,6 +4,10 @@
       {
         "text": "RTOS",
         "dir": "notes/rtos"
+      },
+      {
+        "text": "Display",
+        "dir": "notes/display"
       }
     ],
     "/analysis/": [
