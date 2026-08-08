@@ -11,6 +11,15 @@ const sidebar: DefaultTheme.Sidebar = {
           "link": "/notes/rtos/task-scheduling"
         }
       ]
+    },
+    {
+      "text": "Display",
+      "items": [
+        {
+          "text": "ST7789 TE 信号实测",
+          "link": "/notes/display/st7789-te-signal"
+        }
+      ]
     }
   ],
   "/analysis/": [

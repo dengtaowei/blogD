@@ -1,7 +1,19 @@
 import DefaultTheme from 'vitepress/theme'
+import mediumZoom from 'medium-zoom'
+import type { Zoom } from 'medium-zoom'
 import RecentPosts from './RecentPosts.vue'
 import './style.css'
 import './github-doc.css'
+
+let zoom: Zoom | undefined
+
+function setupImageZoom() {
+  zoom?.detach()
+  zoom = mediumZoom('.vp-doc img:not(.medium-zoom-image--hidden)', {
+    background: 'var(--vp-c-bg)',
+    margin: 24,
+  })
+}
 
 export default {
   extends: DefaultTheme,
@@ -12,9 +24,16 @@ export default {
 
     import('./mermaid-panzoom').then(({ initMermaidPanZoom, rescanMermaidPanZoom }) => {
       initMermaidPanZoom()
-      router.onAfterRouteChanged = () => {
-        setTimeout(rescanMermaidPanZoom, 150)
+
+      const afterRoute = () => {
+        setTimeout(() => {
+          rescanMermaidPanZoom()
+          setupImageZoom()
+        }, 150)
       }
+
+      afterRoute()
+      router.onAfterRouteChanged = afterRoute
     })
   },
 }
