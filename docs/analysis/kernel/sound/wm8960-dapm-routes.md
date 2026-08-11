@@ -22,7 +22,9 @@ date: 2026-08-06
 - [3. tinymix：清单与状态](#3-tinymix清单与状态)
 - [4. 两类控件：音量与路由开关](#4-两类控件音量与路由开关)
 - [5. 按开关画出路由图](#5-按开关画出路由图)
-- [5.3 本板原理图与脚位](#53-本板原理图与脚位)
+  - [5.1 录音（Capture）](#51-录音capture)
+  - [5.2 播放（Playback）](#52-播放playback)
+  - [5.3 本板原理图与脚位](#53-本板原理图与脚位)
 - [6. 源码：路由写在哪个结构体](#6-源码路由写在哪个结构体)
 - [7. 一个开关挂两条边](#7-一个开关挂两条边)
 - [8. 小结](#8-小结)
@@ -140,6 +142,35 @@ tinymix get 'Left Output Mixer PCM Playback Switch'
 ## 5. 按开关画出路由图
 
 图中边上的标注对应上表 ctl 编号；**无编号的边**在驱动里 `control` 字段为 `NULL`，表示常通（不经 tinymix 开关）。
+
+读 DAPM 录音图之前，可先对照芯片手册里的模拟前端（本板耳机麦走 **LINPUT1** 这一路）：
+
+![WM8960 Figure 8：Microphone Input PGA Circuit](/files/wm8960-fig8-mic-input-pga.png)
+
+> 图源：Cirrus Logic *WM8960 Datasheet* Figure 8（版权归原厂商）。完整 PDF 见仓库 [`refs/datasheets/WM8960.pdf`](https://github.com/dengtaowei/blogD/blob/main/refs/datasheets/WM8960.pdf)。
+
+手册链（左声道）可记成：
+
+`LINPUT1` →（**LMN1**）→ Left Input PGA →（**LMICBOOST**）→（**LMIC2B**）→ Left Boost Mixer → Left ADC  
+
+控件位与 `tinymix`：
+
+| 手册 | 本板日常对照 |
+|------|----------------|
+| **LMN1** | `Left Boost Mixer LINPUT1 Switch`（约 ctl **44**） |
+| **LMIC2B** | `Left Input Mixer Boost Switch`（约 ctl **48**） |
+| **LMICBOOST** | `Left Input Boost Mixer LINPUT1 Volume`（粗档再放大） |
+| **LINVOL** | `Capture Volume` 等 PGA 细调增益 |
+
+手册方块名与驱动 widget 名**同名不一定同物**。手册没有 `Left Input Mixer` 这一块；驱动为挂电源位 / 开关另起了两个 MIXER 名。对照时以寄存器位为准：
+
+| 手册 Figure 8 | 驱动 `wm8960.c` DAPM |
+|-----------|----------------------|
+| Left Input PGA 一侧（选脚 **LMN1** 等）+ **AINL** 电源域 | widget **`Left Boost Mixer`**（其上挂 LINPUT1/2/3 Switch） |
+| **LMIC2B** | 挂在 **`Left Input Mixer`** 上的 Boost Switch |
+| 手册里的 **Left Boost Mixer**（求和后进 ADC） | 图上更接近 **`Left Input Mixer` → Left ADC** 这一段 |
+
+驱动链顺序是：`Left Boost Mixer` →（48）→ `Left Input Mixer` → ADC；与手册「PGA → LMIC2B → Boost Mixer → ADC」的命名左右对调。下文 Mermaid / `tinymix` 仍用驱动原名；**48** 还会同时出现在 `LINPUT1 → Left Input Mixer` 上（见 [§7](#7-一个开关挂两条边)）。
 
 ### 5.1 录音（Capture）
 
@@ -386,9 +417,7 @@ snd_soc_dapm_add_routes(dapm, audio_paths, ARRAY_SIZE(audio_paths));
 { "Left Input Mixer", "Boost Switch", "LINPUT1" },  /* Really Boost Switch */
 ```
 
-这不是两个独立 tinymix 控件，而是 **同一个 `Boost Switch`（ctl 48）被两行 `snd_soc_dapm_route` 引用**。一次 `tinymix set`，两条边同时通断。右侧 **49** 对 `RINPUT1` / Right Boost Mixer 同理。
-
-注释 `Really Boost Switch` 提示：硬件语义上这是输入路径上的 Boost 相关位，驱动用同一控件名建模了两条 DAPM 边。
+同一 `Boost Switch`（ctl **48**）被两行 `snd_soc_dapm_route` 引用，一次 `tinymix set` 两条边一起通断。右侧 **49** 对 `RINPUT1` / Right Boost Mixer 同理。源码注释 `Really Boost Switch` 标明第二行边的硬件语义仍是该 Boost 位（手册 **LMIC2B**）。
 
 ---
 
@@ -412,6 +441,8 @@ snd_soc_dapm_add_routes(dapm, audio_paths, ARRAY_SIZE(audio_paths));
 | 同文件 — `audio_paths[]` / `audio_paths_out3[]` | 路由边 |
 | 同文件 — `wm8960_add_widgets` | `dapm_new_controls` + `dapm_add_routes` |
 | `include/sound/soc-dapm.h` | `snd_soc_dapm_route` / widget 宏 |
+| 仓库 [`refs/datasheets/WM8960.pdf`](https://github.com/dengtaowei/blogD/blob/main/refs/datasheets/WM8960.pdf) | 芯片手册 |
+| `/files/wm8960-fig8-mic-input-pga.png` | 手册 Figure 8 摘图 |
 
 ---
 
