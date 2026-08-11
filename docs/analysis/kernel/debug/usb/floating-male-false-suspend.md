@@ -4,6 +4,7 @@ homeTitle: USB 公头悬空误报 Suspend
 homeDesc: Device 已 soft-connect 却无 Host 端接时，悬空 D+/D− 噪声线态导致 USBSUSP 误报
 sidebarOrder: 20
 sidebarTitle: 公头悬空误报 Suspend
+date: 2026-08-11
 ---
 
 # USB Device：公头悬空为何误报 Suspend
@@ -68,6 +69,10 @@ sidebarTitle: 公头悬空误报 Suspend
 | **SE0** | 低 | 低 | 复位等 |
 | **SE1** | 高 | 高 | 非法/异常单端态；悬空时 D− 被抬高且 D+ 仍被上拉时可见 |
 
+UTMI 线态编码（DWC 手册，`utmi_linestate[1:0]`）与上表对应关系如下。编码表里的 `01=J` / `10=K` 是 **组合后的线态名**，不要和后文 `DSTS.DevLnSts` 的「原始高低比特」混读。
+
+![DWC UTMI linestate：SE0/J/K/SE1 编码](/files/dwc-utmi-linestate.png)
+
 soft-connect 后，D+ 经约 **1.5 kΩ 上拉**，电平相对钉在高；对端若没有 Host 约 **15 kΩ 下拉**，**D− 近乎高阻**，最容易被噪声抬高。  
 此时更常见的是：D− 在「低 / 中间 / 高」之间晃 → 线态在 **J**（D− 仍偏低）与 **SE1**（D+、D− 同高）之间变化；只有噪声强到把 **D+ 也拉低** 时，才容易见到 **K** 或 **SE0**。  
 即便不怎么「乱跳」、长时间停在 **J**，已 soft-connect 的控制器仍可按规范在约 **3 ms** 空闲后报 Suspend。
@@ -76,9 +81,16 @@ soft-connect 后，D+ 经约 **1.5 kΩ 上拉**，电平相对钉在高；对端
 
 对已处于 **连接/在线** 的 Device：总线保持 **空闲** 约 **3 ms**，控制器置挂起状态并上报 Suspend 中断。
 
+DWC 上与此直接相关的状态/中断位（手册摘录）：
+
+![GINTSTS：USBSusp 与 ErlySusp（约 3 ms Idle）](/files/dwc-gintsts-usbsusp.png)
+
+![GSTS.SuspSts：Suspend 状态，依赖 phy_line_state 有无活动](/files/dwc-gsts-suspsts.png)
+
 要点：
 
-- 判的是 **「已在线 + 空闲够久」**，不是「差分包幅度够不够」
+- 判的是 **「已在线 + 空闲够久」**（看 linestate / `phy_line_state` 长时间无活动），不是「差分包幅度够不够」
+- `ErlySusp` 对应约 **3 ms** Idle；`USBSusp` / `SuspSts` 为挂起检测与状态
 - HS squelch 调节（PHY 上常见的差分门限/偏置）管的是 **高速包有无活动**，对 **FS 空闲挂起** 通常对不上
 
 因此：把「接收灵敏度」拧到极限，也解决不了这类误报。
@@ -145,6 +157,10 @@ Host（VBUS + D± 下拉 + 驱动）  ←合格线→  Device（需要时才 D+ 
 
 示波器抓偶发尖峰时，注意探头 10× 与通道倍率一致；时基可先从约 `10 µs/div` 扫起，并接受「一探头就改变电路」的现实。
 
+软件侧也可轮询 `DSTS.DevLnSts` 观察 D+/D− 原始电平。手册字段说明如下（**注意：手册把 D+/D− 标反了，见附录 A**）：
+
+![DSTS.DevLnSts：Device 线电平（手册标注与实测对调）](/files/dwc-dsts-devlnsts.png)
+
 ---
 
 ## 7. 和「有插入检测」平台的差异
@@ -154,6 +170,10 @@ Host（VBUS + D± 下拉 + 驱动）  ←合格线→  Device（需要时才 D+ 
 1. 硬件/ TCPC 确认 **VBUS / 角色（Sink）**
 2. 再 `usb_role_switch`（或等价回调）通知 UDC
 3. UDC 才强制 B-session 并 soft-connect
+
+参考一类 Type-C OTG 接法：座子上的 **CC** 进端口控制器，**D+/D−** 经串阻到 SoC USB，**VBUS** 另作检测/供电网络；端口控制器通过 I2C + 中断上报插拔与角色，再驱动 UDC 会话——而不是一上电就 soft-connect。
+
+![Type-C OTG 参考：CC 检测与 D+/D− 分路](/files/usb-typec-otg-ref.png)
 
 因此：**板子已上电、OTG 未接到 Host 时，B-session 不应被置为有效**；自然也少见「悬空公头刷 Suspend」。
 
@@ -201,6 +221,7 @@ Full-Speed（上拉在 D+）：
 - **SE0** = 双低；**SE1** = 双高（异常）  
 - Host 负责 D± 约 15 kΩ 下拉；Device 连接时上拉 D+，**默认不应再给 D− 加产品级下拉**  
 - 悬空时优先不稳的是 **D−**；D+ 有上拉，一般不会像 D− 那样飘
+- 读 `DSTS.DevLnSts`（`[23:22]`）时注意：DWC 手册写 **`[1]=D+`、`[0]=D−`**，与**实测对调**（手册把 D+/D− 标反了）；勿与 UTMI `linestate` 的 `01=J` 编码表直接混用
 
 ---
 
