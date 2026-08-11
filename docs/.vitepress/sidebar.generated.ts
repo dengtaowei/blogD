@@ -213,6 +213,10 @@ const sidebar: DefaultTheme.Sidebar = {
                 {
                   "text": "DJI UVC/UAC2 id_table 与枚举",
                   "link": "/analysis/kernel/debug/usb/dji-osmo-uvc-uac2-id-table"
+                },
+                {
+                  "text": "公头悬空误报 Suspend",
+                  "link": "/analysis/kernel/debug/usb/floating-male-false-suspend"
                 }
               ]
             },
