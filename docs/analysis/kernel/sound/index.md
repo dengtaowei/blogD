@@ -6,7 +6,7 @@ home: false
 
 以百问 i.MX6ULL（SAI2 + WM8960）为例，看 ASoC 分层、`/dev/snd`，以及播、录路径。
 
-内核是 NXP BSP **Linux 4.9.88**（和站里多数 6.8 文不一样，各篇文首有写）。PCM 那套调用链换板也能对照；时钟和模拟口接线跟板子有关——本板耳机麦进 LINPUT1，板载麦克风进 RINPUT1/2，详见 [ASoC 四层 §6.1.1](/analysis/kernel/sound/imx6ull-asoc-layers#611-本板模拟接线)、[DAPM §5.3](/analysis/kernel/sound/wm8960-dapm-routes#53-本板原理图与脚位)。
+内核是 NXP BSP **Linux 4.9.88**（和站里多数 6.8 文不一样，各篇文首有写）。PCM 那套调用链换板也能对照；时钟和模拟口接线跟板子有关——本板耳机麦进 LINPUT1，板载麦克风进 RINPUT1/2，详见 [DAPM §5.3](/analysis/kernel/sound/wm8960-dapm-routes#53-本板原理图与脚位)。
 
 ## 文章
 
