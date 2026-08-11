@@ -10,8 +10,8 @@ date: 2026-08-01
 # i.MX6ULL 声卡播放路径
 
 > **平台**：100ask i.MX6ULL Pro（SAI2 + WM8960）  
-> **内核**：NXP BSP **Linux 4.9.88**（`imx-wm8960` / `fsl_sai` / `imx-pcm-dma` / `wm8960`）；与站点多数 6.8 文路径不同，差异处另行注明  
-> **关联**：[`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) · [录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) · [PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun)  
+> **内核**：NXP BSP **Linux 4.9.88**（`imx-wm8960` / `fsl_sai` / `imx-pcm-dma-v2` / `wm8960`）；与站点多数 6.8 文路径不同，差异处另行注明  
+> **关联**：[`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) · [录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) · [PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) · [ASoC 四层](/analysis/kernel/sound/imx6ull-asoc-layers)  
 > **本文**：`aplay` 播放的七层路径、HiFi（`pcmC0D0p`）内核调用栈、关键源文件
 
 ---
@@ -149,11 +149,12 @@ sys_write(pcmC0D0p, buf, len)
 
 ```text
 SDMA period 完成中断
-  → imx_pcm_dma_complete          // sound/soc/fsl/imx-pcm-dma.c
+  → dmaengine_pcm_dma_complete    // sound/core/pcm_dmaengine.c
       → snd_pcm_period_elapsed
           → 更新硬件指针 / 唤醒 wait_for_avail 中的写端
 ```
 
+本板 Platform 是 `imx-pcm-dma-v2`，period 完成走通用 dmaengine PCM 回调（上表）；同目录下的 `imx-pcm-dma.c` 是另一套注册路径，本板 SAI 不用。
 ### 3.5 对照简图
 
 ```text
@@ -167,7 +168,7 @@ write 热路径:
                   → fsl_sai_trigger           → SAI2
 
 异步反馈:
-  SDMA → imx_pcm_dma_complete → period_elapsed → 唤醒 write
+  SDMA → dmaengine_pcm_dma_complete → period_elapsed → 唤醒 write
 ```
 
 ---
@@ -219,7 +220,7 @@ flowchart LR
   F["SAI2 TX FIFO"]
   C["WM8960 DAC"]
   O["耳机 / 喇叭"]
-  P["imx_pcm_dma_complete()<br/>snd_pcm_period_elapsed()"]
+  P["dmaengine_pcm_dma_complete()<br/>snd_pcm_period_elapsed()"]
 
   U -->|copy_from_user| R
   R --> S --> F
@@ -252,7 +253,7 @@ ASoC        soc_pcm_trigger
 | write / 环形缓冲 | `sound/core/pcm_lib.c` |
 | ASoC trigger | `sound/soc/soc-pcm.c` |
 | Machine | `sound/soc/fsl/imx-wm8960.c` |
-| DMA PCM | `sound/soc/fsl/imx-pcm-dma.c`、`sound/core/pcm_dmaengine.c` |
+| DMA PCM | `sound/soc/fsl/imx-pcm-dma-v2.c`、`sound/core/pcm_dmaengine.c` |
 | SAI | `sound/soc/fsl/fsl_sai.c` |
 | Codec | `sound/soc/codecs/wm8960.c` |
 | 设备树 | `arch/arm/boot/dts/100ask_imx6ull-14x14.dts` |

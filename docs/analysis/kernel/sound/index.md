@@ -6,7 +6,7 @@ home: false
 
 i.MX6ULL（SAI + WM8960）作对照：ASoC 分层、`/dev/snd` 节点与播/录路径分析。
 
-对照内核以百问 **Linux 4.9.88 BSP** 为主（与本站多数 6.8 文章不同，各文文首已注明）。PCM 热路径换板可对照；时钟/模拟路由偏板级。
+对照内核以百问 **Linux 4.9.88 BSP** 为主（与本站多数 6.8 文章不同，各文文首已注明）。PCM 热路径换板可对照；时钟与模拟口接线偏板级——本板耳机麦进 LINPUT1、板载麦克风进 RINPUT1/2，见 [ASoC 四层 §6.1.1](/analysis/kernel/sound/imx6ull-asoc-layers#611-本板模拟接线) / [DAPM §5.3](/analysis/kernel/sound/wm8960-dapm-routes#53-本板原理图与脚位)。
 
 ## 文章列表
 
