@@ -154,7 +154,8 @@ SDMA period 完成中断
           → 更新硬件指针 / 唤醒 wait_for_avail 中的写端
 ```
 
-本板 Platform 是 `imx-pcm-dma-v2`，period 完成走通用 dmaengine PCM 回调（上表）；同目录下的 `imx-pcm-dma.c` 是另一套注册路径，本板 SAI 不用。
+本板 Platform 是 `imx-pcm-dma-v2`，period 完成走通用 dmaengine PCM 回调（上表）。
+
 ### 3.5 对照简图
 
 ```text
