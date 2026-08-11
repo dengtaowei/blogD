@@ -54,10 +54,14 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 内核以百问 **Linux 4.9.88 BSP** 为主（文首已注明；上面多数是 6.8）。
 
-1. [i.MX6ULL `/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) — `controlC0` / `pcmC0D0`·`D1`、`dai_link` 与 `file_operations`
-2. [i.MX6ULL 声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) — `aplay` → SDMA / SAI / WM8960 与调用栈
-3. [i.MX6ULL 声卡录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) — `arecord` / `read` / `DEV_TO_MEM` / SAI RX
-4. [ALSA PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) — 状态、阈值与 underrun/overrun
+1. [ASoC 四层架构与 i.MX6ULL 驱动对照](/analysis/kernel/sound/imx6ull-asoc-layers) — Machine / Platform / CPU DAI / Codec
+2. [i.MX6ULL `/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) — `controlC0` / `pcmC0D0`·`D1`、`dai_link`
+3. [i.MX6ULL 声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) — `aplay` → SDMA / SAI / WM8960
+4. [i.MX6ULL 声卡录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) — `arecord` / `read` / SAI RX
+5. [ALSA PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) — 状态、阈值与 underrun/overrun
+6. [WM8960 kcontrol 构造与使用](/analysis/kernel/sound/wm8960-kcontrol) — `SOC_*` 宏、音量写到寄存器
+7. [从 tinymix 到 WM8960 DAPM 路由](/analysis/kernel/sound/wm8960-dapm-routes) — 开关、播录路径、本板接线
+8. [DAPM widget 上电：谁判、何时判](/analysis/kernel/sound/dapm-widget-power) — `power_check`、complete path
 
 ## BPF / kprobe
 
@@ -70,9 +74,9 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 ## 调试与实践
 
-具体问题的排查记录，和上面的流程分析互补。
+具体问题的排查记录，和上面的流程分析互补。概览：[调试与实践](/analysis/kernel/debug/)。
 
-- [概览与写作说明](/analysis/kernel/debug/)
-- [USB 调试记录](/analysis/kernel/debug/usb/)
-- [Pinctrl / GPIO 调试记录](/analysis/kernel/debug/gpio/)
+- [DJI Osmo UVC/UAC2 枚举排查](/analysis/kernel/debug/usb/dji-osmo-uvc-uac2-id-table) — `2ca3:8004` id_table 与 UAC2 probe
+- [USB Device 公头悬空误报 Suspend](/analysis/kernel/debug/usb/floating-male-false-suspend) — 悬空 D± 触发 `USBSUSP`
+- [IMX6ULL SPI 片选 GPIO 时好时坏](/analysis/kernel/debug/gpio/imx6ull-spi-cs-gpio-runtime-pm) — runtime PM 覆盖 CS
 - [写作模板](/analysis/kernel/debug/template)
