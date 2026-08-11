@@ -13,6 +13,7 @@ USB 子系统相关的具体问题排查与实验记录。
 ## 记录
 
 - [DJI `2ca3:8004` id_table 与 UVC 枚举](/analysis/kernel/debug/usb/dji-osmo-uvc-uac2-id-table) — eCos 上 UAC2 probe 报 `invalid HEADER`，阻塞 UVC 接口继续 probe
+- [USB Device 公头悬空误报 Suspend](/analysis/kernel/debug/usb/floating-male-false-suspend) — 未插入却 soft-connect 时，悬空 D± 线态触发 `USBSUSP`；修法是会话门控而非 D− 下拉
 
 ---
 
