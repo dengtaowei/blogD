@@ -20,12 +20,12 @@ date: 2026-08-01
 
 - [1. 本文要回答什么](#1-本文要回答什么)
 - [2. 板上节点一览](#2-板上节点一览)
-- [3. 各节点做什么](#3-各节点做什么)
-- [4. 与三条 dai_link 的关系](#4-与三条-dai_link-的关系)
-- [5. 内核如何创建这些节点](#5-内核如何创建这些节点)
-- [6. 对应的 file_operations](#6-对应的-file_operations)
-- [7. PCM 节点 open 与 soc_pcm_open](#7-pcm-节点-open-与-soc_pcm_open)
-- [8. 小结](#8-小结)
+- [3. 节点与三条 dai_link](#3-节点与三条-dai_link)
+  - [3.1 ASRC（device 1）](#31-asrcdevice-1)
+- [4. 内核如何创建这些节点](#4-内核如何创建这些节点)
+- [5. 对应的 file_operations](#5-对应的-file_operations)
+- [6. PCM 节点 open 与 soc_pcm_open](#6-pcm-节点-open-与-soc_pcm_open)
+- [7. 小结](#7-小结)
 
 ---
 
@@ -56,65 +56,52 @@ card 0: wm8960audio [wm8960-audio]
   device 1: HiFi-ASRC-FE (*)       → pcmC0D1p / pcmC0D1c
 ```
 
-卡名来自设备树 `model = "wm8960-audio"`。
+卡名来自设备树 `model = "wm8960-audio"`。device 1 为 ASRC 前端，说明见 [§3.1](#31-asrcdevice-1)。
 
 ---
 
-## 3. 各节点做什么
+## 3. 节点与三条 `dai_link`
 
-### 3.1 `controlC0`
+Machine 驱动 `sound/soc/fsl/imx-wm8960.c` 里注册三条 `dai_link`，再加一张卡级控制节点：
 
-声卡 0 的**控制设备**（mixer）。
+| 角色 | 名称 | `/dev` 节点 | 用途 |
+|------|------|-------------|------|
+| `dai_link[0]` | HiFi | `pcmC0D0p` / `pcmC0D0c` | SAI2 ↔ WM8960 直连；日常播 / 录用 `hw:0,0` |
+| `dai_link[1]` | HiFi-ASRC-FE | `pcmC0D1p` / `pcmC0D1c` | ASRC 前端，见 [§3.1](#31-asrcdevice-1) |
+| `dai_link[2]` | HiFi-ASRC-BE | 无（`no_pcm`） | ASRC 后端，见 [§3.1](#31-asrcdevice-1) |
+| 卡级控制 | — | `controlC0` | mixer（音量、通路等），不传 PCM；`amixer` / `tinymix` 等 |
 
-- 调音量、静音、输入/输出通路等
-- 不传 PCM 数据
-- 工具：`amixer` / `alsamixer` / `tinymix`（若根文件系统有）
+HiFi（D0）典型命令：
 
-### 3.2 `pcmC0D0p` / `pcmC0D0c`
-
-**device 0 = HiFi 直连**（`dai_link[0]`：SAI2 ↔ WM8960）。
-
-| 节点 | 方向 | 典型命令 |
-|------|------|----------|
+| 节点 | 方向 | 示例 |
+|------|------|------|
 | `pcmC0D0p` | 播放 | `aplay -D hw:0,0 xxx.wav` |
 | `pcmC0D0c` | 录音 | `arecord -D hw:0,0 -f cd rec.wav` |
 
-日常播/录优先用 D0。
+### 3.1 ASRC（device 1）
 
-### 3.3 `pcmC0D1p` / `pcmC0D1c`
+本板 DTS 挂了 `asrc-controller` 时，Machine 会多建两条 `dai_link`：前端 FE 对应 `pcmC0D1*`，后端 BE 标 `no_pcm`，**不会**出现独立 `/dev` 节点。
 
-**device 1 = HiFi-ASRC-FE**（ASRC 采样率转换前端）。
+数据路径：
 
 ```text
-应用 ↔ D1(ASRC-FE) ↔ ASRC ↔ BE(SAI/WM8960)
+应用 ↔ D1（HiFi-ASRC-FE）↔ ASRC ↔ BE（SAI / WM8960）
 ```
 
-| 节点 | 方向 | 典型命令 |
-|------|------|----------|
+`aplay -l` 里 device 1 旁的 `(*)` 表示该 PCM 还有 DPCM 子设备，不是故障。需要经 ASRC 做采样率转换时再用 `hw:0,1`：
+
+| 节点 | 方向 | 示例 |
+|------|------|------|
 | `pcmC0D1p` | 播放 | `aplay -D hw:0,1 xxx.wav` |
 | `pcmC0D1c` | 录音 | `arecord -D hw:0,1 ...` |
 
-ASRC 后端 `HiFi-ASRC-BE` 为 `no_pcm`，**不会**出现独立 `/dev` 节点。
+打开 `pcmC0D1*` 时，`substream->ops->open` 是 **`dpcm_fe_dai_open`**（不是下文的 `soc_pcm_open`）；内部再挂上 BE。下文 §6 只展开日常用的 HiFi / D0。
 
 ---
 
-## 4. 与三条 `dai_link` 的关系
+## 4. 内核如何创建这些节点
 
-Machine 驱动：`sound/soc/fsl/imx-wm8960.c`
-
-| dai_link | 名称 | `/dev` 节点 |
-|----------|------|-------------|
-| `[0]` | HiFi | `pcmC0D0p` / `pcmC0D0c` |
-| `[1]` | HiFi-ASRC-FE | `pcmC0D1p` / `pcmC0D1c` |
-| `[2]` | HiFi-ASRC-BE | 无（`no_pcm`） |
-
-另有一张卡级控制节点：`controlC0`。
-
----
-
-## 5. 内核如何创建这些节点
-
-### 5.1 总流程
+### 4.1 总流程
 
 ```text
 imx_wm8960_probe
@@ -143,7 +130,7 @@ imx_wm8960_probe
 
 说明：`snd_card_new()` 里会调用 `snd_ctl_create()` **预备** `controlC0`，但用户态真正可访问要等 `snd_card_register()`。
 
-### 5.2 打开时的统一入口
+### 4.2 打开时的统一入口
 
 所有 ALSA 节点先挂在总入口 `snd_fops` 上（`sound/core/sound.c`）：
 
@@ -157,7 +144,7 @@ open("/dev/snd/xxx")
 
 ---
 
-## 6. 对应的 `file_operations`
+## 5. 对应的 `file_operations`
 
 | `/dev/snd` 节点 | file_operations | 定义位置 | 主要接口 |
 |-----------------|-----------------|----------|----------|
@@ -185,11 +172,11 @@ snd_register_device(SNDRV_DEVICE_TYPE_CONTROL, card, -1,
 
 ---
 
-## 7. PCM 节点 open 与 `soc_pcm_open`
+## 6. PCM 节点 open 与 `soc_pcm_open`
 
-§5.2 / §6 说到首次 `open` 会换成 `snd_pcm_playback_open` / `snd_pcm_capture_open`。对 **HiFi（`pcmC0D0p` / `pcmC0D0c`）**，真正把 ASoC 各层拉起来的是 `substream->ops->open` → **`soc_pcm_open`**（`sound/soc/soc-pcm.c`）。建 PCM 时在 `soc_new_pcm` 里写入：`rtd->ops.open = soc_pcm_open`（`dynamic` 的 ASRC-FE 则是 `dpcm_fe_dai_open`，见下）。
+§4.2 / §5 说到首次 `open` 会换成 `snd_pcm_playback_open` / `snd_pcm_capture_open`。对 **HiFi（`pcmC0D0p` / `pcmC0D0c`）**，真正接到 ASoC 各层的是 `substream->ops->open` → **`soc_pcm_open`**（`sound/soc/soc-pcm.c`）。建 PCM 时在 `soc_new_pcm` 里写入：`rtd->ops.open = soc_pcm_open`。（D1 / ASRC-FE 的 open 见 [§3.1](#31-asrcdevice-1)。）
 
-### 7.1 从节点到 `soc_pcm_open`
+### 6.1 从节点到 `soc_pcm_open`
 
 以打开 `pcmC0D0p` 为例（录音把 `playback` 换成 `capture` / `f_ops[1]` 即可）：
 
@@ -207,7 +194,7 @@ open("/dev/snd/pcmC0D0p")
 
 `snd_pcm_open` 负责「这个 PCM 设备能不能被占上」；`soc_pcm_open` 负责「这条 `rtd` 上的 CPU DAI / Platform / Codec / Machine 如何 startup」。
 
-### 7.2 `soc_pcm_open` 在做什么（本板）
+### 6.2 `soc_pcm_open` 在做什么（本板）
 
 `substream->private_data` 即绑卡得到的 **`rtd`（`snd_soc_pcm_runtime`）**，其上已挂好 `cpu_dai` / `platform` / `codec_dai`。函数大致分四段：
 
@@ -235,20 +222,11 @@ soc_pcm_open(substream)
 
 此阶段 **一般不** 配具体采样率、不开环形 DMA 传数；那些在后续 `hw_params` / `prepare` / `trigger`（见播/录路径文）。
 
-### 7.3 D0 与 D1 的差别
-
-| 节点 | `dai_link` | `substream->ops->open` |
-|------|------------|-------------------------|
-| `pcmC0D0*` | HiFi（直连） | **`soc_pcm_open`** |
-| `pcmC0D1*` | HiFi-ASRC-FE（`dynamic`） | **`dpcm_fe_dai_open`**（内部再挂 BE，BE 侧仍会走到类似 `soc_pcm_open` 的路径） |
-
-日常 `hw:0,0` 只关心 D0 / `soc_pcm_open` 即可。
-
 ---
 
-## 8. 小结
+## 7. 小结
 
-- 日常播/录用 **D0（HiFi）**；D1 走 ASRC 前端；BE 无独立节点。
+- 日常播 / 录用 **D0（HiFi）**；另有 ASRC 时见 [§3.1](#31-asrcdevice-1)。
 - 节点在 `snd_card_register` → `snd_register_device` 后出现在 `/dev/snd`。
 - 首次 `open` 经 `snd_open` 再 `replace_fops` 到 control / PCM 各自的 `file_operations`。
-- PCM 节点再经 `snd_pcm_open` → **`soc_pcm_open`**（D0）：拉起 SAI / `imx_pcm` / Machine，并求交 `runtime->hw`；D1 走 DPCM 前端 open。
+- PCM（D0）再经 `snd_pcm_open` → **`soc_pcm_open`**：启动 SAI / `imx_pcm` / Machine，并求交 `runtime->hw`。
