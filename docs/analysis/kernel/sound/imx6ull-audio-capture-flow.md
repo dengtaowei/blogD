@@ -11,7 +11,7 @@ date: 2026-08-01
 
 > **平台**：100ask i.MX6ULL Pro（SAI2 + WM8960）作对照实例  
 > **内核**：NXP BSP **Linux 4.9.88**；ALSA / ASoC 调用链与主流内核同构，换板时改的主要是 Machine / Codec / 模拟路由  
-> **关联**：[播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) · [`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) · [PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun)  
+> **关联**：[播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) · [`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) · [PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) · [DAPM 路由与本板脚位](/analysis/kernel/sound/wm8960-dapm-routes#53-本板原理图与脚位)  
 > **本文**：`arecord` 录音的分层路径、HiFi（`pcmC0D0c`）内核调用栈，以及与播放的对称差异
 
 ---
@@ -36,7 +36,7 @@ date: 2026-08-01
 
 录音可以看成：硬件按采样率把 ADC 采样搬进内核环形缓冲，应用用 `read()` 取走。ALSA PCM / ASoC / dmaengine 框架与播放共用，差异主要在**数据方向**与 **RX 侧使能**。
 
-模拟输入选哪路麦、左右声道是否都有信号，取决于 Codec DAPM / `audio-routing` 与板级接线，属于板级配置，本文不展开；框架路径换板仍可对照。
+模拟输入选哪路麦、左右声道是否都有信号，取决于板级接线与 Codec DAPM。本板：耳机麦进 **LINPUT1**，板载麦克风进 **RINPUT1 / RINPUT2**（见 [DAPM 路由 §5.3](/analysis/kernel/sound/wm8960-dapm-routes#53-本板原理图与脚位)）。下文只跟 PCM 热路径。
 
 ---
 
@@ -149,7 +149,7 @@ sys_read(pcmC0D0c, buf, len)
 
 ```text
 SDMA period 完成
-  → imx_pcm_dma_complete
+  → dmaengine_pcm_dma_complete    // sound/core/pcm_dmaengine.c（本板 imx-pcm-dma-v2）
       → snd_pcm_period_elapsed
           → 更新硬件指针 / 唤醒 wait_for_avail 中的读端
 ```
@@ -169,7 +169,7 @@ read 热路径:
         → copy_to_user(dma_area → 用户缓冲)
 
 异步反馈:
-  SDMA → imx_pcm_dma_complete → period_elapsed → 唤醒 read
+  SDMA → dmaengine_pcm_dma_complete → period_elapsed → 唤醒 read
 ```
 
 ---
@@ -217,7 +217,7 @@ flowchart LR
   S["SDMA<br/>cyclic，外设到内存"]
   R["内核环形缓冲<br/>runtime 的 dma_area"]
   U["用户缓冲区"]
-  P["imx_pcm_dma_complete()<br/>snd_pcm_period_elapsed()"]
+  P["dmaengine_pcm_dma_complete()<br/>snd_pcm_period_elapsed()"]
 
   M --> C
   C -->|"I2S：BCLK / LRCLK / DATA"| F
@@ -250,7 +250,7 @@ ASoC        soc_pcm_trigger
 | capture fops / start | `sound/core/pcm_native.c` |
 | read / 环形缓冲 | `sound/core/pcm_lib.c` |
 | ASoC trigger | `sound/soc/soc-pcm.c` |
-| DMA 方向 | `sound/core/pcm_dmaengine.c`（`DMA_DEV_TO_MEM`） |
+| DMA 方向 | `sound/core/pcm_dmaengine.c`（`DMA_DEV_TO_MEM`；Platform 为 `imx-pcm-dma-v2`） |
 | SAI RX | `sound/soc/fsl/fsl_sai.c` — `fsl_sai_trigger` |
 | Machine / Codec | `imx-wm8960.c`、`wm8960.c`（与播放共用；输入路由另见 DAPM） |
 
@@ -260,4 +260,4 @@ ASoC        soc_pcm_trigger
 
 - 录音与播放共用 ASoC / dmaengine / SAI 驱动入口，差别在 **fops 下标、读写方向、DMA 方向、SAI TX/RX**。  
 - 首次启动常发生在 **`read` 且请求帧数 ≥ `start_threshold`**，之后阻塞等待 DMA 填满可读区域。  
-- 换板时优先复用本文调用链；麦通路、声道有无声属于 Codec 路由与硬件，宜单独对照 `audio-routing` / DAPM，不必和 PCM 热路径绑死。
+- 换板时优先复用本文调用链；麦走哪只脚、左右有无声，看板级接线与 DAPM。本板：耳机麦 **LINPUT1**、板载麦克风 **RINPUT1/2**，见 [DAPM §5.3](/analysis/kernel/sound/wm8960-dapm-routes#53-本板原理图与脚位)。

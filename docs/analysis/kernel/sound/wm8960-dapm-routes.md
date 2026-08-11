@@ -21,6 +21,7 @@ sidebarTitle: WM8960 DAPM 路由
 - [3. tinymix：清单与状态](#3-tinymix清单与状态)
 - [4. 两类控件：音量与路由开关](#4-两类控件音量与路由开关)
 - [5. 按开关画出路由图](#5-按开关画出路由图)
+- [5.3 本板原理图与脚位](#53-本板原理图与脚位)
 - [6. 源码：路由写在哪个结构体](#6-源码路由写在哪个结构体)
 - [7. 一个开关挂两条边](#7-一个开关挂两条边)
 - [8. 小结](#8-小结)
@@ -33,7 +34,7 @@ sidebarTitle: WM8960 DAPM 路由
 
 > **`tinymix controls` 里那一长串名字是什么？其中带 Mixer / Switch 的项如何对应 WM8960 内部连线？驱动里用哪个结构体声明这些连线？**
 
-范围限定 **Codec 内 DAPM 图**（widget + route + mixer 开关）以及如何用 `tinymix` 观察。不展开 PCM DMA / SAI 数据面，也不展开 `SOC_*` 音量宏的逐字段展开。
+范围限定 **Codec 内 DAPM 图**（widget + route + mixer 开关）以及如何用 `tinymix` 观察；[§5.3](#53-本板原理图与脚位) 对照本板插座与板载麦克风接到哪些输入脚。不展开 PCM DMA / SAI 数据面，也不展开 `SOC_*` 音量宏的逐字段展开。
 
 ---
 
@@ -187,11 +188,12 @@ flowchart LR
 
 - `LINPUT2` / `LINPUT3`（及右侧对称）进入 **Input Mixer** 的边在驱动里是常通。  
 - 走 **Boost** 支路时，需打开对应 `LINPUT`/`RINPUT` Switch，并打开 **48 / 49**（Boost Switch）。  
-- **48** 同时出现在两条边上（Boost Mixer→Input Mixer，以及 LINPUT1→Input Mixer），见 [§7](#7-一个开关挂两条边)。
+- **48** 同时出现在两条边上（Boost Mixer→Input Mixer，以及 LINPUT1→Input Mixer），见 [§7](#7-一个开关挂两条边)。  
+- 本板插座 / 板载麦克风接到哪几个输入脚，见 [§5.3](#53-本板原理图与脚位)。
 
 ### 5.2 播放（Playback）
 
-DAC / 旁路 → Output Mixer → 耳机 / 喇叭（以及可选 Mono→OUT3）。相关开关主要是 **50～57**。
+DAC / 旁路 → Output Mixer → 耳机 / 喇叭（驱动里还可经 Mono Mixer 到 OUT3）。相关开关主要是 **50～57**。
 
 ```mermaid
 flowchart LR
@@ -228,7 +230,51 @@ flowchart LR
 ```
 
 日常数字播放：至少需要 **50 / 53**（`PCM Playback Switch`）打开，使 Left/Right DAC 进入 Output Mixer；再经常通边到 `HP_*` / `SPK_*`。  
-**51 / 54**、**52 / 55** 是模拟旁路；**56 / 57** 只服务 Mono / OUT3 路径。
+**51 / 54**、**52 / 55** 是模拟旁路；**56 / 57** 服务 Mono / OUT3。本板耳机走 `HP_L` / `HP_R` 隔直输出，OUT3 未接到插座，日常播放一般只用到 **50 / 53** 这一路。
+
+### 5.3 本板原理图与脚位
+
+百问底板原理图（`100ask_imx6ull_v1.1.pdf` 音频页，U17 WM8960）省略电阻、去耦与电源后，可以分成数字、模拟两张看：
+
+**数字口（SoC ↔ Codec）**
+
+```mermaid
+flowchart LR
+  SAI2["i.MX6ULL<br/>SAI2"] -->|"I2S：MCLK / BCLK / SYNC / TXD / RXD"| DIG["WM8960<br/>MCLK · BCLK · DACLRC<br/>DACDAT · ADCDAT"]
+  I2C2["i.MX6ULL<br/>I2C2"] -->|"SCLK / SDIN @0x1a"| CTRL["WM8960<br/>控制口"]
+  INT["WM8960<br/>ADCLRC/GPIO1<br/>AUD_INT"] -.->|"插拔中断"| CPU["i.MX6ULL"]
+```
+
+**模拟口（Codec ↔ 板级）**
+
+```mermaid
+flowchart TB
+  subgraph CAP["录音输入"]
+    direction LR
+    ECM["板载麦克风"] -->|"MIC2P / MIC2N"| RIN["RINPUT1 / RINPUT2"]
+    JMIC["J10 · MIC"] -->|"MIC1P"| LIN1["LINPUT1"]
+    JHPD["J10 · HPD"] --> JD["RINPUT3 / JD3"]
+  end
+
+  subgraph PB["播放输出"]
+    direction LR
+    HP["HP_L / HP_R"] -->|"隔直约 47 µF"| JLR["J10 · L / R"]
+    SPK["SPK_LP/LN/RP/RN"] --> J11["J11 喇叭座"]
+  end
+```
+
+两路麦还共用 Codec 的 `MICBIAS` 偏置（图中略）。
+
+| 板级通路 | 接到 WM8960 | 用 `tinymix` 时 |
+|----------|-------------|-----------------|
+| 3.5 mm 耳机麦（J10 → `MIC1P`） | **`LINPUT1`**（耦合电容） | 打开左侧 Boost 相关开关（如 **44** `LINPUT1 Switch`、**48** `Boost Switch`） |
+| 板载麦克风（`MIC2P` / `MIC2N`） | **`RINPUT2` / `RINPUT1`**（差分） | 打开右侧 Boost（**45～47**、**49**） |
+| 耳机左右 | `HP_L` / `HP_R` → 约 47 µF 隔直 → J10 | 数字播放经 Output Mixer 常通边到 `HP_*` |
+| 外接喇叭 | `SPK_LP/LN/RP/RN` 差分 → 喇叭座 | 与耳机共用 Output Mixer 之后的喇叭功放脚 |
+| 耳机插入检测 `HPD` | **`RINPUT3` / JD3**；`ADCLRC/GPIO1` 作 `AUD_INT` | Machine 用 `hp-det = <3 0>` 选片内 JD |
+| OUT3 | 未外接 | 驱动另有 Mono / capless 附加表；本板日常走 `HP_*` / `SPK_*` |
+
+`audio-routing` 用 `Mic Jack`、`Main MIC`、`Headphone Jack` 等名字挂到这些 Codec 脚；DAPM / `tinymix` 里看到的仍是 `LINPUT*`、`HP_*` 一类芯片侧名字。Machine 侧写法见 [ASoC 四层 §6.1.1](/analysis/kernel/sound/imx6ull-asoc-layers#611-本板模拟接线)。
 
 ---
 
@@ -274,7 +320,7 @@ static const struct snd_soc_dapm_route audio_paths[] = {
 
 有名字的 `control` 必须与某个 **MIXER widget 上挂的 DAPM kcontrol 名字**一致，否则边无法受 tinymix 控制。
 
-OUT3 / capless 等模式另有 `audio_paths_out3[]`、`audio_paths_capless[]`，在 `wm8960_add_widgets` 里按平台数据追加。
+OUT3 / capless 等模式另有 `audio_paths_out3[]`、`audio_paths_capless[]`，在 `wm8960_add_widgets` 里按平台数据追加。本板耳机走 `HP_*` 隔直、OUT3 未外接，日常 complete path 一般落在 `audio_paths[]` 主表。
 
 ### 6.2 点：`struct snd_soc_dapm_widget`
 
@@ -351,6 +397,7 @@ snd_soc_dapm_add_routes(dapm, audio_paths, ARRAY_SIZE(audio_paths));
 - `tinymix controls` 只给清单；看开关状态用 `contents` / `get`。  
 - 列表里约 42～57 的 BOOL 是 DAPM 路由开关；前面多为音量 / 算法类控件。  
 - 播 / 录应分开看图：录音盯 Boost / Input Mixer（42～49）；播放盯 Output Mixer 的 PCM / Bypass（50～57）。  
+- 本板：耳机麦进 **LINPUT1**，板载麦克风进 **RINPUT1/2**，耳机 / 喇叭走 `HP_*` / `SPK_*`；OUT3 未外接。  
 - 边在 `audio_paths[]`（`struct snd_soc_dapm_route`）；点在 `wm8960_dapm_widgets[]`；开关短名在 `SOC_DAPM_SINGLE` 表里，经 `snd_soc_dapm_add_routes` 挂上。
 
 ---
@@ -375,4 +422,5 @@ snd_soc_dapm_add_routes(dapm, audio_paths, ARRAY_SIZE(audio_paths));
 4. 路由三件套：**widget + route +（可选）DAPM kcontrol**。  
 5. `route = { sink, control, source }`；`control == NULL` 常通。  
 6. 数字播放关键开关：`Left/Right Output Mixer PCM Playback Switch`（50 / 53）。  
-7. 同一 `control` 字符串可出现在多行 route 里，对应一次开关、多条边。
+7. 同一 `control` 字符串可出现在多行 route 里，对应一次开关、多条边。  
+8. 本板耳机麦 → LINPUT1，板载麦克风 → RINPUT1/2；播放走 HP_* / SPK_*。

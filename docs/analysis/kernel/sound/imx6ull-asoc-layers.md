@@ -22,6 +22,8 @@ sidebarTitle: ASoC 四层架构
 - [4. 分层关系图](#4-分层关系图)
 - [5. i.MX6ULL Pro 四层驱动对照](#5-imx6ull-pro-四层驱动对照)
 - [6. 设备树如何粘合四层](#6-设备树如何粘合四层)
+  - [6.1 Machine：`sound`](#61-machine-sound)
+  - [6.1.1 本板模拟接线](#611-本板模拟接线)
   - [6.5 内核如何管理这三层](#65-内核如何管理这三层)
   - [6.6 绑卡：soc_bind_dai_link 与 rtd](#66-绑卡soc_bind_dai_link-与-rtd)
 - [7. Probe 顺序](#7-probe-顺序)
@@ -127,7 +129,17 @@ sound {
     audio-codec = <&codec>;
     asrc-controller = <&asrc>;
     codec-master;
-    /* audio-routing、gpr、hp-det 等 */
+    gpr = <&gpr 4 0x100000 0x100000>;
+    hp-det = <3 0>;          /* 片内 JD3，对应原理图 HPD */
+    audio-routing =
+        "Headphone Jack", "HP_L",
+        "Headphone Jack", "HP_R",
+        "Ext Spk", "SPK_LP",
+        /* … SPK_LN / SPK_RP / SPK_RN … */
+        "RINPUT1", "Main MIC",
+        "RINPUT2", "Main MIC",
+        "Main MIC", "MICB",
+        /* … 其余边见 dts 源文件 … */;
 };
 ```
 
@@ -138,8 +150,29 @@ sound {
 | `asrc-controller` | 存在则 Machine 建 ASRC 相关 `dai_link` |
 | `codec-master` | WM8960 出 BCLK / LRCLK，SAI 为 clock slave |
 | `model` | 用户可见卡名 |
+| `hp-det` | 片内耳机检测脚；本板 `<3 0>` 选 JD3（原理图 `HPD` → `RINPUT3/JD3`） |
+| `audio-routing` | 板级端点名（`Headphone Jack`、`Main MIC` 等）接到 Codec 脚名 |
 
 `compatible` 首项 `"fsl,imx6ul-evk-wm8960"` 不在本驱动 `of_device_id` 表内；实际匹配靠 `"fsl,imx-audio-wm8960"`。
+
+#### 6.1.1 本板模拟接线
+
+数字侧与原理图对齐：SAI2 的 MCLK / BCLK / SYNC / TXD / RXD 接到 WM8960 的 MCLK / BCLK / DACLRC / DACDAT / ADCDAT；I2C2 `@0x1a`；`wlf,shared-lrclk` 下 ADCLRC 复用为 GPIO，拉出 `AUD_INT`。
+
+简化接线图（与下表同内容）见 [WM8960 DAPM §5.3](/analysis/kernel/sound/wm8960-dapm-routes#53-本板原理图与脚位)。
+
+模拟侧（底板原理图音频页）可以记成一张小表：
+
+| 板级端 | Codec 脚 | 说明 |
+|--------|----------|------|
+| 耳机插座麦 | **LINPUT1** | J10 → `MIC1P`，经耦合电容进芯片 |
+| 板载麦克风 | RINPUT1 / RINPUT2 | `MIC2N` / `MIC2P` 差分 |
+| 耳机左右 | HP_L / HP_R | 经约 47 µF 隔直到 J10 |
+| 喇叭座 | SPK_LP/LN/RP/RN | 差分功放输出 |
+| 插入检测 | RINPUT3 / JD3 | `HPD`；Machine 用 `hp-det` 选片内检测 |
+| OUT3 | （未外接） | 本板外放走 HP_* / SPK_* |
+
+`audio-routing` 把 `Headphone Jack`、`Main MIC`、`Ext Spk` 等板级名接到上表对应脚。耳机麦走 LINPUT1：在 `tinymix` 里打开左侧 Boost 相关开关即可（开关编号见 [WM8960 DAPM §5.3](/analysis/kernel/sound/wm8960-dapm-routes#53-本板原理图与脚位)）。
 
 ### 6.2 CPU DAI：`&sai2`
 
@@ -450,6 +483,7 @@ Machine 在 `hw_params` 等路径上配置格式、主从与 PLL，**不参与 p
 - ASoC 经典 **四层**：Machine（组卡）、Platform（PCM/DMA）、CPU DAI（数字接口）、Codec（编解码与模拟路由）。
 - 本板对应：`imx-wm8960.c` / `imx-pcm-dma-v2.c` / `fsl_sai.c` / `wm8960.c`。
 - DTS 用 `sound` 的 phandle 把 SAI 与 WM8960 绑在一起；Platform 挂在 SAI 上注册，无单独节点。
+- 本板模拟口：耳机麦 → LINPUT1，板载麦克风 → RINPUT1/2，耳机 / 喇叭 → HP_* / SPK_*（见 [§6.1.1](#611-本板模拟接线)）。
 - 播录热路径经 Platform + CPU DAI + Codec；Machine 负责板级策略与路由。
 
 ---
@@ -478,4 +512,5 @@ Machine 在 `hw_params` 等路径上配置格式、主从与 PLL，**不参与 p
 3. Platform 无 DTS 节点；随 SAI probe 注册。  
 4. `codec-master` + SAI2 MCLK（约 12.288 MHz）是本板时钟策略。  
 5. 有 ASRC 时多一套 FE PCM，不改变四层划分本身。  
-6. mini 板可能是 MQS + SAI1，与本文 WM8960 路径不同。
+6. mini 板可能是 MQS + SAI1，与本文 WM8960 路径不同。  
+7. 本板模拟：耳机麦 → LINPUT1，板载麦克风 → RINPUT1/2，播放走 HP_* / SPK_*。
