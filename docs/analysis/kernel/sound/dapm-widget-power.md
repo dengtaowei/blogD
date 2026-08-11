@@ -4,6 +4,7 @@ homeTitle: DAPM widget 何时上电
 homeDesc: power_check、complete path、dapm_power_widgets 调用链
 sidebarOrder: 7
 sidebarTitle: DAPM widget 上电
+date: 2026-08-07
 ---
 
 # DAPM widget 上电：谁判、何时判

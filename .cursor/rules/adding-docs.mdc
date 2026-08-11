@@ -8,15 +8,22 @@ alwaysApply: false
 
 侧边栏由 **`scripts/generate-sidebar.mjs`** 根据 `docs/.vitepress/sidebar.meta.json` 与各文 frontmatter 自动生成（`docs:dev` / `docs:build` 前会自动跑）。
 
+## 侧栏怎么挂
+
+侧栏里每个子系统一般只留一条入口，链到该目录的 `index.md`；正文不进侧栏。新文章在对应 `index.md` 里加链接即可。`sidebarOrder` / `sidebarTitle` 仍可写，方便以后排序或脚本用。
+
 ## 新增文章（已有子系统目录）
 
 1. 在对应目录新建 `.md`（kebab-case）。
-2. frontmatter 加 **`sidebarOrder`**（数字，越小越靠前）；可选 **`sidebarTitle`**（侧栏显示名，默认取 `#` 标题）、**`sidebarHidden: true`**（不进侧边栏）。`sidebarTitle` 长度见 **`doc-conventions.mdc` §8**（当前 328px 侧栏下，3 级嵌套约混排 ≤24 字 / 纯中文 ≤18 字）。
-3. 本地 `npm run docs:dev` 或 `npm run sync:sidebar` 即可，**不必改 `config.ts`**。
+2. frontmatter 加 **`sidebarOrder`**（越小越靠前）；可选 **`sidebarTitle`**（短名，默认用 `#` 标题）。长度见 **`doc-conventions.mdc` §8**。
+3. 在同目录 **`index.md`** 里补上链接。
+4. 跑 `npm run docs:dev` 或 `npm run sync:sidebar` 即可，**不用改 `config.ts`**。
 
 ## 新增子系统 / 调整分组
 
-编辑 **`docs/.vitepress/sidebar.meta.json`**（例如新增 `dir` 分组或 `index` 概览页），再跑 `npm run sync:sidebar`。
+1. 建目录，写好 **`index.md`**（`home: false`，列出文章）。
+2. 改 **`docs/.vitepress/sidebar.meta.json`**：`{ "text": "…", "index": "analysis/kernel/…" }`。
+3. 再跑 `npm run sync:sidebar`。
 
 ## 其他约定
 

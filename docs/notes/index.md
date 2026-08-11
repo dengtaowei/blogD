@@ -4,10 +4,9 @@ home: false
 
 # 学习笔记
 
-内核学习之外的补充笔记，如 RTOS、实验记录等（非本站主线）。
+内核以外的笔记，比如 RTOS、显示相关实验。
 
 ## 分类
 
-- [RTOS](/notes/rtos/task-scheduling) — 实时操作系统相关
-- [Display](/notes/display/st7789-te-signal) — 面板 TE、抓沿选型与写速约束
-- 更多分类待补充…
+- [RTOS](/notes/rtos/)
+- [Display](/notes/display/) — 面板 TE、抓沿和写屏速度

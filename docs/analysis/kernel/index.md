@@ -8,6 +8,8 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 ## USB 子系统
 
+专题页：[USB 子系统](/analysis/kernel/usb/)
+
 1. [USB 2.0 枚举流程](/analysis/kernel/usb/usb-enumeration)
 2. [hub_port_init 调用链](/analysis/kernel/usb/hub-port-init)
 3. [usb_get_descriptor 调用链](/analysis/kernel/usb/get-descriptor-trace)
@@ -23,6 +25,8 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 ## Media / V4L2 子系统
 
+专题页：[Media / V4L2](/analysis/kernel/media/)
+
 - [i.MX6ULL OV5640：设备树到 /dev/video](/analysis/kernel/media/imx6-ov5640-dts-video) — DVP DTS、引脚冲突与 mx6s 出现 video 节点（Linux 4.9.88 BSP）
 - [OV5640 横纹与偏色](/analysis/kernel/media/imx6-ov5640-artifacts-color-stripes) — CSI 同步极性 vs ffplay 像素格式（Linux 4.9.88 BSP）
 - [PXP PRIMARY 直写 fb0](/analysis/kernel/media/imx6-pxp-display-fb0) — YUYV→RGB 硬件显示与内核 patch（Linux 4.9.88 BSP）
@@ -33,36 +37,40 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 ## Pinctrl / GPIO 子系统
 
+专题页：[Pinctrl / GPIO 子系统](/analysis/kernel/pinctrl/)
+
 - [STM32 Pinctrl 分析](/analysis/kernel/pinctrl/stm32-pinctrl)
 - [STM32 GPIO 分析](/analysis/kernel/gpio/stm32-gpio)
 
 ## SPI 子系统
 
+专题页：[SPI 子系统](/analysis/kernel/spi/)
+
 - [STM32MP157 SPI 子系统](/analysis/kernel/spi/spi-sync-trace)
 
 ## Sound / ALSA
 
-对照内核以百问 **Linux 4.9.88 BSP** 为主（文首已注明；与上方多数 6.8 文不同）。
+专题页：[Sound / ALSA](/analysis/kernel/sound/)
+
+内核以百问 **Linux 4.9.88 BSP** 为主（文首已注明；上面多数是 6.8）。
 
 1. [i.MX6ULL `/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) — `controlC0` / `pcmC0D0`·`D1`、`dai_link` 与 `file_operations`
 2. [i.MX6ULL 声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) — `aplay` → SDMA / SAI / WM8960 与调用栈
 3. [i.MX6ULL 声卡录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) — `arecord` / `read` / `DEV_TO_MEM` / SAI RX
 4. [ALSA PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) — 状态、阈值与 underrun/overrun
 
-系列概览：[Sound / ALSA](/analysis/kernel/sound/)
-
 ## BPF / kprobe
 
-对照内核以 Ubuntu HWE **5.15** 为主（文首已注明；与上方多数 6.8 文不同）。
+专题页：[BPF / kprobe](/analysis/kernel/bpf/)
+
+内核以 Ubuntu HWE **5.15** 为主（文首已注明；上面多数是 6.8）。
 
 1. [eBPF kprobe：load / attach / 命中](/analysis/kernel/bpf/ebpf-kprobe-load-attach) — PROG_LOAD / 插桩 / LINK / 多 BPF 分发
 2. [kprobe-on-ftrace 插桩实测](/analysis/kernel/bpf/kprobe-on-ftrace-lab) — 入口 NOP↔CALL 与 handler 上下文
 
-系列概览：[BPF / kprobe](/analysis/kernel/bpf/)
-
 ## 调试与实践
 
-针对具体问题的排查记录与实验笔记（与上方流程分析互补）。
+具体问题的排查记录，和上面的流程分析互补。
 
 - [概览与写作说明](/analysis/kernel/debug/)
 - [USB 调试记录](/analysis/kernel/debug/usb/)

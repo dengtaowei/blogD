@@ -4,6 +4,7 @@ homeTitle: WM8960 kcontrol 构造与使用
 homeDesc: SOC_* 宏、注册到 controlC0、tinymix 读写路径
 sidebarOrder: 5
 sidebarTitle: WM8960 kcontrol
+date: 2026-08-03
 ---
 
 # WM8960 kcontrol 构造与使用
