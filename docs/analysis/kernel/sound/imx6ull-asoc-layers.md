@@ -4,6 +4,7 @@ homeTitle: ASoC 四层架构与 i.MX6ULL 驱动对照
 homeDesc: Machine / Platform / CPU DAI / Codec 职责与源文件
 sidebarOrder: 0
 sidebarTitle: ASoC 四层架构
+date: 2026-08-02
 ---
 
 # ASoC 四层架构与 i.MX6ULL 驱动对照

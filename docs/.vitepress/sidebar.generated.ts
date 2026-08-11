@@ -5,21 +5,11 @@ const sidebar: DefaultTheme.Sidebar = {
   "/notes/": [
     {
       "text": "RTOS",
-      "items": [
-        {
-          "text": "FreeRTOS 任务调度",
-          "link": "/notes/rtos/task-scheduling"
-        }
-      ]
+      "link": "/notes/rtos/"
     },
     {
       "text": "Display",
-      "items": [
-        {
-          "text": "ST7789 TE 信号实测",
-          "link": "/notes/display/st7789-te-signal"
-        }
-      ]
+      "link": "/notes/display/"
     }
   ],
   "/analysis/": [
@@ -32,169 +22,27 @@ const sidebar: DefaultTheme.Sidebar = {
         },
         {
           "text": "USB 子系统",
-          "items": [
-            {
-              "text": "USB 2.0 枚举流程",
-              "link": "/analysis/kernel/usb/usb-enumeration"
-            },
-            {
-              "text": "hub_port_init 调用链",
-              "link": "/analysis/kernel/usb/hub-port-init"
-            },
-            {
-              "text": "usb_get_descriptor 调用链",
-              "link": "/analysis/kernel/usb/get-descriptor-trace"
-            },
-            {
-              "text": "枚举与两轮 Probe",
-              "link": "/analysis/kernel/usb/enumeration-and-probe"
-            },
-            {
-              "text": "UVC 驱动分析",
-              "link": "/analysis/kernel/usb/uvc-driver"
-            },
-            {
-              "text": "Gadget 子系统概览",
-              "link": "/analysis/kernel/usb/gadget-subsystem"
-            },
-            {
-              "text": "Configfs 组装分析",
-              "link": "/analysis/kernel/usb/gadget-configfs-assembly"
-            },
-            {
-              "text": "UDC bind 分析",
-              "link": "/analysis/kernel/usb/gadget-udc-core-bind"
-            },
-            {
-              "text": "DWC2 接口总览",
-              "link": "/analysis/kernel/usb/gadget-dwc2-interface"
-            },
-            {
-              "text": "Composite EP0 枚举",
-              "link": "/analysis/kernel/usb/gadget-composite-ep0"
-            },
-            {
-              "text": "ACM Function 路径",
-              "link": "/analysis/kernel/usb/gadget-function-acm"
-            },
-            {
-              "text": "Gadget CDC ACM 串口实践",
-              "link": "/analysis/kernel/usb/gadget-cdc-acm"
-            }
-          ]
+          "link": "/analysis/kernel/usb/"
         },
         {
           "text": "Pinctrl / GPIO 子系统",
-          "items": [
-            {
-              "text": "STM32 Pinctrl 分析",
-              "link": "/analysis/kernel/pinctrl/stm32-pinctrl"
-            },
-            {
-              "text": "STM32 GPIO 分析",
-              "link": "/analysis/kernel/gpio/stm32-gpio"
-            }
-          ]
+          "link": "/analysis/kernel/pinctrl/"
         },
         {
           "text": "SPI 子系统",
-          "items": [
-            {
-              "text": "STM32MP157 SPI 子系统",
-              "link": "/analysis/kernel/spi/spi-sync-trace"
-            }
-          ]
+          "link": "/analysis/kernel/spi/"
         },
         {
           "text": "Media / V4L2",
-          "items": [
-            {
-              "text": "OV5640 DTS 与 video",
-              "link": "/analysis/kernel/media/imx6-ov5640-dts-video"
-            },
-            {
-              "text": "OV5640 横纹与偏色",
-              "link": "/analysis/kernel/media/imx6-ov5640-artifacts-color-stripes"
-            },
-            {
-              "text": "PXP PRIMARY 直写 fb0",
-              "link": "/analysis/kernel/media/imx6-pxp-display-fb0"
-            },
-            {
-              "text": "PXP USERPTR 零拷贝",
-              "link": "/analysis/kernel/media/imx6-pxp-userptr-zero-copy"
-            },
-            {
-              "text": "V4L2 设备注册",
-              "link": "/analysis/kernel/media/v4l2-device-registration"
-            },
-            {
-              "text": "V4L2 ioctl 分发",
-              "link": "/analysis/kernel/media/v4l2-ioctl-dispatch"
-            },
-            {
-              "text": "V4L2 vb2 队列",
-              "link": "/analysis/kernel/media/v4l2-vb2-queue"
-            }
-          ]
+          "link": "/analysis/kernel/media/"
         },
         {
           "text": "Sound / ALSA",
-          "items": [
-            {
-              "text": "概览",
-              "link": "/analysis/kernel/sound/"
-            },
-            {
-              "text": "ASoC 四层架构",
-              "link": "/analysis/kernel/sound/imx6ull-asoc-layers"
-            },
-            {
-              "text": "/dev/snd 节点",
-              "link": "/analysis/kernel/sound/imx6ull-snd-devices"
-            },
-            {
-              "text": "播放路径与调用栈",
-              "link": "/analysis/kernel/sound/imx6ull-audio-playback-flow"
-            },
-            {
-              "text": "录音路径与调用栈",
-              "link": "/analysis/kernel/sound/imx6ull-audio-capture-flow"
-            },
-            {
-              "text": "PCM 状态机与 XRUN",
-              "link": "/analysis/kernel/sound/alsa-pcm-state-xrun"
-            },
-            {
-              "text": "WM8960 kcontrol",
-              "link": "/analysis/kernel/sound/wm8960-kcontrol"
-            },
-            {
-              "text": "WM8960 DAPM 路由",
-              "link": "/analysis/kernel/sound/wm8960-dapm-routes"
-            },
-            {
-              "text": "DAPM widget 上电",
-              "link": "/analysis/kernel/sound/dapm-widget-power"
-            }
-          ]
+          "link": "/analysis/kernel/sound/"
         },
         {
           "text": "BPF / kprobe",
-          "items": [
-            {
-              "text": "概览",
-              "link": "/analysis/kernel/bpf/"
-            },
-            {
-              "text": "eBPF kprobe 路径",
-              "link": "/analysis/kernel/bpf/ebpf-kprobe-load-attach"
-            },
-            {
-              "text": "ftrace 插桩实测",
-              "link": "/analysis/kernel/bpf/kprobe-on-ftrace-lab"
-            }
-          ]
+          "link": "/analysis/kernel/bpf/"
         },
         {
           "text": "调试与实践",
@@ -205,33 +53,11 @@ const sidebar: DefaultTheme.Sidebar = {
             },
             {
               "text": "USB",
-              "items": [
-                {
-                  "text": "概览",
-                  "link": "/analysis/kernel/debug/usb/"
-                },
-                {
-                  "text": "DJI UVC/UAC2 id_table 与枚举",
-                  "link": "/analysis/kernel/debug/usb/dji-osmo-uvc-uac2-id-table"
-                },
-                {
-                  "text": "公头悬空误报 Suspend",
-                  "link": "/analysis/kernel/debug/usb/floating-male-false-suspend"
-                }
-              ]
+              "link": "/analysis/kernel/debug/usb/"
             },
             {
               "text": "Pinctrl / GPIO",
-              "items": [
-                {
-                  "text": "概览",
-                  "link": "/analysis/kernel/debug/gpio/"
-                },
-                {
-                  "text": "IMX6ULL SPI 片选 GPIO 时好时坏",
-                  "link": "/analysis/kernel/debug/gpio/imx6ull-spi-cs-gpio-runtime-pm"
-                }
-              ]
+              "link": "/analysis/kernel/debug/gpio/"
             },
             {
               "text": "写作模板",
