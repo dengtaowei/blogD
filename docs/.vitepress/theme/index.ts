@@ -2,6 +2,7 @@ import DefaultTheme from 'vitepress/theme'
 import mediumZoom from 'medium-zoom'
 import type { Zoom } from 'medium-zoom'
 import RecentPosts from './RecentPosts.vue'
+import TeSlowWriteDemo from './TeSlowWriteDemo.vue'
 import './style.css'
 import './github-doc.css'
 
@@ -19,6 +20,7 @@ export default {
   extends: DefaultTheme,
   enhanceApp({ app, router }) {
     app.component('RecentPosts', RecentPosts)
+    app.component('TeSlowWriteDemo', TeSlowWriteDemo)
 
     if (typeof window === 'undefined') return
 

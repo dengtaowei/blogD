@@ -6,4 +6,4 @@ home: false
 
 ## 文章
 
-- [ST7789 TE 信号实测](/notes/display/st7789-te-signal) — TE 抓沿、1×/2× 与写屏速度
+- [ST7789 TE 信号实测](/notes/display/st7789-te-signal) — TE 抓沿、1×/2×、慢写示意与写屏速度
