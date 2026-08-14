@@ -2,7 +2,7 @@
 date: 2026-08-08
 homeTag: Display · 笔记
 homeTitle: ST7789 TE 信号实测
-homeDesc: V-blank、TEM=0/1、抓沿、慢写示意与 Linux fbtft
+homeDesc: V-blank、TEM=0/1、抓沿、慢写/快写示意与 Linux fbtft
 sidebarOrder: 10
 sidebarTitle: ST7789 TE 信号实测
 ---
@@ -12,7 +12,7 @@ sidebarTitle: ST7789 TE 信号实测
 > **平台**：MCU + ST7789 类面板（i8080 / SPI 写 GRAM）  
 > **工具**：DSLogic 逻辑分析仪（采样率 1 MHz）  
 > **内核对照**：Linux 6.8 · `drivers/staging/fbtft/fb_st7789v.c`  
-> **本文**：TE 是什么、屏侧如何打开、`TEM=0/1` 波形差异、主机抓沿；慢写时 GRAM/Panel 时序示意；Linux 写屏前会等一次 TE
+> **本文**：TE 是什么、屏侧如何打开、`TEM=0/1` 波形差异、主机抓沿；慢写 / 快写时 GRAM/Panel 时序示意；Linux 写屏前会等一次 TE
 
 ---
 
@@ -25,6 +25,7 @@ sidebarTitle: ST7789 TE 信号实测
 - [5. 主机该抓上升沿还是下降沿](#5-主机该抓上升沿还是下降沿)
   - [5.1 写得快用 1× 上升沿，写得慢用 2× 下降沿](#51-写得快用-1-上升沿写得慢用-2-下降沿)
   - [5.2 慢写时 GRAM 与 Panel](#52-慢写时-gram-与-panel)
+  - [5.3 快写时 GRAM 与 Panel](#53-快写时-gram-与-panel)
 - [6. Linux 6.8 如何处理 TE](#6-linux-68-如何处理-te)
 - [7. 刷图时怎么用 TE](#7-刷图时怎么用-te)
 - [8. 小结](#8-小结)
@@ -165,6 +166,35 @@ ST7789 手册 §8.15.4（MPU write slower than panel read）描述的慢写路�
 
 要点：TE（`TEM=0` 下降沿 ≈ 有效区开扫）给出起笔相位；写指针保持在读指针之后，本场 Panel 读到的是完整旧帧或已写完的新帧区域，减轻「同一场里上下两截分属未完成写入」的撕裂。
 
+### 5.3 快写时 GRAM 与 Panel
+
+ST7789 手册中 MPU write faster than panel read 描述的快写路径，可与 §5.1「上升沿起笔、写在扫描线前」对照。同样用红 = OLD、绿 = NEW：
+
+- **TE 上升沿（V-blank 开始）**：主机起笔；消隐段内写指针已推进一大截。
+- **场 1 有效扫描**：读指针自上而下时，所经行在 GRAM 里已是 NEW → Panel 扫过区域同场变绿；写指针始终跑在读指针前面，并在场中较早写满整帧。
+- **场 2**：整屏已是绿，继续扫描仍为新帧。
+
+与 §5.2 对照：慢写是「本场仍红、下场才绿」；快写是「本场扫过即为绿」。
+
+<TeFastWriteDemo />
+
+要点：TE（`TEM=0` 上升沿 ≈ V-blank 开始）给出起笔相位；整帧总线时间须短于一场扫描，写指针才能稳稳领先读指针。
+
+#### 5.3.1 实测：整帧 WR 短于一场 TE
+
+i8080 快时序下，逻辑分析仪抓到整帧写屏落在一场周期内（约 60 Hz）：
+
+![整帧 WR 约 12 ms，短于一场约 16.8 ms](/files/faster_wr.png)
+
+光标量到的典型关系（见上图）：
+
+| 测量项 | 约值 | 含义 |
+|--------|------|------|
+| 整帧 WR 突发宽度 | **≈ 12 ms** | 主机写完一帧 GRAM |
+| 相邻 TE / 帧标记跨度 | **≈ 16.8 ms** | 一场扫描周期（约 60 Hz） |
+
+WR 突发短于一场周期，对应「写屏速率快于屏扫」；再配合上升沿起笔，即本节快写模型。
+
 ---
 
 ## 6. Linux 6.8 如何处理 TE
@@ -234,7 +264,7 @@ sequenceDiagram
 1. **TE** 由屏在扫描节拍下产生，供主机对齐写 GRAM，减轻撕裂。  
 2. **`TEON` + `TEM=0`**：每帧一个宽脉冲，高电平 ≈ V-blank（实测约 1.16 ms）；周期落在标称 60 Hz 附近。  
 3. **`TEM=1`**：叠加行消隐窄脉冲（实测约 321 次/帧）；整帧刷屏用 `TEM=0` 即可。  
-4. **抓沿**：按写速相对扫描速选型；快路径常见 1× + 上升沿，慢路径常见 2× + 下降沿。慢写时序见 §5.2 示意。  
+4. **抓沿**：按写速相对扫描速选型；快路径常见 1× + 上升沿，慢路径常见 2× + 下降沿。慢写 / 快写时序见 §5.2、§5.3 示意。  
 5. **Linux 6.8 fbtft**：写屏前等一次 TE，再经 SPI 写 GRAM。  
 6. **工程上**：TE 管相位；写速与扫描速匹配（乐鑫模型里约写速 ≳ 扫速一半）再配合实测画面。
 
@@ -247,4 +277,4 @@ sequenceDiagram
 - [Espressif：LCD Screen Tearing](https://docs.espressif.com/projects/esp-iot-solution/zh_CN/release-v2.0/display/lcd/lcd_screen_tearing.html) — TE 同步与写/读速度关系  
 - Espressif `lcd_with_te` 示例：`bsp_display_lcd_init` 中 I80 1× 上升沿 / QSPI 2× 下降沿注释  
 - Solomon SSD1963 Tearing Effect 应用笔记 — 快 MCU 抓上升沿、慢 MCU 抓下降沿  
-- 附件波形：[tem_0.png](/files/tem_0.png)（`TEM=0`）、[tem_1.png](/files/tem_1.png)（`TEM=1`）
+- 附件波形：[tem_0.png](/files/tem_0.png)（`TEM=0`）、[tem_1.png](/files/tem_1.png)（`TEM=1`）、[faster_wr.png](/files/faster_wr.png)（快写：整帧 WR 短于一场）
