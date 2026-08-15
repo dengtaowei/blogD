@@ -12,7 +12,7 @@ date: 2026-06-15
 > **层**：L1 UDC（`drivers/usb/dwc2/gadget.c`）  
 > **内核**：Linux 5.4 源码（dwc2 dual-role 平台对照）；路径与 Linux 6.8 同源，差异处另行注明  
 > **配置**：Buffer DMA（`g_dma=1`，`g_dma_desc=0`）  
-> **关联**：[Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) · [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) · [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm)  
+> **关联**：[Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) · [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) · [DWC2 USBTRDTIM 选值](/analysis/kernel/usb/gadget-dwc2-turnaround-time) · [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) · [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm)  
 > **说明**：本文「三层」指硬件↔dwc2↔框架的交付边界，与 [Gadget 子系统概览](/analysis/kernel/usb/gadget-subsystem) 的 L0–L4 分层编号不同
 
 ---

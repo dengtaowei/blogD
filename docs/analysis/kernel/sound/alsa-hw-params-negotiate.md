@@ -4,6 +4,7 @@ homeTitle: ALSA hw_params 参数协商
 homeDesc: 本板成功/失败对照；dump 区间与 rule_rate 离散率
 sidebarOrder: 8
 sidebarTitle: hw_params 参数协商
+date: 2026-08-15
 ---
 
 # ALSA hw_params 参数协商

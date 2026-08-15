@@ -2,7 +2,7 @@
 homeTag: USB · Gadget
 homeTitle: Gadget ACM Function 路径
 homeDesc: f_acm.c 与 u_serial.c 的 bind、set_alt 与 ttyGS 数据面
-sidebarOrder: 57
+sidebarOrder: 58
 sidebarTitle: ACM Function 路径
 date: 2026-06-14
 ---
