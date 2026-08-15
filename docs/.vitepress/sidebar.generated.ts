@@ -60,6 +60,10 @@ const sidebar: DefaultTheme.Sidebar = {
               "link": "/analysis/kernel/debug/gpio/"
             },
             {
+              "text": "Sound",
+              "link": "/analysis/kernel/debug/sound/"
+            },
+            {
               "text": "写作模板",
               "link": "/analysis/kernel/debug/template"
             }

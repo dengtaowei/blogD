@@ -43,6 +43,10 @@
                 "index": "analysis/kernel/debug/gpio"
               },
               {
+                "text": "Sound",
+                "index": "analysis/kernel/debug/sound"
+              },
+              {
                 "file": "analysis/kernel/debug/template.md",
                 "text": "写作模板"
               }
