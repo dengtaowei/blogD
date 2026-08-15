@@ -2,7 +2,7 @@
 homeTag: USB · Gadget
 homeTitle: USB Gadget CDC ACM 串口实践
 homeDesc: configfs 配置 ACM，板子 ttyGS0 与 PC cdc_acm 对接
-sidebarOrder: 58
+sidebarOrder: 59
 sidebarTitle: Gadget CDC ACM 串口实践
 date: 2026-06-13
 ---

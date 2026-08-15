@@ -2,7 +2,7 @@
 homeTag: USB · Gadget
 homeTitle: Gadget composite EP0 与枚举
 homeDesc: composite_setup、GET_DESCRIPTOR 与 SET_CONFIGURATION
-sidebarOrder: 56
+sidebarOrder: 57
 sidebarTitle: Composite EP0 枚举
 date: 2026-06-14
 ---

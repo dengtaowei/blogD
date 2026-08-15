@@ -65,6 +65,18 @@
     <lastmod>2026-08-15</lastmod>
   </url>
   <url>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/debug/usb/libusb-windows-hcd-enum-fail</loc>
+    <lastmod>2026-08-15</lastmod>
+  </url>
+  <url>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/debug/usb/usb-wifi-reboot-power-residue</loc>
+    <lastmod>2026-08-15</lastmod>
+  </url>
+  <url>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/debug/usb/uvc-disconnect-dqbuf-hang</loc>
+    <lastmod>2026-08-15</lastmod>
+  </url>
+  <url>
     <loc>https://blog.xvfex.com.cn/analysis/kernel/gpio/stm32-gpio</loc>
     <lastmod>2026-08-15</lastmod>
   </url>
@@ -178,6 +190,10 @@
   </url>
   <url>
     <loc>https://blog.xvfex.com.cn/analysis/kernel/usb/gadget-dwc2-interface</loc>
+    <lastmod>2026-08-15</lastmod>
+  </url>
+  <url>
+    <loc>https://blog.xvfex.com.cn/analysis/kernel/usb/gadget-dwc2-turnaround-time</loc>
     <lastmod>2026-08-15</lastmod>
   </url>
   <url>

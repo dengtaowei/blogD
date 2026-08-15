@@ -19,9 +19,10 @@ Linux 内核子系统源码分析（Linux 6.8）。
 7. [Configfs 组装分析](/analysis/kernel/usb/gadget-configfs-assembly) — `gadget_info` / `cdev` 脚本拼装与 bind
 8. [UDC bind 分析](/analysis/kernel/usb/gadget-udc-core-bind) — `udc_bind_to_driver`、pending、pullup
 9. [DWC2 接口总览](/analysis/kernel/usb/gadget-dwc2-interface) — `gadget_ops`、`ep_ops` 与框架交付边界
-10. [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) — `composite_setup`、`SET_CONFIGURATION`
-11. [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) — `f_acm.c`、`gserial_connect` 与 ttyGS
-12. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0` / Host `cdc_acm`
+10. [DWC2 USBTRDTIM 选值](/analysis/kernel/usb/gadget-dwc2-turnaround-time) — 按 UTMI+ 位宽给 5 / 9，对照 ST HAL 按 AHB 频率查表
+11. [Composite EP0 枚举](/analysis/kernel/usb/gadget-composite-ep0) — `composite_setup`、`SET_CONFIGURATION`
+12. [ACM Function 路径](/analysis/kernel/usb/gadget-function-acm) — `f_acm.c`、`gserial_connect` 与 ttyGS
+13. [Gadget CDC ACM 串口实践](/analysis/kernel/usb/gadget-cdc-acm) — configfs + `ttyGS0` / Host `cdc_acm`
 
 ## Media / V4L2 子系统
 
@@ -78,5 +79,8 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 - [DJI Osmo UVC/UAC2 枚举排查](/analysis/kernel/debug/usb/dji-osmo-uvc-uac2-id-table) — `2ca3:8004` id_table 与 UAC2 probe
 - [USB Device 公头悬空误报 Suspend](/analysis/kernel/debug/usb/floating-male-false-suspend) — 悬空 D± 触发 `USBSUSP`
+- [UVC 拔出后 DQBUF 不返回](/analysis/kernel/debug/usb/uvc-disconnect-dqbuf-hang) — 断连未唤醒 `done_wq`，`vb2_queue_error()`
+- [重启后 USB WiFi 概率枚举不到](/analysis/kernel/debug/usb/usb-wifi-reboot-power-residue) — 上电序列轮询超时，按序下电
+- [libusb Windows 枚举失败](/analysis/kernel/debug/usb/libusb-windows-hcd-enum-fail) — 空 root hub 让 HCD 扫描轮整体失败
 - [IMX6ULL SPI 片选 GPIO 时好时坏](/analysis/kernel/debug/gpio/imx6ull-spi-cs-gpio-runtime-pm) — runtime PM 覆盖 CS
 - [写作模板](/analysis/kernel/debug/template)
