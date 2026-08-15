@@ -21,6 +21,18 @@ home: false
 - [从 tinymix 到 WM8960 DAPM 路由](/analysis/kernel/sound/wm8960-dapm-routes) — 开关、播录路径、本板接线
 - [DAPM widget 上电：谁判、何时判](/analysis/kernel/sound/dapm-widget-power) — `power_check`、complete path
 
+## 英文资料
+
+| 资料 | 内容 |
+|------|------|
+| [Bootlin · Audio with Embedded Linux](https://bootlin.com/training/audio/) | 嵌入式音频培训总览（ASoC、DTS、DAPM、用户态） |
+| [Bootlin · 培训幻灯片 PDF](https://bootlin.com/doc/training/audio/audio-slides.pdf) | 同上课程的完整讲义 |
+| [Luca Ceresoli · Introduction to DAPM](https://bootlin.com/pub/conferences/2024/eoss/ceresoli-dapm/ceresoli-dapm.pdf) | EOSS 2024：widget / route、驱动接入与调试 |
+| [Marcus Folkesson · Audio and Embedded Linux](https://www.marcusfolkesson.se/blog/audio-and-embedded-linux/) | i.MX8MM + TAS5720，`simple-audio-card` 组卡实战 |
+| [Kernel · ASoC Overview](https://docs.kernel.org/sound/soc/overview.html) | 官方 ASoC 设计目标与分层 |
+| [Kernel · DAPM](https://docs.kernel.org/sound/soc/dapm.html) | 官方 DAPM 说明 |
+| [Pandy · ALSA Soc (ASoC) Driver Explained](https://pandysong.github.io/blog/post/asoc_explained/) | 四层、widget 与路由的概念梳理 |
+
 ## 后续蓝图
 
 八篇已覆盖的主干是：一次 `write` / `read` 在四层里怎么走完、`/dev/snd` 节点从哪来、kcontrol 与 DAPM 图怎么建。下面按层记录后续选题，**新文以 Linux 6.8 为基线**，与 4.9.88 BSP 有出入处并列写明。优先级只表示动笔顺序。
