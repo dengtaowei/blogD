@@ -4,6 +4,7 @@ homeTitle: T113 Vela 板载麦与喇叭
 homeDesc: DMIC 脚复用、gpio-spk、Headphone 与 HpSpeaker
 sidebarOrder: 1
 sidebarTitle: T113 Vela 麦与喇叭
+date: 2026-08-15
 ---
 
 # T113 Vela：板载麦与喇叭通路对齐
