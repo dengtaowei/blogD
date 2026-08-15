@@ -6,7 +6,7 @@ alwaysApply: false
 
 # 文档写作约定
 
-参考既有分析文（如 `docs/analysis/kernel/gpio/stm32-gpio.md`）的结构。全文**中文**，技术术语 / 标识符用反引号。**用词严谨、符合规范**见 **`doc-wording.mdc`**（`alwaysApply: true`，书写或修改 `docs/**/*.md` 时必须遵守）。
+参考既有分析文（如 `docs/analysis/kernel/gpio/stm32-gpio.md`）的结构。全文**中文**，技术术语 / 标识符用反引号。**用词严谨、符合规范**见 **`doc-wording.mdc`**（`alwaysApply: true`，书写或修改 `docs/**/*.md` 时必须遵守）。**叙事不空洞、桥接少旁白**见 **`doc-narrative.mdc`**（同 globs；大段改写 / 新分析文时一并遵守）。
 
 1. **开头元信息**：`#` 标题后紧跟一段引用块，注明内核版本、子系统、一句话摘要、关联文档链接。
 2. **内核版本以 Linux 6.8 为基准**；引用源码写明文件路径与函数名，例如 `drivers/gpio/gpiolib-of.c` — `of_gpiochip_add_pin_range`。
