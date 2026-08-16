@@ -12,7 +12,7 @@ home: false
 
 ## 记录
 
-- [T113 Vela：板载麦与喇叭通路对齐](/analysis/kernel/debug/sound/t113-vela-onboard-audio) — DMIC 用 PD18～20；`gpio-spk=PD17`；播放开 `Headphone` 与 `HpSpeaker`
+- [T113 Vela：板载麦与喇叭通路对齐](/analysis/kernel/debug/sound/t113-vela-onboard-audio) — 先梳理原理图，再对齐 DMIC（PD18～20）与 `gpio-spk`（PD17）
 
 ---
 
