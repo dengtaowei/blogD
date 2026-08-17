@@ -278,3 +278,4 @@ sequenceDiagram
 - Espressif `lcd_with_te` 示例：`bsp_display_lcd_init` 中 I80 1× 上升沿 / QSPI 2× 下降沿注释  
 - Solomon SSD1963 Tearing Effect 应用笔记 — 快 MCU 抓上升沿、慢 MCU 抓下降沿  
 - 附件波形：[tem_0.png](/files/tem_0.png)（`TEM=0`）、[tem_1.png](/files/tem_1.png)（`TEM=1`）、[faster_wr.png](/files/faster_wr.png)（快写：整帧 WR 短于一场）
+- [双缓冲：解压快还是写屏快](/notes/display/double-buffer-unzip-vs-write) — 解压与写屏谁更快时，帧率会被哪一端拖住

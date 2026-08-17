@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>双缓冲：解压快 vs 写屏快</title>
+<style>
+  :root {
+    --bg: #1b1b1d;
+    --fg: #e8e8ea;
+    --muted: #9a9aa3;
+    --card: #252528;
+    --line: #3a3a40;
+    --fill: #323236;
+    --fill2: #3e3e44;
+    --accent: #4d8dff;
+    --on-accent: #f4f7ff;
+    --disp: #3d8f6a;
+    --block: #c45454;
+    --ok: #6dca8a;
+    --danger: #e07070;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body {
+    font: 14px/1.45 system-ui, sans-serif;
+    color: var(--fg);
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 16px 12px 24px; }
+  h1 { font-size: 20px; font-weight: 650; margin: 0 0 8px; }
+  h2 { font-size: 15px; margin: 16px 0 8px; }
+  .sub { color: var(--muted); margin: 0 0 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button {
+    background: var(--fill2);
+    color: var(--fg);
+    border: 1px solid var(--line);
+    padding: 6px 12px;
+    cursor: pointer;
+    font: inherit;
+  }
+  button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .pill {
+    border: 1px solid var(--line);
+    padding: 3px 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .pill.on { background: var(--fill2); color: var(--fg); }
+  input[type=range] { width: 100%; margin: 4px 0 12px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); }
+  .head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px; border-bottom: 1px solid var(--line); font-weight: 600;
+  }
+  .body { padding: 12px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .stats { display: flex; gap: 16px; margin: 12px 0; flex-wrap: wrap; }
+  .stat b { display: block; font-size: 18px; }
+  .stat span { font-size: 12px; color: var(--muted); }
+  .stat.ok b { color: var(--ok); }
+  .stat.bad b { color: var(--danger); }
+  .fbs { display: flex; gap: 8px; }
+  .fb-col { flex: 1; }
+  .fb { padding: 10px 12px; min-height: 88px; background: var(--fill); }
+  .fb.unzip { background: var(--accent); color: var(--on-accent); }
+  .fb.display { background: var(--disp); color: var(--on-accent); }
+  .fb.ready { background: var(--fill2); }
+  .fb .k { font-size: 12px; opacity: 0.85; }
+  .fb .f { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .bar { margin-top: 8px; height: 6px; background: rgba(0,0,0,.25); }
+  .bar > i { display: block; height: 6px; background: var(--on-accent); }
+  .note { margin: 10px 0; font-size: 13px; }
+  .warn {
+    background: #3a2222; border: 1px solid var(--block);
+    padding: 8px 10px; font-size: 13px; margin: 8px 0;
+  }
+  .gantt { border: 1px solid var(--line); padding: 8px; overflow: auto; }
+  .info {
+    background: #243044; border: 1px solid #3a5478;
+    padding: 10px 12px; margin-top: 14px; font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>双缓冲：解压快 vs 写屏快</h1>
+  <p class="sub">应用侧一直在提交下一张压缩图。时间轴单位是模拟毫秒，TE 每 17 ms 一次。黑线是当前时刻。看左侧「卡住」泳道何时变红。</p>
+
+  <div class="row">
+    <button class="primary" id="btnPlay">播放</button>
+    <button id="btnReset">复位</button>
+    <span class="pill on" id="tPill">t = 0 ms</span>
+    <span class="pill">蓝 = 解压</span>
+    <span class="pill">绿 = 写屏</span>
+    <span class="pill">红 = 无空闲 FB</span>
+  </div>
+  <p class="muted" style="margin:12px 0 0">进度（拖动会暂停）</p>
+  <input type="range" id="slider" min="0" max="260" value="0" step="1">
+
+  <div class="grid" id="scenes"></div>
+
+  <div class="info">
+    <b>对照怎么看</b><br>
+    左图解压 20 ms、写屏 50 ms：约 t=40 解完第二帧时，FB0 还在写第一帧，开始解下一张被挡住，直到写屏结束。
+    右图解压 53 ms、写屏 23 ms（一组 320×480 RGB565 的量级）：写屏在解压中途结束，解完立刻开始解下一张。
+  </div>
+  <h2>颜色</h2>
+  <p class="muted">FB 方块：蓝正在解，灰已解完等写屏，绿正在 i8080 写屏，浅底空闲。甘特图红条 = 解压器空闲但没有空闲 FB。</p>
+</div>
+<script>
+(function () {
+  var TE_MS = 17;
+  var SIM_END = 260;
+  var CYCLE_MS = 16000;
+
+  function kindLabel(k) {
+    if (k === "unzip") return "正在解";
+    if (k === "ready") return "已解完，等写屏";
+    if (k === "display") return "正在写屏";
+    return "空闲";
+  }
+
+  function simulate(unzipMs, dispMs) {
+    var snaps = [];
+    var spans = [];
+    var nextFrame = 0;
+    var pending = true;
+    var unzipBusy = false;
+    var decodeIdx = -1;
+    var unzipEnd = 0, unzipStart = 0, unzipFrame = -1;
+    var pipeRefreshing = false;
+    var displayIdx = -1, dispEnd = 0, dispStart = 0, dispFrame = -1;
+    var ready = [];
+    var fbFrame = [null, null];
+    var blockStart = -1;
+    var note = "开始解 帧 0 → FB0";
+
+    function findFree() {
+      for (var i = 0; i < 2; i++) {
+        if (unzipBusy && decodeIdx === i) continue;
+        if (ready.indexOf(i) >= 0) continue;
+        if (pipeRefreshing && displayIdx === i) continue;
+        return i;
+      }
+      return -1;
+    }
+
+    function tryKick(t) {
+      if (unzipBusy || !pending) return false;
+      var idx = findFree();
+      if (idx < 0) {
+        if (blockStart < 0) {
+          blockStart = t;
+          note = "解压器空闲，但两块 FB 都占着，开始解被挡住";
+        }
+        return false;
+      }
+      if (blockStart >= 0) {
+        spans.push({ kind: "block", start: blockStart, end: t, label: "无空闲 FB" });
+        blockStart = -1;
+      }
+      var fr = nextFrame++;
+      pending = true;
+      unzipBusy = true;
+      decodeIdx = idx;
+      unzipStart = t;
+      unzipEnd = t + unzipMs;
+      unzipFrame = fr;
+      fbFrame[idx] = fr;
+      note = "开始解 帧 " + fr + " → FB" + idx;
+      return true;
+    }
+
+    function fbSnap(i, t) {
+      if (unzipBusy && decodeIdx === i) {
+        return { kind: "unzip", frame: unzipFrame, prog: Math.min(1, (t - unzipStart) / unzipMs) };
+      }
+      if (pipeRefreshing && displayIdx === i) {
+        return { kind: "display", frame: dispFrame, prog: Math.min(1, (t - dispStart) / dispMs) };
+      }
+      if (ready.indexOf(i) >= 0) {
+        return { kind: "ready", frame: fbFrame[i], prog: 1 };
+      }
+      return { kind: "free", frame: fbFrame[i], prog: 0 };
+    }
+
+    tryKick(0);
+    for (var t = 0; t <= SIM_END; t++) {
+      if (pipeRefreshing && t >= dispEnd) {
+        spans.push({ kind: "disp", start: dispStart, end: dispEnd, label: "帧 " + dispFrame + " 写屏" });
+        pipeRefreshing = false;
+        note = "写屏结束 FB" + displayIdx;
+        tryKick(t);
+      }
+      if (unzipBusy && t >= unzipEnd) {
+        spans.push({ kind: "unzip", start: unzipStart, end: unzipEnd, label: "帧 " + unzipFrame + " 解压" });
+        ready.push(decodeIdx);
+        unzipBusy = false;
+        decodeIdx = -1;
+        note = "解完 帧 " + unzipFrame;
+        tryKick(t);
+      }
+      if (t > 0 && t % TE_MS === 0) {
+        if (!pipeRefreshing && ready.length > 0) {
+          var idx = ready.shift();
+          pipeRefreshing = true;
+          displayIdx = idx;
+          dispStart = t;
+          dispEnd = t + dispMs;
+          dispFrame = fbFrame[idx];
+          note = "TE → 写屏 帧 " + dispFrame + " FB" + idx;
+          tryKick(t);
+        }
+      }
+      snaps.push({
+        t: t,
+        fb: [fbSnap(0, t), fbSnap(1, t)],
+        unzipBusy: unzipBusy,
+        pending: pending,
+        kickBlocked: !unzipBusy && pending && findFree() < 0,
+        note: note
+      });
+    }
+    if (blockStart >= 0) {
+      spans.push({ kind: "block", start: blockStart, end: SIM_END, label: "无空闲 FB" });
+    }
+    return { snaps: snaps, spans: spans };
+  }
+
+  var SCENARIOS = [
+    {
+      title: "解压比写屏快",
+      subtitle: "解压 20 ms，写屏 50 ms，TE 17 ms。解完时上一帧往往还在写，没有空闲 FB。",
+      unzipMs: 20,
+      dispMs: 50,
+      sim: simulate(20, 50)
+    },
+    {
+      title: "写屏比解压快",
+      subtitle: "解压 53 ms，写屏 23 ms，TE 17 ms。写屏在解压中途结束，解完立刻开始解下一张。",
+      unzipMs: 53,
+      dispMs: 23,
+      sim: simulate(53, 23)
+    }
+  ];
+
+  function ganttSvg(spans, t, width) {
+    var h = 72, padL = 44, inner = width - padL - 8;
+    function x(ms) { return padL + (ms / SIM_END) * inner; }
+    function w(a, b) { return Math.max(2, ((b - a) / SIM_END) * inner); }
+    function fill(k) {
+      if (k === "unzip") return "#4d8dff";
+      if (k === "disp") return "#3d8f6a";
+      return "#c45454";
+    }
+    var lanes = [
+      { y: 8, kind: "unzip", name: "解压" },
+      { y: 30, kind: "disp", name: "i8080" },
+      { y: 52, kind: "block", name: "卡住" }
+    ];
+    var html = '<svg width="' + width + '" height="' + h + '" style="display:block">';
+    lanes.forEach(function (ln) {
+      html += '<text x="0" y="' + (ln.y + 11) + '" fill="#9a9aa3" font-size="11">' + ln.name + "</text>";
+      html += '<rect x="' + padL + '" y="' + ln.y + '" width="' + inner + '" height="16" fill="#323236"/>';
+      spans.filter(function (s) { return s.kind === ln.kind; }).forEach(function (s) {
+        html += '<rect x="' + x(s.start) + '" y="' + ln.y + '" width="' + w(s.start, s.end) + '" height="16" fill="' + fill(s.kind) + '"/>';
+      });
+    });
+    html += '<rect x="' + x(t) + '" y="4" width="2" height="' + (h - 8) + '" fill="#e8e8ea"/>';
+    html += "</svg>";
+    return html;
+  }
+
+  function fbHtml(fb) {
+    var frame = fb.frame === null ? "—" : "帧 " + fb.frame;
+    var bar = "";
+    if (fb.kind === "unzip" || fb.kind === "display") {
+      bar = '<div class="bar"><i style="width:' + Math.round(fb.prog * 100) + '%"></i></div>';
+    }
+    return '<div class="fb ' + fb.kind + '"><div class="k">' + kindLabel(fb.kind) +
+      '</div><div class="f">' + frame + "</div>" + bar + "</div>";
+  }
+
+  function render(t) {
+    document.getElementById("tPill").textContent = "t = " + t + " ms";
+    document.getElementById("slider").value = String(t);
+    var host = document.getElementById("scenes");
+    host.innerHTML = SCENARIOS.map(function (sc) {
+      var snap = sc.sim.snaps[Math.min(t, sc.sim.snaps.length - 1)];
+      var badge = snap.kickBlocked ? "没有空闲 FB" : (snap.unzipBusy ? "解压中" : "可以开始解");
+      var fourth = snap.kickBlocked
+        ? '<div class="stat bad"><b>卡住</b><span>空闲帧缓冲</span></div>'
+        : '<div class="stat ok"><b>有空闲</b><span>空闲帧缓冲</span></div>';
+      var warn = snap.kickBlocked
+        ? '<div class="warn"><b>开始解被挡住</b><br>显示通路在跑、解压器空闲、已经提交了下一张，但两块 FB 分别处于「已解完等写屏」和「正在写屏」，没有空闲块。</div>'
+        : "";
+      return '<div class="card"><div class="head"><span>' + sc.title +
+        '</span><span class="pill on">' + badge + "</span></div><div class=\"body\">" +
+        '<p class="muted">' + sc.subtitle + "</p>" +
+        '<div class="stats"><div class="stat"><b>' + sc.unzipMs +
+        ' ms</b><span>解压</span></div><div class="stat"><b>' + sc.dispMs +
+        ' ms</b><span>写屏</span></div>' + fourth + "</div>" +
+        '<div class="fbs"><div class="fb-col"><div class="muted">FB0</div>' + fbHtml(snap.fb[0]) +
+        '</div><div class="fb-col"><div class="muted">FB1</div>' + fbHtml(snap.fb[1]) +
+        "</div></div>" +
+        '<div class="note">' + snap.note + "</div>" + warn +
+        '<div class="gantt">' + ganttSvg(sc.sim.spans, t, 420) + "</div></div></div>";
+    }).join("");
+  }
+
+  var playing = false;
+  var progress = 0;
+  var raf = 0;
+  var last = 0;
+  var btn = document.getElementById("btnPlay");
+
+  function setPlaying(v) {
+    playing = v;
+    if (!playing && raf) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
+    updateBtn();
+    if (playing) {
+      last = performance.now();
+      raf = requestAnimationFrame(tick);
+    }
+  }
+
+  function updateBtn() {
+    var t = Math.round(progress * SIM_END);
+    if (playing) btn.textContent = "暂停";
+    else if (t > 0 && t < SIM_END) btn.textContent = "继续";
+    else if (t >= SIM_END) btn.textContent = "重播";
+    else btn.textContent = "播放";
+  }
+
+  function tick(now) {
+    if (!playing) return;
+    var dt = now - last;
+    last = now;
+    progress += dt / CYCLE_MS;
+    if (progress >= 1) {
+      progress = 1;
+      setPlaying(false);
+      render(SIM_END);
+      return;
+    }
+    render(Math.round(progress * SIM_END));
+    updateBtn();
+    raf = requestAnimationFrame(tick);
+  }
+
+  btn.onclick = function () {
+    if (playing) setPlaying(false);
+    else {
+      if (progress >= 1) progress = 0;
+      setPlaying(true);
+    }
+  };
+  document.getElementById("btnReset").onclick = function () {
+    setPlaying(false);
+    progress = 0;
+    render(0);
+    updateBtn();
+  };
+  document.getElementById("slider").oninput = function (e) {
+    setPlaying(false);
+    var t = Number(e.target.value);
+    progress = t / SIM_END;
+    render(t);
+    updateBtn();
+  };
+
+  render(0);
+})();
+</script>
+</body>
+</html>

@@ -9,4 +9,4 @@ home: false
 ## 分类
 
 - [RTOS](/notes/rtos/)
-- [Display](/notes/display/) — 面板 TE、抓沿和写屏速度
+- [Display](/notes/display/) — 面板 TE、抓沿、写屏速度与双缓冲
