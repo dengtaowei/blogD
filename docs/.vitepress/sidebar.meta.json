@@ -2,6 +2,10 @@
   "sections": {
     "/notes/": [
       {
+        "text": "RISC-V",
+        "index": "notes/riscv"
+      },
+      {
         "text": "RTOS",
         "index": "notes/rtos"
       },
