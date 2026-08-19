@@ -12,7 +12,7 @@ home: false
 
 ## 记录
 
-- [T113 Vela：板载麦与喇叭通路对齐](/analysis/kernel/debug/sound/t113-vela-onboard-audio) — 先梳理原理图，再对齐 DMIC（PD18～20）与 `gpio-spk`（PD17）
+- [T113 Vela：板载麦与喇叭通路对齐](/analysis/kernel/debug/sound/t113-vela-onboard-audio) — 先对原理图：麦 PD18～20、功放使能 PD17，并与 RGB 屏让脚
 
 ---
 
