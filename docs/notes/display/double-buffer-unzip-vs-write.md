@@ -29,6 +29,6 @@ sidebarTitle: 双缓冲：解压与写屏
 
 应用侧一直有待解的下一张，TE 每 17 ms 一次。左：解压 20 ms / 写屏 50 ms；右：解压 53 ms / 写屏 23 ms（一组 320×480 RGB565 的量级）。蓝是解压，绿是写屏，红是没有空闲帧缓冲。
 
-[单独打开动画](/files/double-buffer-unzip-vs-write.html)
+<a href="/files/double-buffer-unzip-vs-write.html" target="_blank" rel="noopener">单独打开动画</a>
 
 <iframe src="/files/double-buffer-unzip-vs-write.html" title="双缓冲：解压快 vs 写屏快" style="width:100%;height:980px;border:1px solid var(--vp-c-divider);background:#1b1b1d;"></iframe>
