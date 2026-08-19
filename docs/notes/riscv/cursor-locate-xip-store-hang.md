@@ -197,6 +197,8 @@ si               # 此处挂住，GDB 不返回；或 Target disconnected
 归纳：**向 I-BUS Flash XIP 地址 `0x13000100` 的 `sw` 在总线事务阶段挂住，CPU 未进入 M-mode trap。**  
 文档若定义该 XIP 区域为只读，则现象与「写请求被接受、后端无法完成」的硬件行为一致；「总线挂死」一句来自上述串口与 GDB 实测，非文档原文。
 
+进了 trap 之后如何读 `mcause` / `mtval` / `mepc` / `mexstatus.BUSERR` 和 PMP 表项，见 [PMP 与访问错误寄存器](/notes/riscv/pmp-access-fault)。
+
 ---
 
 ## 附录 A 测试代码片段
