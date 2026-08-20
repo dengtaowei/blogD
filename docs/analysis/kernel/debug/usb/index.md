@@ -17,6 +17,7 @@ USB 子系统相关的具体问题排查与实验记录。
 - [UVC 拔出后 `VIDIOC_DQBUF` 不返回](/analysis/kernel/debug/usb/uvc-disconnect-dqbuf-hang) — 断连未唤醒 `done_wq`；vb2 的 `q->error` 出口一直在，缺的是 `vb2_queue_error()`
 - [重启后 USB WiFi 概率性枚举不到](/analysis/kernel/debug/usb/usb-wifi-reboot-power-residue) — 软复位不断电，设备侧上电序列轮询 `0x05` 超时；按序停流量再下电
 - [libusb 在 Windows 上枚举不到设备](/analysis/kernel/debug/usb/libusb-windows-hcd-enum-fail) — 无子节点的虚拟 root hub 让 HCD 扫描轮失败，整张设备列表为空
+- [USB HID 键盘 Remote Wakeup](/analysis/kernel/debug/usb/hid-remote-wakeup) — Host 何时 `SET_FEATURE`；DWC2 上 Device 主动 Resume 收不到检测中断
 
 ---
 
