@@ -24,7 +24,7 @@ date: 2026-08-15
 - [2. 软件分析](#2-软件分析)
   - [2.1 录音：`snddmic`](#21-录音snddmic)
   - [2.2 播放：`audiocodec`](#22-播放audiocodec)
-- [3. 板级要对齐的三处](#3-板级要对齐的三处)
+- [3. 板级修改](#3-板级修改)
   - [3.1 先把 PD17～20 从 RGB 屏上释放](#31-先把-pd1720-从-rgb-屏上释放)
   - [3.2 功放使能脚：`gpio-spk`](#32-功放使能脚gpio-spk)
   - [3.3 播放还要开两个开关](#33-播放还要开两个开关)
@@ -46,7 +46,7 @@ date: 2026-08-15
 手册：[MSM261](https://github.com/dengtaowei/blogD/blob/main/refs/datasheets/MSM261D4030H1CPM_Datasheet.pdf) · [AW8010A](https://github.com/dengtaowei/blogD/blob/main/refs/datasheets/AW8010A.pdf)
 
 ```text
-麦:    MSM261 PDM ──DMIC_CLK/D0/D1──► SoC DMIC ──(抽取)──► PCM ──► arecord (hw:snddmic)
+麦:    MSM261 PDM ──DMIC_CLK/D0/D1──► SoC DMIC ──(转换)──► PCM ──► arecord (hw:snddmic)
 喇叭:  aplay (hw:audiocodec) ──► 片内 DAC ──HPOUTL──► AW8010 ──SPK+/−──► 喇叭
                               AMP_EN(PD17) ─────────────► SHUTDOWN#
 ```
@@ -63,9 +63,9 @@ date: 2026-08-15
 | **MIC3** | `DMIC_D1`（经 47 Ω） | 同上 |
 
 手册里 `L/R` 用来选择在哪个时钟边沿驱动 DATA。本板两颗的 `L/R` 都接到 VDD，并且 **各占一根 DATA**（`D0` / `D1`），只共用一根 `CLK`。  
-这些信号接到 SoC：**`PD20` = CLK，`PD19` = DATA0，`PD18` = DATA1**。用户态 `arecord -D hw:snddmic -c 2 …` 拿到的是 DMIC 控制器把 PDM 抽取后的双声道 PCM。
+这些信号接到 SoC：**`PD20` = CLK，`PD19` = DATA0，`PD18` = DATA1**。用户态 `arecord -D hw:snddmic -c 2 …` 拿到的是 DMIC 控制器把 PDM 转换后的双声道 PCM。
 
-SDK 默认的 RGB `rgb18` 占用 PD0～PD21，其中就包括这三根脚。要用板载麦，须把显示从这组脚上释放掉，或改用其它显示接口。
+SDK 默认的 RGB `rgb18` 占用 PD0～PD21，其中就包括这三根脚。要用板载麦，须把显示从这组脚上释放掉。
 
 ### 1.2 喇叭：HPOUTL → AW8010
 
@@ -93,18 +93,18 @@ PCM 到模拟由片内 DAC 完成。软件上还要打开 HPOUT 模拟驱动，�
 
 ## 2. 软件分析
 
-§1 两条硬件通路，在内核里分别做成两张 ALSA 声卡。分层含义见 [ASoC 四层](/analysis/kernel/sound/imx6ull-asoc-layers)。同板默认还开了 SPDIF 卡，本路径不用。
+§1 两条硬件通路，在内核里分别注册成两张 ALSA 声卡。分层含义见 [ASoC 四层](/analysis/kernel/sound/imx6ull-asoc-layers)。
 
 ### 2.1 录音：`snddmic`
 
-PDM 由 SoC 的 **DMIC 控制器**接收，再抽取成 PCM。片外硅麦直接出 PDM，ASoC 用通用的 `codecs/dmic.c` 占位，把卡组起来。
+PDM 由 SoC 的 **DMIC 控制器**接收，再转换成 PCM。片外硅麦直接出 PDM，ASoC 用通用的 `codecs/dmic.c` 占位，把卡组起来。
 
 | 层 | 本板文件 / 节点 | 做什么 |
 |----|-----------------|--------|
 | **Machine** | `sunxi/sunxi-simple-card.c`（`sounddmic`） | 组卡；DTS 里 `simple-audio-card,name = "snddmic"`，只录音 |
 | **CPU DAI** | `sunxi/sunxi-dmic.c`（`dmic@…`） | 配 DMIC 时钟与数据脚、启动收数 |
 | **Platform** | 同文件内注册 + `sunxi/sunxi-pcm.*`（dtsi：`dmas = <&dma 8>`） | 把 FIFO 里的 PCM 搬进用户缓冲 |
-| **Codec** | `codecs/dmic.c`（`dmic_codec`） | 满足 ASoC 组卡 |
+| **Codec** | `codecs/dmic.c`（`dmic_codec`） | 占位，满足 ASoC 组卡 |
 
 录音时数据从麦到用户态：
 
@@ -136,7 +136,7 @@ PDM 由 SoC 的 **DMIC 控制器**接收，再抽取成 PCM。片外硅麦直接
 
 ---
 
-## 3. 板级要对齐的三处
+## 3. 板级修改
 
 原理图对上之后，SDK 默认的 `board.dts` 还要对这三处：DMIC 脚、功放使能脚、上电后的两个播放开关。
 
@@ -154,7 +154,7 @@ PDM 由 SoC 的 **DMIC 控制器**接收，再抽取成 PCM。片外硅麦直接
 | `dmic_pins_a` / `dmic_pins_b` | `pins = "PD20", "PD19", "PD18"`，功能选 `dmic`（休眠态用 `io_disabled`） |
 | LCD / 显示 | 释放 PD17～20，或改用其它显示接口 |
 
-脚复用成 `dmic` 之后，PDM 才能进控制器，`arecord` 录到的 wav 才有声音能量。
+脚复用成 `dmic` 之后，PDM 才能进控制器，`arecord` 录到的 wav 才有声音。
 
 ### 3.2 功放使能脚：`gpio-spk`
 
