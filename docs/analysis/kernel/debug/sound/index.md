@@ -12,7 +12,7 @@ home: false
 
 ## 记录
 
-- [T113 Vela：板载麦与喇叭通路对齐](/analysis/kernel/debug/sound/t113-vela-onboard-audio) — 先对原理图：麦 PD18～20、功放使能 PD17，并与 RGB 屏让脚
+- [T113 Vela：板载麦与喇叭通路调试](/analysis/kernel/debug/sound/t113-vela-onboard-audio) — 先对原理图：麦 PD18～20、功放使能 PD17，并与 RGB 屏让脚
 
 ---
 
