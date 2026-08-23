@@ -4,6 +4,10 @@ import type { DefaultTheme } from 'vitepress'
 const sidebar: DefaultTheme.Sidebar = {
   "/notes/": [
     {
+      "text": "ARM64",
+      "link": "/notes/arm64/"
+    },
+    {
       "text": "RISC-V",
       "link": "/notes/riscv/"
     },

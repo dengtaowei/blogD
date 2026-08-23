@@ -2,6 +2,10 @@
   "sections": {
     "/notes/": [
       {
+        "text": "ARM64",
+        "index": "notes/arm64"
+      },
+      {
         "text": "RISC-V",
         "index": "notes/riscv"
       },

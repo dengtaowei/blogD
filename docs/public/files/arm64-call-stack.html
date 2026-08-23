@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARM64 函数调用栈</title>
+<style>
+  :root {
+    --bg: #1b1b1d;
+    --fg: #e8e8ea;
+    --muted: #9a9aa3;
+    --card: #252528;
+    --line: #3a3a40;
+    --fill: #323236;
+    --fill2: #3e3e44;
+    --accent: #4d8dff;
+    --on-accent: #f4f7ff;
+    --soft: #2a3348;
+    --study: #2c2c32;
+    --warn: #e6c35c;
+    --ok: #6dca8a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body {
+    font: 14px/1.45 system-ui, sans-serif;
+    color: var(--fg);
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 16px 12px 28px; }
+  h1 { font-size: 20px; font-weight: 650; margin: 0 0 8px; }
+  .sub { color: var(--muted); margin: 0 0 14px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  button {
+    background: var(--fill2);
+    color: var(--fg);
+    border: 1px solid var(--line);
+    padding: 6px 12px;
+    cursor: pointer;
+    font: inherit;
+  }
+  button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  button:disabled { opacity: 0.45; cursor: default; }
+  .pill {
+    border: 1px solid var(--line);
+    padding: 3px 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .pill.ok { color: var(--ok); border-color: #3d8a60; }
+  .pill.warn { color: var(--warn); border-color: #8a7020; }
+  .title {
+    font: 600 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    margin: 0 0 6px;
+  }
+  .explain { color: var(--muted); margin: 0 0 14px; }
+  .grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 12px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .label { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+  .label.gap { margin-top: 12px; }
+  .listing, .regs, .stack-wrap {
+    background: var(--card);
+    border: 1px solid var(--line);
+  }
+  .listing {
+    max-height: 28rem;
+    overflow: auto;
+    font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .blank { height: 8px; }
+  .ln, .meta {
+    display: grid;
+    grid-template-columns: 22px 64px 1fr;
+    padding: 1px 8px;
+  }
+  .meta { color: var(--muted); }
+  .ln.on { background: var(--soft); color: var(--accent); font-weight: 600; }
+  .regs { font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .reg {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    border-top: 1px solid var(--line);
+  }
+  .reg:first-child { border-top: 0; }
+  .reg span { padding: 6px 8px; }
+  .reg span:first-child { color: var(--muted); }
+  .reg em { font-style: normal; margin-left: 8px; color: var(--muted); font-size: 11px; }
+  .reg.hot, .reg.hot span:first-child { background: var(--soft); color: var(--accent); }
+  .stack-wrap { overflow-x: auto; }
+  .stack {
+    min-width: 520px;
+    font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .sh, .sr {
+    display: grid;
+    grid-template-columns: 44px 60px repeat(8, 26px) 1fr;
+  }
+  .sh { color: var(--muted); background: var(--fill); }
+  .sh span, .sr span { padding: 4px 2px; text-align: center; }
+  .sr { border-top: 1px solid var(--line); }
+  .sr.hello { background: var(--soft); }
+  .sr.study { background: var(--study); }
+  .mark { color: var(--accent); font-weight: 600; text-align: left !important; padding-left: 6px !important; }
+  .meaning { text-align: left !important; padding-left: 6px !important; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ARM64 函数调用栈</h1>
+  <p class="sub">每步一条指令。栈地址是示意值，看相对位置即可。</p>
+  <div class="row">
+    <button id="prev" type="button">上一步</button>
+    <button id="play" class="primary" type="button">播放</button>
+    <button id="next" type="button">下一步</button>
+    <button id="reset" type="button">复位</button>
+    <span id="count" class="pill"></span>
+    <span id="depth" class="pill"></span>
+    <span id="split" class="pill"></span>
+  </div>
+  <h2 id="title" class="title"></h2>
+  <p id="explain" class="explain"></p>
+  <div class="grid">
+    <div>
+      <div class="label">汇编，每步一条</div>
+      <div id="listing" class="listing"></div>
+    </div>
+    <div>
+      <div class="label">寄存器</div>
+      <div id="regs" class="regs"></div>
+      <div class="label gap">栈，每格 1 字节，低字节在前</div>
+      <div class="stack-wrap">
+        <div id="stack" class="stack"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const DATA = {"ASM":[{"kind":"label","addr":"400870","text":"<main>"},{"kind":"insn","id":"m_stp","addr":"400870","text":"stp     x29, x30, [sp, #-32]!"},{"kind":"insn","id":"m_mov","addr":"400874","text":"mov     x29, sp"},{"kind":"comment","text":"// … printf / fflush …"},{"kind":"insn","id":"m_bl","addr":"4008ac","text":"bl      400828 <study_stack>"},{"kind":"insn","id":"m_after","addr":"4008b0","text":"bl      4007b0 <read_sp>        // 回来后从这里接着跑"},{"kind":"blank"},{"kind":"label","addr":"400828","text":"<study_stack>"},{"kind":"insn","id":"s_stp","addr":"400828","text":"stp     x29, x30, [sp, #-32]!"},{"kind":"insn","id":"s_mov","addr":"40082c","text":"mov     x29, sp"},{"kind":"insn","id":"s_m0a","addr":"400830","text":"mov     x0, #0x4444"},{"kind":"insn","id":"s_m0b","addr":"400834","text":"movk    x0, #0x3333, lsl #16"},{"kind":"insn","id":"s_m0c","addr":"400838","text":"movk    x0, #0x2222, lsl #32"},{"kind":"insn","id":"s_m0d","addr":"40083c","text":"movk    x0, #0x1111, lsl #48"},{"kind":"insn","id":"s_str0","addr":"400840","text":"str     x0, [sp, #24]"},{"kind":"insn","id":"s_m1a","addr":"400844","text":"mov     x0, #0xdddd"},{"kind":"insn","id":"s_m1b","addr":"400848","text":"movk    x0, #0xcccc, lsl #16"},{"kind":"insn","id":"s_m1c","addr":"40084c","text":"movk    x0, #0xbbbb, lsl #32"},{"kind":"insn","id":"s_m1d","addr":"400850","text":"movk    x0, #0xaaaa, lsl #48"},{"kind":"insn","id":"s_str1","addr":"400854","text":"str     x0, [sp, #16]"},{"kind":"insn","id":"s_bl","addr":"400858","text":"bl      4007e0 <print_hello>"},{"kind":"insn","id":"s_ldr0","addr":"40085c","text":"ldr     x0, [sp, #24]"},{"kind":"insn","id":"s_ldr1","addr":"400860","text":"ldr     x0, [sp, #16]"},{"kind":"insn","id":"s_nop","addr":"400864","text":"nop"},{"kind":"insn","id":"s_ldp","addr":"400868","text":"ldp     x29, x30, [sp], #32"},{"kind":"insn","id":"s_ret","addr":"40086c","text":"ret"},{"kind":"blank"},{"kind":"label","addr":"4007e0","text":"<print_hello>"},{"kind":"insn","id":"h_sub","addr":"4007e0","text":"sub     sp, sp, #0x10"},{"kind":"insn","id":"h_adrp","addr":"4007e4","text":"adrp    x0, hello_rodata"},{"kind":"insn","id":"h_add1","addr":"4007e8","text":"add     x1, x0, #0x78"},{"kind":"insn","id":"h_add0","addr":"4007ec","text":"add     x0, sp, #0x8"},{"kind":"insn","id":"h_ldr","addr":"4007f0","text":"ldr     w2, [x1]"},{"kind":"insn","id":"h_str","addr":"4007f4","text":"str     w2, [x0]"},{"kind":"insn","id":"h_ldur","addr":"4007f8","text":"ldur    w1, [x1, #3]"},{"kind":"insn","id":"h_stur","addr":"4007fc","text":"stur    w1, [x0, #3]"},{"kind":"insn","id":"h_add3","addr":"400800","text":"add     x3, sp, #0x8"},{"kind":"insn","id":"h_x4","addr":"400804","text":"mov     x4, #6"},{"kind":"insn","id":"h_x0","addr":"400808","text":"mov     x0, #1"},{"kind":"insn","id":"h_x1","addr":"40080c","text":"mov     x1, x3"},{"kind":"insn","id":"h_x2","addr":"400810","text":"mov     x2, x4"},{"kind":"insn","id":"h_x8","addr":"400814","text":"mov     x8, #64"},{"kind":"insn","id":"h_svc","addr":"400818","text":"svc     #0"},{"kind":"insn","id":"h_nop","addr":"40081c","text":"nop"},{"kind":"insn","id":"h_add","addr":"400820","text":"add     sp, sp, #0x10"},{"kind":"insn","id":"h_ret","addr":"400824","text":"ret"}],"STEPS":[{"title":"400870  stp     x29, x30, [sp, #-32]!","pcIds":["m_stp"],"explain":"SP 减 32，原来的 x29、x30 写到 [SP]、[SP+8]。x29 还指着调用者。","regs":{"pc":"0x400870","sp":"0x7ffbe0","fp":"0x7ffc00","lr":"回 libc","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":["sp"],"sp":8387552,"fp":8387584},{"title":"400874  mov     x29, sp","pcIds":["m_mov"],"explain":"x29 = SP。main 的栈底和栈顶重合。","regs":{"pc":"0x400874","sp":"0x7ffbe0","fp":"0x7ffbe0","lr":"回 libc","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":["fp"],"sp":8387552,"fp":8387552},{"title":"4008ac  bl      400828 <study_stack>","pcIds":["m_bl"],"explain":"x30 = 0x4008b0，跳到 study_stack。SP 不变。","regs":{"pc":"0x4008ac","sp":"0x7ffbe0","fp":"0x7ffbe0","lr":"0x4008b0","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":["pc","lr"],"sp":8387552,"fp":8387552},{"title":"400828  stp     x29, x30, [sp, #-32]!","pcIds":["s_stp"],"explain":"SP 一次减 32：靠近 SP 的 16 字节存 x29/x30（0x4008b0），另外 16 字节留给两个局部变量。x29 还指着 main。","regs":{"pc":"0x400828","sp":"0x7ffbc0","fp":"0x7ffbe0","lr":"0x4008b0  （已在 [SP+8]）","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":["sp"],"sp":8387520,"fp":8387552},{"title":"40082c  mov     x29, sp","pcIds":["s_mov"],"explain":"x29 = SP。这一层的栈底已经定好，局部变量的位置还是空的，不再 sub。","regs":{"pc":"0x40082c","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x4008b0  （已在 [SP+8]）","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":["fp"],"sp":8387520,"fp":8387520},{"title":"400830  mov     x0, #0x4444","pcIds":["s_m0a"],"explain":"x0 低 16 位写成 0x4444。","regs":{"pc":"0x400830","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x4008b0  （已在 [SP+8]）","x0":"0x4444","x1":"—","x2":"—","x8":"—"},"changed":["x0"],"sp":8387520,"fp":8387520},{"title":"400834  movk    x0, #0x3333, lsl #16","pcIds":["s_m0b"],"explain":"x0 的 [31:16] 写成 0x3333 → 0x33334444。","regs":{"pc":"0x400834","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x4008b0  （已在 [SP+8]）","x0":"0x33334444","x1":"—","x2":"—","x8":"—"},"changed":["x0"],"sp":8387520,"fp":8387520},{"title":"400838  movk    x0, #0x2222, lsl #32","pcIds":["s_m0c"],"explain":"x0 的 [47:32] 写成 0x2222 → 0x222233334444。","regs":{"pc":"0x400838","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x4008b0  （已在 [SP+8]）","x0":"0x222233334444","x1":"—","x2":"—","x8":"—"},"changed":["x0"],"sp":8387520,"fp":8387520},{"title":"40083c  movk    x0, #0x1111, lsl #48","pcIds":["s_m0d"],"explain":"x0 拼完：0x1111222233334444，还没写到栈上。","regs":{"pc":"0x40083c","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x4008b0  （已在 [SP+8]）","x0":"0x1111222233334444","x1":"—","x2":"—","x8":"—"},"changed":["x0"],"sp":8387520,"fp":8387520},{"title":"400840  str     x0, [sp, #24]","pcIds":["s_str0"],"explain":"local0 写到 [SP+24]。SP、x29 不动。","regs":{"pc":"0x400840","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x4008b0  （已在 [SP+8]）","x0":"0x1111222233334444","x1":"—","x2":"—","x8":"—"},"changed":[],"sp":8387520,"fp":8387520,"local0Written":true},{"title":"400844  mov     x0, #0xdddd","pcIds":["s_m1a"],"explain":"开始拼 local1，x0 低 16 位写成 0xdddd。","regs":{"pc":"0x400844","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x4008b0  （已在 [SP+8]）","x0":"0xdddd","x1":"—","x2":"—","x8":"—"},"changed":["x0"],"sp":8387520,"fp":8387520,"local0Written":true},{"title":"400848  movk    x0, #0xcccc, lsl #16","pcIds":["s_m1b"],"explain":"x0 → 0xccccdddd。","regs":{"pc":"0x400848","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x4008b0  （已在 [SP+8]）","x0":"0xccccdddd","x1":"—","x2":"—","x8":"—"},"changed":["x0"],"sp":8387520,"fp":8387520,"local0Written":true},{"title":"40084c  movk    x0, #0xbbbb, lsl #32","pcIds":["s_m1c"],"explain":"x0 → 0xbbbbccccdddd。","regs":{"pc":"0x40084c","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x4008b0  （已在 [SP+8]）","x0":"0xbbbbccccdddd","x1":"—","x2":"—","x8":"—"},"changed":["x0"],"sp":8387520,"fp":8387520,"local0Written":true},{"title":"400850  movk    x0, #0xaaaa, lsl #48","pcIds":["s_m1d"],"explain":"x0 拼完：0xAAAABBBBCCCCDDDD。","regs":{"pc":"0x400850","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x4008b0  （已在 [SP+8]）","x0":"0xAAAABBBBCCCCDDDD","x1":"—","x2":"—","x8":"—"},"changed":["x0"],"sp":8387520,"fp":8387520,"local0Written":true},{"title":"400854  str     x0, [sp, #16]","pcIds":["s_str1"],"explain":"local1 写到 [SP+16]。两个局部变量都在栈上了。","regs":{"pc":"0x400854","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x4008b0  （已在 [SP+8]）","x0":"0xAAAABBBBCCCCDDDD","x1":"—","x2":"—","x8":"—"},"changed":[],"sp":8387520,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"400858  bl      4007e0 <print_hello>","pcIds":["s_bl"],"explain":"x30 改成 0x40085c，跳到 print_hello。[SP+8] 仍是回 main 的 0x4008b0。","regs":{"pc":"0x400858","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x40085c","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":["pc","lr"],"sp":8387520,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"4007e0  sub     sp, sp, #0x10","pcIds":["h_sub"],"explain":"只为 msg[] 再减 16 字节。不改 x29，栈底还指着 study_stack。","regs":{"pc":"0x4007e0","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":["sp"],"sp":8387504,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"4007e4  adrp    x0, hello_rodata","pcIds":["h_adrp"],"explain":"x0 取到只读页 0x454000。","regs":{"pc":"0x4007e4","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"0x454000","x1":"—","x2":"—","x8":"—"},"changed":["x0"],"sp":8387504,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"4007e8  add     x1, x0, #0x78","pcIds":["h_add1"],"explain":"x1 = 字符串 hello 的地址。","regs":{"pc":"0x4007e8","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"0x454000","x1":"0x454078","x2":"—","x8":"—"},"changed":["x1"],"sp":8387504,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"4007ec  add     x0, sp, #0x8","pcIds":["h_add0"],"explain":"x0 = 栈上 msg[] 的地址 0x7ffbb8。","regs":{"pc":"0x4007ec","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"0x7ffbb8","x1":"0x454078","x2":"—","x8":"—"},"changed":["x0"],"sp":8387504,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"4007f0  ldr     w2, [x1]","pcIds":["h_ldr"],"explain":"从 rodata 读出前 4 字节 hell。","regs":{"pc":"0x4007f0","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"0x7ffbb8","x1":"0x454078","x2":"0x6c6c6568","x8":"—"},"changed":["x2"],"sp":8387504,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"4007f4  str     w2, [x0]","pcIds":["h_str"],"explain":"前 4 字节写入 [SP+8]。","regs":{"pc":"0x4007f4","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"0x7ffbb8","x1":"0x454078","x2":"0x6c6c6568","x8":"—"},"changed":[],"sp":8387504,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"4007f8  ldur    w1, [x1, #3]","pcIds":["h_ldur"],"explain":"从 rodata+3 再读 4 字节。","regs":{"pc":"0x4007f8","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"0x7ffbb8","x1":"0x006c6f6c","x2":"—","x8":"—"},"changed":["x1"],"sp":8387504,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"4007fc  stur    w1, [x0, #3]","pcIds":["h_stur"],"explain":"写到 [SP+8+3]，msg[] 成为 hello 换行空字符。","regs":{"pc":"0x4007fc","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"0x7ffbb8","x1":"—","x2":"—","x8":"—"},"changed":[],"sp":8387504,"fp":8387520,"helloCopied":true,"local0Written":true,"local1Written":true},{"title":"400800  add     x3, sp, #0x8","pcIds":["h_add3"],"explain":"x3 = buf = 0x7ffbb8。","regs":{"pc":"0x400800","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":[],"sp":8387504,"fp":8387520,"helloCopied":true,"local0Written":true,"local1Written":true},{"title":"400804  mov     x4, #6","pcIds":["h_x4"],"explain":"x4 = 长度 6。","regs":{"pc":"0x400804","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":[],"sp":8387504,"fp":8387520,"helloCopied":true,"local0Written":true,"local1Written":true},{"title":"400808  mov     x0, #1","pcIds":["h_x0"],"explain":"x0 = stdout（fd 1）。","regs":{"pc":"0x400808","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"1","x1":"—","x2":"—","x8":"—"},"changed":["x0"],"sp":8387504,"fp":8387520,"helloCopied":true,"local0Written":true,"local1Written":true},{"title":"40080c  mov     x1, x3","pcIds":["h_x1"],"explain":"x1 = buf = 0x7ffbb8。","regs":{"pc":"0x40080c","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"1","x1":"0x7ffbb8","x2":"—","x8":"—"},"changed":["x1"],"sp":8387504,"fp":8387520,"helloCopied":true,"local0Written":true,"local1Written":true},{"title":"400810  mov     x2, x4","pcIds":["h_x2"],"explain":"x2 = 6。","regs":{"pc":"0x400810","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"1","x1":"0x7ffbb8","x2":"6","x8":"—"},"changed":["x2"],"sp":8387504,"fp":8387520,"helloCopied":true,"local0Written":true,"local1Written":true},{"title":"400814  mov     x8, #64","pcIds":["h_x8"],"explain":"x8 = 64，也就是 write 的系统调用号。","regs":{"pc":"0x400814","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"1","x1":"0x7ffbb8","x2":"6","x8":"64"},"changed":["x8"],"sp":8387504,"fp":8387520,"helloCopied":true,"local0Written":true,"local1Written":true},{"title":"400818  svc     #0","pcIds":["h_svc"],"explain":"进内核写 6 个字节。不改 x30，也不再减 SP。","regs":{"pc":"0x400818","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"1","x1":"0x7ffbb8","x2":"6","x8":"64"},"changed":[],"sp":8387504,"fp":8387520,"helloCopied":true,"local0Written":true,"local1Written":true},{"title":"40081c  nop","pcIds":["h_nop"],"explain":"空指令，寄存器和栈都不动。","regs":{"pc":"0x40081c","sp":"0x7ffbb0","fp":"0x7ffbc0","lr":"0x40085c","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":[],"sp":8387504,"fp":8387520,"helloCopied":true,"local0Written":true,"local1Written":true},{"title":"400820  add     sp, sp, #0x10","pcIds":["h_add"],"explain":"把 print_hello 多占的 16 字节还回去。SP 回到 0x7ffbc0，和 x29 重合。","regs":{"pc":"0x400820","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x40085c","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":["sp"],"sp":8387520,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"400824  ret","pcIds":["h_ret"],"explain":"PC = x30 = 0x40085c，回到 study_stack。","regs":{"pc":"0x400824","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x40085c","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":["pc"],"sp":8387520,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"40085c  ldr     x0, [sp, #24]","pcIds":["s_ldr0"],"explain":"按 volatile 的要求，从栈上把 local0 再读进 x0。","regs":{"pc":"0x40085c","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x40085c","x0":"0x1111222233334444","x1":"—","x2":"—","x8":"—"},"changed":["x0"],"sp":8387520,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"400860  ldr     x0, [sp, #16]","pcIds":["s_ldr1"],"explain":"按 volatile 的要求，从栈上把 local1 再读进 x0。","regs":{"pc":"0x400860","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x40085c","x0":"0xAAAABBBBCCCCDDDD","x1":"—","x2":"—","x8":"—"},"changed":["x0"],"sp":8387520,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"400864  nop","pcIds":["s_nop"],"explain":"空指令，寄存器和栈都不动。","regs":{"pc":"0x400864","sp":"0x7ffbc0","fp":"0x7ffbc0","lr":"0x40085c","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":[],"sp":8387520,"fp":8387520,"local0Written":true,"local1Written":true},{"title":"400868  ldp     x29, x30, [sp], #32","pcIds":["s_ldp"],"explain":"把 x29、x30 读回来，SP 加 32。这一层栈收回去。x29 回到 0x7ffbe0，x30 回到 0x4008b0。","regs":{"pc":"0x400868","sp":"0x7ffbe0","fp":"0x7ffbe0","lr":"0x4008b0","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":["sp","fp","lr"],"sp":8387552,"fp":8387552},{"title":"40086c  ret","pcIds":["s_ret"],"explain":"PC = x30 = 0x4008b0，回到 main。","regs":{"pc":"0x40086c","sp":"0x7ffbe0","fp":"0x7ffbe0","lr":"0x4008b0","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":["pc"],"sp":8387552,"fp":8387552},{"title":"4008b0  bl      4007b0 <read_sp>","pcIds":["m_after"],"explain":"回到 main。SP、x29 和调用 study_stack 之前一样。","regs":{"pc":"0x4008b0","sp":"0x7ffbe0","fp":"0x7ffbe0","lr":"0x4008b0","x0":"—","x1":"—","x2":"—","x8":"—"},"changed":["pc"],"sp":8387552,"fp":8387552}],"REG_META":[{"key":"pc","name":"PC","hint":"正在执行"},{"key":"sp","name":"SP","hint":"栈顶"},{"key":"fp","name":"x29","hint":"栈底"},{"key":"lr","name":"x30","hint":"返回地址"},{"key":"x0","name":"x0","hint":"第 1 个参数 / 返回值"},{"key":"x1","name":"x1","hint":"第 2 个参数"},{"key":"x2","name":"x2","hint":"第 3 个参数"},{"key":"x8","name":"x8","hint":"系统调用号"}],"MAIN_SP":8387552,"STUDY_SP":8387520,"HELLO_SP":8387504};
+const MAIN_SP = DATA.MAIN_SP;
+const STUDY_SP = DATA.STUDY_SP;
+const HELLO_SP = DATA.HELLO_SP;
+const UNK = ['??','??','??','??','??','??','??','??'];
+const HELLO_BYTES = ['68','65','6c','6c','6f','0a','00','00'];
+
+function le8(value) {
+  const v = BigInt(value);
+  const out = [];
+  for (let i = 0; i < 8; i++) out.push(((v >> BigInt(8 * i)) & 0xffn).toString(16).padStart(2, '0'));
+  return out;
+}
+function stackWords(step) {
+  const words = [
+    { addr: 0x7ffbf8, bytes: le8(0), label: 'main 多留的 8 字节' },
+    { addr: 0x7ffbf0, bytes: le8(1), label: 'main 保存的 x19' },
+    { addr: 0x7ffbe8, bytes: le8(0x400948), label: 'main 保存的 x30' },
+    { addr: 0x7ffbe0, bytes: le8('0x4000007ffc00'), label: 'main 保存的 x29' },
+  ];
+  if (step.sp <= STUDY_SP) {
+    words.push(
+      { addr: 0x7ffbd8, bytes: step.local0Written ? le8('0x1111222233334444') : UNK, label: step.local0Written ? 'local0  0x1111222233334444' : 'local0 还没写' },
+      { addr: 0x7ffbd0, bytes: step.local1Written ? le8('0xaaaabbbbccccdddd') : UNK, label: step.local1Written ? 'local1  0xAAAABBBBCCCCDDDD' : 'local1 还没写' },
+      { addr: 0x7ffbc8, bytes: le8(0x4008b0), label: 'study 保存的 x30' },
+      { addr: 0x7ffbc0, bytes: le8('0x4000007ffbe0'), label: 'study 保存的 x29' },
+    );
+  }
+  if (step.sp <= HELLO_SP) {
+    words.push(
+      { addr: 0x7ffbb8, bytes: step.helloCopied ? HELLO_BYTES : UNK, label: step.helloCopied ? 'msg[]  h e l l o \\n \\0' : '还没写' },
+      { addr: 0x7ffbb0, bytes: UNK, label: '空着，凑齐 16 字节' },
+    );
+  }
+  return words.filter(w => w.addr >= step.sp).sort((a, b) => b.addr - a.addr);
+}
+function frameKind(addr) {
+  if (addr < STUDY_SP) return 'hello';
+  if (addr < MAIN_SP) return 'study';
+  return 'main';
+}
+
+let index = 0;
+let playing = false;
+let timer = 0;
+const STEPS = DATA.STEPS;
+
+function stop() {
+  playing = false;
+  if (timer) { clearInterval(timer); timer = 0; }
+  $('play').textContent = index > 0 && index < STEPS.length - 1 ? '继续' : index >= STEPS.length - 1 ? '重播' : '播放';
+}
+function play() {
+  if (index >= STEPS.length - 1) index = 0;
+  if (playing) return;
+  playing = true;
+  $('play').textContent = '暂停';
+  timer = setInterval(() => {
+    if (index >= STEPS.length - 1) { stop(); render(); return; }
+    index += 1;
+    render();
+  }, 1200);
+}
+function $(id) { return document.getElementById(id); }
+function render() {
+  const step = STEPS[index];
+  const depth = MAIN_SP - step.sp;
+  $('count').textContent = (index + 1) + ' / ' + STEPS.length;
+  $('depth').textContent = 'SP 相对 main ' + (depth === 0 ? '0' : '−0x' + depth.toString(16));
+  const split = step.sp !== step.fp;
+  $('split').textContent = 'SP 与 x29 ' + (split ? '分开' : '重合');
+  $('split').className = 'pill ' + (split ? 'warn' : 'ok');
+  $('title').textContent = step.title;
+  $('explain').textContent = step.explain;
+  $('prev').disabled = index === 0;
+  $('next').disabled = index >= STEPS.length - 1;
+  if (!playing) $('play').textContent = index > 0 && index < STEPS.length - 1 ? '继续' : index >= STEPS.length - 1 ? '重播' : '播放';
+
+  const primary = step.pcIds[0];
+  const listing = $('listing');
+  listing.innerHTML = DATA.ASM.map((line, i) => {
+    if (line.kind === 'blank') return '<div class="blank"></div>';
+    if (line.kind === 'label' || line.kind === 'comment') {
+      return '<div class="meta"><span></span><span>' + (line.kind === 'label' ? line.addr : '') + '</span><span>' + esc(line.text) + '</span></div>';
+    }
+    const on = line.id === primary;
+    return '<div class="ln' + (on ? ' on' : '') + '" id="asm-' + line.id + '"><span>' + (on ? '→' : '') + '</span><span>' + line.addr + '</span><span>' + esc(line.text) + '</span></div>';
+  }).join('');
+  const el = document.getElementById('asm-' + primary);
+  if (el) el.scrollIntoView({ block: 'nearest' });
+
+  $('regs').innerHTML = DATA.REG_META.filter(r => step.regs[r.key] !== '—').map(r => {
+    const hot = step.changed.includes(r.key);
+    return '<div class="reg' + (hot ? ' hot' : '') + '"><span>' + r.name + '</span><span>' + esc(step.regs[r.key]) + '<em>' + r.hint + '</em></span></div>';
+  }).join('');
+
+  const words = stackWords(step);
+  $('stack').innerHTML = '<div class="sh"><span></span><span>地址</span>' +
+    ['+0','+1','+2','+3','+4','+5','+6','+7'].map(h => '<span>' + h + '</span>').join('') +
+    '<span>含义</span></div>' + words.map(word => {
+      const mark = word.addr === step.sp && word.addr === step.fp ? 'SP/FP' : word.addr === step.sp ? 'SP' : word.addr === step.fp ? 'FP' : '';
+      return '<div class="sr ' + frameKind(word.addr) + '"><span class="mark">' + mark + '</span><span>' + word.addr.toString(16) + '</span>' +
+        word.bytes.map(b => '<span>' + b + '</span>').join('') +
+        '<span class="meaning">' + esc(word.label) + '</span></div>';
+    }).join('');
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+$('prev').onclick = () => { stop(); index = Math.max(0, index - 1); render(); };
+$('next').onclick = () => { stop(); index = Math.min(STEPS.length - 1, index + 1); render(); };
+$('reset').onclick = () => { stop(); index = 0; render(); };
+$('play').onclick = () => { if (playing) { stop(); } else { play(); } };
+render();
+</script>
+</body>
+</html>
