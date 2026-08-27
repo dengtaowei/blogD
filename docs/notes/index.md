@@ -9,6 +9,6 @@ home: false
 ## 分类
 
 - [ARM64](/notes/arm64/) — 函数调用时 SP、`x29`、`x30` 怎么变，带逐步动画
-- [RISC-V](/notes/riscv/) — XIP 写挂死定位，以及 PMP / 访问错误寄存器
+- [RISC-V](/notes/riscv/) — RV32 调用约定与 `$sp` 上的第九个参数，XIP 写挂死定位，PMP / 访问错误寄存器
 - [RTOS](/notes/rtos/)
 - [Display](/notes/display/) — 面板 TE、抓沿、写屏速度与双缓冲
