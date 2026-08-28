@@ -4,6 +4,7 @@ homeTitle: DWC2 turnaround time 怎么定
 homeDesc: GUSBCFG.USBTRDTIM 的两种选值策略：Linux 按 UTMI 数据位宽给常数，ST HAL 按 AHB 频率查表
 sidebarOrder: 56
 sidebarTitle: DWC2 USBTRDTIM 选值
+date: 2026-08-16
 ---
 
 # DWC2 turnaround time：`GUSBCFG.USBTRDTIM` 的选值

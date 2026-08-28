@@ -4,6 +4,7 @@ homeTitle: 重启后 WiFi 概率枚举不到
 homeDesc: 重启前未走完下电序列，设备侧上电状态机残留，再上电轮询 0x05 超时
 sidebarOrder: 40
 sidebarTitle: 重启后 WiFi 概率枚举不到
+date: 2026-08-16
 ---
 
 # 重启后 USB WiFi 概率性枚举不到

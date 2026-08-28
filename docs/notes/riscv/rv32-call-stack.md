@@ -1,5 +1,5 @@
 ---
-date: 2026-08-26
+date: 2026-08-27
 homeTag: RISC-V · 笔记
 homeTitle: RV32 调用约定与 $sp 栈
 homeDesc: 前八个整数参数走 a0～a7，第 9、10 个在 $sp 上；跟着 si 看 add1 怎么把它们放到栈上
