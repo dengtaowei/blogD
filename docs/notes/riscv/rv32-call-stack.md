@@ -1,17 +1,18 @@
 ---
 date: 2026-08-27
 homeTag: RISC-V · 笔记
-homeTitle: RV32 调用约定与 $sp 栈
-homeDesc: 前八个整数参数走 a0～a7，第 9、10 个在 $sp 上；跟着 si 看 add1 怎么把它们放到栈上
+homeTitle: RV32 调用约定与帧指针
+homeDesc: 前八个整数参数走 a0～a7，第 9、10 个占 4 字节栈槽；对照有无 s0 的两份单步
 sidebarOrder: 20
-sidebarTitle: RV32 调用约定与 $sp
+sidebarTitle: 调用约定与帧指针
 ---
 
-# RV32 调用约定：从 `$sp` 上的第九个参数读起
+# RV32 调用约定
 
-> **平台**：`qemu-riscv32`；`riscv64-unknown-elf-gcc -march=rv32imac -mabi=ilp32 -O1 -g -fno-inline`  
-> **工具**：[gdbsp](https://github.com/dengtaowei/gdbsp)；录好的 JSON `/gdbsp/add1.json`（40 步，从 `main` 到 `exit`）  
-> **本文**：对着下一条要执行的指令，看通用寄存器和 `$sp` 附近每个字
+> **平台**：`qemu-riscv32`；`riscv64-unknown-elf-gcc -march=rv32imac -mabi=ilp32 -O1 -g -fno-inline`（一份加 `-fomit-frame-pointer`，一份加 `-fno-omit-frame-pointer`）  
+> **工具**：[gdbsp](https://github.com/dengtaowei/gdbsp)；JSON `/gdbsp/rv32-add1-nofp.json`（40 步）、`/gdbsp/rv32-add1-fp.json`（51 步），都从 `main` 到 `exit`  
+> **本文**：对着下一条要执行的指令，看通用寄存器和 `$sp` 附近每个字  
+> **配套代码**：`code/riscv-call-stack/`
 
 ---
 
@@ -19,13 +20,13 @@ sidebarTitle: RV32 调用约定与 $sp
 
 - [1. 对应的 C](#1-对应的-c)
 - [2. 单步回放](#2-单步回放)
-- [3. 进 add1：先减 sp，再存 ra](#3-进-add1先减-sp再存-ra)
-- [4. 进 add2：a0～a7 与栈上的 9、10](#4-进-add2a0a7-与栈上的-9、10)
-- [5. 这份 JSON 怎么来](#5-这份-json-怎么来)
+- [3. 如何做栈回溯](#3-如何做栈回溯)
+- [4. 局部变量如何传递](#4-局部变量如何传递)
+- [5. 返回值如何传递](#5-返回值如何传递)
 
 ---
 
-RV32 的 ilp32 调用约定里，前八个整数参数放在 `a0`～`a7`，再多出来的由调用者写到栈上。`add2` 有十个参数，进函数时 `$sp` 指向的两个字就是 9 和 10。下面跟着事先录好的单步走一遍。
+RV32 的 ilp32 调用约定里，前八个整数参数放在 `a0`～`a7`，再多出来的由调用者写到栈上，**每个槽 4 字节**。`add2` 有十个参数，进函数时 `0(sp)`、`4(sp)` 就是 9 和 10。
 
 ## 1. 对应的 C
 
@@ -39,42 +40,203 @@ int add1(int a, int b) {
 }
 
 int main(int argc, char *argv[]) {
-    volatile int local = 1;
+    volatile int local = 0xffff;
     return add1(1, 2);
 }
 ```
 
-`add1` 编译后会先 `addi sp,sp,-32`，空出 32 字节，把 `ra` 和要传给 `add2` 的 9、10 写进去，再 `jal add2`。
+`add1` 还要再 `jal add2`，得先把返回地址从 `ra` 存到栈上。无帧指针时 `add2` 是叶函数，进来之后直接用寄存器和 `lw` 做加法。
 
 ## 2. 单步回放
 
-左边是 PC 附近的反汇编（`=>` 标的是**下一条要执行**的指令），中间是通用寄存器（刚变过的标黄），右边是栈（高地址在上）。打开后点 **si**，或按 `s` / 右箭头，前进一步。
+| 编译 | 步数 | 回放 |
+|------|------|------|
+| `-fomit-frame-pointer` | 40 | <a href="/files/gdbsp-add1.html?t=nofp" target="_blank" rel="noopener">无帧指针</a> |
+| `-fno-omit-frame-pointer` | 51 | <a href="/files/gdbsp-add1.html?t=fp" target="_blank" rel="noopener">有帧指针</a> |
 
-<a href="/files/gdbsp-add1.html" target="_blank" rel="noopener">单独打开回放</a>
+## 3. 如何做栈回溯
 
-## 3. 进 add1：先减 sp，再存 ra
+### 有帧指针
 
-第 7 步停在 `add1` 入口 `0x00010124`，这时 `addi  sp,sp,-32` 还没执行。再 si 几次可以看到：
+RV32 的帧指针是 `s0`（ABI 里也叫 `fp`）。非叶函数序言会把 `ra` 和旧的 `s0` 存进栈，再 `addi s0, sp, <帧大小>`，让 `s0` 对准**进入本函数时的 sp**。有如下规则：
 
-1. `sp` 减 32，空出 32 字节；
-2. `sw ra, 28(sp)` 把返回地址写到 `28(sp)`；
-3. 接着把 10、9 写到 `4(sp)`、`0(sp)`。
+`s0` 指向进入当前函数前的 `sp`，**`[s0-4]` = 本函数的 `ra`，`[s0-8]` = 上一层 `s0`。`s0` 寄存器指在这对的上面。**
 
-`main` 里的 `jal add1` 已经把返回地址写进 `ra`。`add1` 自己还要再 `jal`，得先把这份 `ra` 存到栈上。
+```text
+高地址
+[s0]      进入本函数时的 sp      ← s0 寄存器指这里
+[s0-4]    本函数的 ra
+[s0-8]    上一层 s0
+…
+低地址
+```
 
-## 4. 进 add2：a0～a7 与栈上的 9、10
+这份录制里帧大小是 32，所以 `addi s0, sp, 32`，`ra` 在 `28(sp)`，旧 `s0` 在 `24(sp)`。顺着 `[s0-8]` 走到 0 就是整条链。
 
-第 20 步停在 `add2` 入口 `0x0001010c`。此时：
+### 无帧指针
 
-| 位置 | 值 |
-|------|-----|
-| `a0`～`a7` | 1 到 8 |
-| `0(sp)` | 9 |
-| `4(sp)` | 10 |
-| `ra` | `add1` 里 `jal add2` 的下一条（`0x0001013e`） |
+只能根据序言里面保存的 `ra` 做栈回溯。这份录制里是 `sw ra, 28(sp)`。
 
-`add2` 里是一串 `add a0,a0,aN`，最后用 `lw a7,0(sp)`、`lw a5,4(sp)` 把栈上两个参数加进去，再 `ret`。右边栈那一栏，`sp` 那一行的值就是后面 `lw` 会读到的 9。
+### 栈帧示意图
 
-## 5. 这份 JSON 怎么来
+进了 `add2` 之后。示意地址从 164 往下每格 4 字节；红色是 `main`，绿色是 `add1`，蓝色是 `add2`（有 `s0` 时才提栈）。
 
-在本机启动 [gdbsp](https://github.com/dengtaowei/gdbsp)，连上 `qemu-riscv32`，从 `main` 一路 `si` 到 `exit`，把每一步的 `pc`、寄存器、反汇编和 `$sp` 附近的内存写成 JSON。页面读这份文件，点 si 只是换到下一步当时的现场。
+<div class="rv-stacks">
+<figure class="rv-stack">
+<figcaption>有帧指针</figcaption>
+<div class="rv-grid">
+  <span class="rv-addr">164</span><span class="rv-cell rv-gap"></span><span class="rv-note rv-muted">main 入口时的 sp；main 的 s0 指向这里</span>
+  <span class="rv-addr">160</span><span class="rv-cell rv-main rv-top"><code>ra</code></span><span class="rv-note">main 保存的 ra</span>
+  <span class="rv-addr">156</span><span class="rv-cell rv-main"><code>s0</code></span><span class="rv-note">main 保存的上一层 s0</span>
+  <span class="rv-addr">152</span><span class="rv-cell rv-main"></span><span class="rv-note"></span>
+  <span class="rv-addr">148</span><span class="rv-cell rv-main"></span><span class="rv-note"></span>
+  <span class="rv-addr">144</span><span class="rv-cell rv-main">0xffff</span><span class="rv-note">main 的局部变量 local</span>
+  <span class="rv-addr">140</span><span class="rv-cell rv-main"></span><span class="rv-note"></span>
+  <span class="rv-addr">136</span><span class="rv-cell rv-main"></span><span class="rv-note"></span>
+  <span class="rv-addr">132</span><span class="rv-cell rv-main rv-bot"></span><span class="rv-note">main 的 sp；add1 的 s0 指向这里</span>
+  <span class="rv-addr">128</span><span class="rv-cell rv-add1 rv-top"><code>ra</code></span><span class="rv-note">add1 保存的 ra</span>
+  <span class="rv-addr">124</span><span class="rv-cell rv-add1">164</span><span class="rv-note">add1 保存的 s0，接到 main 的 s0</span>
+  <span class="rv-addr">120</span><span class="rv-cell rv-add1"></span><span class="rv-note"></span>
+  <span class="rv-addr">116</span><span class="rv-cell rv-add1"></span><span class="rv-note"></span>
+  <span class="rv-addr">112</span><span class="rv-cell rv-add1"></span><span class="rv-note"></span>
+  <span class="rv-addr">108</span><span class="rv-cell rv-add1"></span><span class="rv-note"></span>
+  <span class="rv-addr">104</span><span class="rv-cell rv-add1">10</span><span class="rv-note">传给 add2 的第 10 个参数</span>
+  <span class="rv-addr">100</span><span class="rv-cell rv-add1 rv-bot">9</span><span class="rv-note">传给 add2 的第 9 个参数；add2 的 s0 指向这里</span>
+  <span class="rv-addr">96</span><span class="rv-cell rv-add2 rv-top">132</span><span class="rv-note">add2 保存的 s0，接到 add1 的 s0</span>
+  <span class="rv-addr">92</span><span class="rv-cell rv-add2"></span><span class="rv-note"></span>
+  <span class="rv-addr">88</span><span class="rv-cell rv-add2"></span><span class="rv-note"></span>
+  <span class="rv-addr">84</span><span class="rv-cell rv-add2 rv-bot"></span><span class="rv-note">add2 的 sp</span>
+</div>
+</figure>
+<figure class="rv-stack">
+<figcaption>无帧指针</figcaption>
+<div class="rv-grid">
+  <span class="rv-addr">164</span><span class="rv-cell rv-gap"></span><span class="rv-note rv-muted">main 入口时的 sp</span>
+  <span class="rv-addr">160</span><span class="rv-cell rv-main rv-top"><code>ra</code></span><span class="rv-note">main 保存的 ra</span>
+  <span class="rv-addr">156</span><span class="rv-cell rv-main"></span><span class="rv-note"></span>
+  <span class="rv-addr">152</span><span class="rv-cell rv-main"></span><span class="rv-note"></span>
+  <span class="rv-addr">148</span><span class="rv-cell rv-main"></span><span class="rv-note"></span>
+  <span class="rv-addr">144</span><span class="rv-cell rv-main">0xffff</span><span class="rv-note">main 的局部变量 local</span>
+  <span class="rv-addr">140</span><span class="rv-cell rv-main"></span><span class="rv-note"></span>
+  <span class="rv-addr">136</span><span class="rv-cell rv-main"></span><span class="rv-note"></span>
+  <span class="rv-addr">132</span><span class="rv-cell rv-main rv-bot"></span><span class="rv-note"></span>
+  <span class="rv-addr">128</span><span class="rv-cell rv-add1 rv-top"><code>ra</code></span><span class="rv-note">add1 保存的 ra</span>
+  <span class="rv-addr">124</span><span class="rv-cell rv-add1"></span><span class="rv-note"></span>
+  <span class="rv-addr">120</span><span class="rv-cell rv-add1"></span><span class="rv-note"></span>
+  <span class="rv-addr">116</span><span class="rv-cell rv-add1"></span><span class="rv-note"></span>
+  <span class="rv-addr">112</span><span class="rv-cell rv-add1"></span><span class="rv-note"></span>
+  <span class="rv-addr">108</span><span class="rv-cell rv-add1"></span><span class="rv-note"></span>
+  <span class="rv-addr">104</span><span class="rv-cell rv-add1">10</span><span class="rv-note">传给 add2 的第 10 个参数</span>
+  <span class="rv-addr">100</span><span class="rv-cell rv-add1 rv-bot">9</span><span class="rv-note">传给 add2 的第 9 个参数，当时的 sp</span>
+</div>
+</figure>
+</div>
+
+## 4. 局部变量如何传递
+
+RV32 ilp32 用 `a0`～`a7` 传递整数参数，超出的由调用者写到栈上，每个槽 4 字节。
+
+## 5. 返回值如何传递
+
+RV32 默认使用 `a0` 传递函数返回值。
+
+<style>
+.rv-stacks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 1.75rem;
+  margin: 1rem 0 1.25rem;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--gh-fg-default);
+}
+.vp-doc .rv-stack {
+  flex: 1 1 22rem;
+  margin: 0;
+  min-width: 0;
+}
+.vp-doc .rv-stack > figcaption {
+  font-weight: 600;
+  font-size: 14px;
+  margin: 0 0 0.5rem;
+  color: var(--gh-fg-default);
+}
+.rv-grid {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(4.5rem, 6.5rem) minmax(7rem, 1fr);
+  column-gap: 0.45rem;
+  align-items: stretch;
+}
+.rv-addr {
+  font-family: var(--gh-font-mono);
+  font-size: 12px;
+  color: var(--gh-fg-muted);
+  text-align: right;
+  padding: 0.25rem 0.15rem 0.25rem 0;
+  align-self: center;
+}
+.rv-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.7rem;
+  padding: 0.1rem 0.25rem;
+  border: 1px solid var(--gh-border-default);
+  margin-bottom: -1px;
+  font-family: var(--gh-font-mono);
+  font-size: 11px;
+  text-align: center;
+  word-break: break-all;
+}
+.vp-doc .rv-cell code {
+  padding: 0;
+  margin: 0;
+  font-size: inherit;
+  background: transparent;
+  border-radius: 0;
+  color: inherit;
+}
+.rv-gap {
+  border: none;
+  background: transparent;
+  min-height: 1.2rem;
+  margin: 0;
+}
+.rv-main {
+  background: #f8d4d4;
+}
+.rv-add1 {
+  background: #cfe9d4;
+}
+.rv-add2 {
+  background: #d4e3f8;
+}
+.rv-top {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+.rv-bot {
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  margin-bottom: 0;
+}
+.rv-note {
+  display: flex;
+  align-items: center;
+  padding: 0.15rem 0;
+  font-size: 12.5px;
+  color: var(--gh-fg-default);
+}
+.rv-muted {
+  color: var(--gh-fg-muted);
+}
+.dark .rv-main {
+  background: #5a3030;
+}
+.dark .rv-add1 {
+  background: #243d2c;
+}
+.dark .rv-add2 {
+  background: #2a3d5a;
+}
+</style>

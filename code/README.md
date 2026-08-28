@@ -11,6 +11,7 @@
 | `uvc-capture/` | UVC 相关实验与分析代码（待补充） |
 | `kprobe-bytes-demo/` | kprobe-on-ftrace 入口改码教学模块（配合 BPF / kprobe 文） |
 | `arm64-call-stack/` | AArch64 `add1` / `add2`（配合调用约定笔记） |
+| `riscv-call-stack/` | RV32 `add1` / `add2`（配合调用约定笔记） |
 
 ## 约定
 
