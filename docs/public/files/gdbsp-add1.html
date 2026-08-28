@@ -16,6 +16,7 @@
     --chg: #3d2f0b;
     --chg-fg: #e3b341;
     --sp: #388bfd;
+    --fp: #d2a8ff;
     --frame: #12261a;
     --btn: #21262d;
   }
@@ -31,6 +32,8 @@
   header h1 { font-size: 13px; font-weight: 600; margin: 0; }
   header a { color: var(--muted); text-decoration: none; }
   header a:hover { color: var(--text); }
+  header a.pill { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); }
+  header a.pill.on { color: var(--pc-fg); border-color: var(--pc-fg); }
   .pill {
     font-size: 11px; padding: 2px 8px; border-radius: 999px;
     border: 1px solid var(--border); color: var(--muted);
@@ -50,7 +53,7 @@
   main {
     flex: 1 1 auto; min-height: 0;
     display: grid;
-    grid-template-columns: minmax(260px, 1.35fr) 180px minmax(280px, 1.25fr);
+    grid-template-columns: minmax(280px, 1.45fr) 200px minmax(320px, 1.25fr);
   }
   section {
     border-right: 1px solid var(--border);
@@ -80,7 +83,7 @@
   .reg.chg { background: var(--chg); color: var(--chg-fg); }
   .reg.chg .n { color: var(--chg-fg); }
   .stk {
-    grid-template-columns: 22px 11ch 8ch 11ch; gap: 6px;
+    grid-template-columns: 22px 22px 11ch 8ch 11ch; gap: 6px;
     align-items: center; border-bottom: 1px solid #21262d;
   }
   .stk.head {
@@ -91,6 +94,7 @@
   .stk.frame { background: var(--frame); }
   .stk.is-sp { box-shadow: inset 3px 0 0 var(--sp); }
   .mark-sp { color: var(--sp); font-weight: 700; }
+  .mark-fp { color: var(--fp); font-weight: 700; }
   .rel-sp { color: var(--sp); }
   @media (max-width: 800px) {
     main { grid-template-columns: 1fr; }
@@ -102,6 +106,8 @@
 <header>
   <h1>gdbsp</h1>
   <a href="/notes/riscv/rv32-call-stack">← 笔记</a>
+  <a class="pill" id="tab-nofp" href="?t=nofp">无帧指针</a>
+  <a class="pill" id="tab-fp" href="?t=fp">有帧指针</a>
   <span id="title" class="pill">add1 / add2</span>
   <span id="fn" class="pill on">—</span>
   <span id="count" class="meta">0 / 0</span>
@@ -123,13 +129,20 @@
     <div class="body" id="regs"></div>
   </section>
   <section>
-    <div class="pane-title">栈（高地址在上） <button type="button" id="btn-sp">回到 sp</button></div>
+    <div class="pane-title">栈（高地址在上） <button type="button" id="btn-sp">回到 sp</button> <button type="button" id="btn-fp">回到 s0</button></div>
     <div class="body" id="stk"></div>
   </section>
 </main>
 <script>
-  const TAPE = "/gdbsp/add1.json";
+  const TAPES = {
+    nofp: "/gdbsp/rv32-add1-nofp.json",
+    fp: "/gdbsp/rv32-add1-fp.json",
+  };
+  const which = new URLSearchParams(location.search).get("t") === "fp" ? "fp" : "nofp";
+  const TAPE = TAPES[which];
   const $ = (id) => document.getElementById(id);
+  $("tab-" + which).classList.add("on");
+
   let frames = [];
   let idx = 0;
   let playing = false;
@@ -172,7 +185,8 @@
   function hexNum(s) {
     if (!s) return 0;
     const i = String(s).indexOf("0x");
-    return parseInt(i < 0 ? s : s.slice(i), 16) >>> 0;
+    const n = parseInt(i < 0 ? s : s.slice(i), 16);
+    return Number.isFinite(n) ? n : 0;
   }
 
   function offSp(addr, sp) {
@@ -194,9 +208,6 @@
     });
     insnList = Array.from(imap.values()).sort((a, b) => hexNum(a.addr) - hexNum(b.addr));
     stkAddrs = Array.from(smap.keys()).sort((a, b) => hexNum(b) - hexNum(a));
-    // Each frame only records ~48 words around $sp. After addi sp,sp,-N the
-    // old high addresses fall out of that window; keep last-known values so
-    // the union list does not blank those rows.
     const acc = {};
     stkHist = frames.map((f) => {
       (f.stack || []).forEach((row) => {
@@ -232,7 +243,7 @@
     stk.innerHTML = "";
     const head = document.createElement("div");
     head.className = "stk head";
-    head.innerHTML = "<span>sp</span><span>值</span><span>n(sp)</span><span class='addr'>地址</span>";
+    head.innerHTML = "<span>sp</span><span>s0</span><span>值</span><span>n(sp)</span><span class='addr'>地址</span>";
     stk.appendChild(head);
     stkAddrs.forEach((addr) => {
       const d = document.createElement("div");
@@ -240,6 +251,7 @@
       d.dataset.addr = addr;
       d.innerHTML =
         "<span class='mark-sp'></span>" +
+        "<span class='mark-fp'></span>" +
         "<span class='val'></span>" +
         "<span class='rel-sp'></span>" +
         "<span class='addr'>" + esc(addr) + "</span>";
@@ -288,6 +300,7 @@
     });
 
     const spReg = (f.regs || []).find((r) => r.name === "sp");
+    const fpReg = (f.regs || []).find((r) => r.name === "s0" || r.name === "fp");
     const spNum = hexNum(spReg && spReg.value);
     const byAddr = {};
     (f.stack || []).forEach((row) => { byAddr[row.addr] = row; });
@@ -298,9 +311,12 @@
       const row = byAddr[addr];
       const n = hexNum(addr);
       const isSp = spReg && addr === spReg.value;
+      const isFp = which === "fp" && fpReg && fpReg.value && addr === fpReg.value;
       d.classList.toggle("is-sp", isSp);
       d.classList.toggle("below", n < spNum);
+      d.classList.toggle("frame", !!(row && row.zone === "frame"));
       d.querySelector(".mark-sp").textContent = isSp ? "sp" : "";
+      d.querySelector(".mark-fp").textContent = isFp ? "s0" : "";
       d.querySelector(".val").textContent = row && row.value ? row.value : (known[addr] || "");
       d.querySelector(".rel-sp").textContent = spReg ? offSp(addr, spReg.value) : "";
       if (isSp) spEl = d;
@@ -327,6 +343,14 @@
   };
   $("btn-sp").onclick = () => {
     const el = $("stk").querySelector(".stk.is-sp");
+    if (el) {
+      $("stk").scrollTop = Math.max(0, paneContentY($("stk"), el) - 40);
+    }
+  };
+  $("btn-fp").onclick = () => {
+    const el = [...$("stk").querySelectorAll(".stk:not(.head)")].find((d) =>
+      d.querySelector(".mark-fp") && d.querySelector(".mark-fp").textContent
+    );
     if (el) {
       $("stk").scrollTop = Math.max(0, paneContentY($("stk"), el) - 40);
     }
