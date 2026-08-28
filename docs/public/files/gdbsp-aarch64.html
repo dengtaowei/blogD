@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gdbsp · AArch64 add1 / add2</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --pc: #1b4332;
+    --pc-fg: #3fb950;
+    --chg: #3d2f0b;
+    --chg-fg: #e3b341;
+    --sp: #388bfd;
+    --fp: #d2a8ff;
+    --frame: #12261a;
+    --btn: #21262d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  body { display: flex; flex-direction: column; }
+  header {
+    flex: 0 0 auto;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+    padding: 8px 12px; border-bottom: 1px solid var(--border); background: #010409;
+  }
+  header h1 { font-size: 13px; font-weight: 600; margin: 0; }
+  header a { color: var(--muted); text-decoration: none; }
+  header a:hover { color: var(--text); }
+  header a.pill { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); }
+  header a.pill.on { color: var(--pc-fg); border-color: var(--pc-fg); }
+  .pill {
+    font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--muted);
+  }
+  .pill.on { color: var(--pc-fg); border-color: var(--pc-fg); }
+  button {
+    background: var(--btn); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 10px; font: inherit; cursor: pointer;
+  }
+  button:hover { background: #30363d; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { border-color: #238636; background: #238636; color: #fff; }
+  .meta { color: var(--muted); font-size: 12px; }
+  .slider { flex: 1 1 140px; min-width: 80px; }
+  .hint { margin: 0; padding: 6px 12px; font-size: 12px; color: var(--muted); font-family: system-ui, sans-serif; }
+  .err { color: #f85149; padding: 12px; }
+  main {
+    flex: 1 1 auto; min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(280px, 1.45fr) 200px minmax(320px, 1.25fr);
+  }
+  section {
+    border-right: 1px solid var(--border);
+    min-width: 0; min-height: 0;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  section:last-child { border-right: 0; }
+  .pane-title {
+    margin: 0; padding: 8px 12px; font-size: 11px; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+    border-bottom: 1px solid var(--border); background: var(--panel);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pane-title button { padding: 2px 8px; font-size: 12px; }
+  .body { overflow: auto; flex: 1 1 auto; padding: 4px 0 20px; min-height: 0; position: relative; }
+  .insn-fn {
+    padding: 6px 12px 2px; color: var(--muted); font-size: 11px;
+    border-top: 1px solid var(--border);
+  }
+  .insn, .reg, .stk { display: grid; padding: 1px 12px; white-space: pre; }
+  .insn { grid-template-columns: 22px 18ch minmax(0, 1fr); gap: 8px; }
+  .insn.pc { background: var(--pc); color: var(--pc-fg); }
+  .insn .arr { color: var(--pc-fg); font-weight: 700; text-align: center; }
+  .insn .addr, .stk .addr, .reg .n { color: var(--muted); }
+  .insn.pc .addr { color: var(--pc-fg); }
+  .reg { grid-template-columns: 4ch 1fr; gap: 10px; }
+  .reg.chg { background: var(--chg); color: var(--chg-fg); }
+  .reg.chg .n { color: var(--chg-fg); }
+  .stk {
+    grid-template-columns: 22px 22px 18ch 8ch 18ch; gap: 6px;
+    align-items: center; border-bottom: 1px solid #21262d;
+  }
+  .stk.head {
+    position: sticky; top: 0; z-index: 1; background: var(--panel);
+    color: var(--muted); font-size: 11px; padding-top: 4px; padding-bottom: 4px;
+  }
+  .stk.below { opacity: .35; }
+  .stk.frame { background: var(--frame); }
+  .stk.is-sp { box-shadow: inset 3px 0 0 var(--sp); }
+  .mark-sp { color: var(--sp); font-weight: 700; }
+  .mark-fp { color: var(--fp); font-weight: 700; }
+  .rel-sp { color: var(--sp); }
+  @media (max-width: 800px) {
+    main { grid-template-columns: 1fr; }
+    section { border-right: 0; border-bottom: 1px solid var(--border); min-height: 220px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>gdbsp</h1>
+  <a href="/notes/arm64/function-call-stack">← 笔记</a>
+  <a class="pill" id="tab-nofp" href="?t=nofp">无帧指针</a>
+  <a class="pill" id="tab-fp" href="?t=fp">有帧指针</a>
+  <span id="title" class="pill">add1 / add2</span>
+  <span id="fn" class="pill on">—</span>
+  <span id="count" class="meta">0 / 0</span>
+  <button type="button" id="btn-back">上一步</button>
+  <button type="button" class="primary" id="btn-si">si</button>
+  <button type="button" id="btn-play">播放</button>
+  <button type="button" id="btn-main">回到 main</button>
+  <input id="slider" class="slider" type="range" min="0" max="0" value="0">
+</header>
+<p class="hint">高亮的是下一条要执行的指令。si / 右箭头前进一步，左箭头后退，空格播放。</p>
+<p id="err" class="err" hidden></p>
+<main>
+  <section>
+    <div class="pane-title">反汇编 <button type="button" id="btn-pc">回到 pc</button></div>
+    <div class="body" id="asm"></div>
+  </section>
+  <section>
+    <div class="pane-title">寄存器</div>
+    <div class="body" id="regs"></div>
+  </section>
+  <section>
+    <div class="pane-title">栈（高地址在上） <button type="button" id="btn-sp">回到 sp</button></div>
+    <div class="body" id="stk"></div>
+  </section>
+</main>
+<script>
+  const TAPES = {
+    nofp: "/gdbsp/aarch64-add1-nofp.json",
+    fp: "/gdbsp/aarch64-add1-fp.json",
+  };
+  const which = new URLSearchParams(location.search).get("t") === "fp" ? "fp" : "nofp";
+  const TAPE = TAPES[which];
+  const $ = (id) => document.getElementById(id);
+  $("tab-" + which).classList.add("on");
+
+  let frames = [];
+  let idx = 0;
+  let playing = false;
+  let timer = 0;
+  let insnList = [];
+  let stkAddrs = [];
+  let stkHist = [];
+
+  function esc(t) {
+    return String(t == null ? "" : t).replace(/[&<>]/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;"
+    }[c]));
+  }
+
+  function paneContentY(pane, el) {
+    const pr = pane.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    return er.top - pr.top + pane.scrollTop;
+  }
+
+  function inView(pane, el) {
+    if (!pane || !el || !el.isConnected) return false;
+    const pr = pane.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    return er.bottom > pr.top + 8 && er.top < pr.bottom - 8;
+  }
+
+  function ensureVisible(pane, el) {
+    if (!pane || !el || !el.isConnected) return;
+    if (inView(pane, el)) return;
+    const pr = pane.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    if (er.bottom <= pr.top + 8) {
+      pane.scrollTop = Math.max(0, paneContentY(pane, el) - 40);
+    } else {
+      pane.scrollTop = Math.max(0, paneContentY(pane, el) + el.offsetHeight - pane.clientHeight + 40);
+    }
+  }
+
+  function hexNum(s) {
+    if (!s) return 0;
+    const i = String(s).indexOf("0x");
+    const n = parseInt(i < 0 ? s : s.slice(i), 16);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function offSp(addr, sp) {
+    return ((hexNum(addr) - hexNum(sp)) | 0) + "(sp)";
+  }
+
+  function buildLists() {
+    const imap = new Map();
+    const smap = new Map();
+    frames.forEach((f) => {
+      (f.insns || []).forEach((ins) => {
+        if (!ins.addr) return;
+        if (!imap.has(ins.addr)) imap.set(ins.addr, ins);
+      });
+      (f.stack || []).forEach((row) => {
+        if (!row.addr) return;
+        smap.set(row.addr, true);
+      });
+    });
+    insnList = Array.from(imap.values()).sort((a, b) => hexNum(a.addr) - hexNum(b.addr));
+    stkAddrs = Array.from(smap.keys()).sort((a, b) => hexNum(b) - hexNum(a));
+    const acc = {};
+    stkHist = frames.map((f) => {
+      (f.stack || []).forEach((row) => {
+        if (row.addr && row.value) acc[row.addr] = row.value;
+      });
+      return Object.assign({}, acc);
+    });
+  }
+
+  function mountLists() {
+    const asm = $("asm");
+    asm.innerHTML = "";
+    let lastFn = null;
+    insnList.forEach((ins) => {
+      if (ins.func && ins.func !== lastFn) {
+        lastFn = ins.func;
+        const sep = document.createElement("div");
+        sep.className = "insn-fn";
+        sep.textContent = ins.func;
+        asm.appendChild(sep);
+      }
+      const d = document.createElement("div");
+      d.className = "insn";
+      d.dataset.addr = ins.addr;
+      d.innerHTML =
+        "<span class='arr'></span>" +
+        "<span class='addr'>" + esc(ins.addr) + "</span>" +
+        "<span class='asm'>" + esc(ins.asm) + "</span>";
+      asm.appendChild(d);
+    });
+
+    const stk = $("stk");
+    stk.innerHTML = "";
+    const head = document.createElement("div");
+    head.className = "stk head";
+    head.innerHTML = "<span>sp</span><span>fp</span><span>值</span><span>n(sp)</span><span class='addr'>地址</span>";
+    stk.appendChild(head);
+    stkAddrs.forEach((addr) => {
+      const d = document.createElement("div");
+      d.className = "stk";
+      d.dataset.addr = addr;
+      d.innerHTML =
+        "<span class='mark-sp'></span>" +
+        "<span class='mark-fp'></span>" +
+        "<span class='val'></span>" +
+        "<span class='rel-sp'></span>" +
+        "<span class='addr'>" + esc(addr) + "</span>";
+      stk.appendChild(d);
+    });
+  }
+
+  function go(n) {
+    if (!frames.length) return;
+    idx = Math.max(0, Math.min(frames.length - 1, n));
+    paint();
+  }
+
+  function paint() {
+    const f = frames[idx] || {};
+    const prev = idx > 0 ? frames[idx - 1] : null;
+    const prevRegs = {};
+    (prev && prev.regs || []).forEach((r) => { prevRegs[r.name] = r.value; });
+
+    $("fn").textContent = (f.func || "—") + (f.pc ? "  " + f.pc : "");
+    $("count").textContent = (idx + 1) + " / " + frames.length;
+    $("slider").max = String(Math.max(0, frames.length - 1));
+    $("slider").value = String(idx);
+    $("btn-back").disabled = idx <= 0;
+    $("btn-si").disabled = idx >= frames.length - 1;
+    $("btn-play").textContent = playing ? "暂停" : "播放";
+
+    const pc = f.pc;
+    let pcEl = null;
+    $("asm").querySelectorAll(".insn").forEach((d) => {
+      const on = d.dataset.addr === pc;
+      d.classList.toggle("pc", on);
+      const arr = d.querySelector(".arr");
+      if (arr) arr.textContent = on ? "=>" : "";
+      if (on) pcEl = d;
+    });
+
+    const regs = $("regs");
+    regs.innerHTML = "";
+    (f.regs || []).forEach((r) => {
+      const d = document.createElement("div");
+      const chg = prevRegs[r.name] && prevRegs[r.name] !== r.value;
+      d.className = "reg" + (chg ? " chg" : "");
+      d.innerHTML = "<span class='n'>" + esc(r.name) + "</span><span>" + esc(r.value) + "</span>";
+      regs.appendChild(d);
+    });
+
+    const spReg = (f.regs || []).find((r) => r.name === "sp");
+    const fpReg = (f.regs || []).find((r) => r.name === "fp");
+    const spNum = hexNum(spReg && spReg.value);
+    const byAddr = {};
+    (f.stack || []).forEach((row) => { byAddr[row.addr] = row; });
+    const known = stkHist[idx] || {};
+    let spEl = null;
+    $("stk").querySelectorAll(".stk:not(.head)").forEach((d) => {
+      const addr = d.dataset.addr;
+      const row = byAddr[addr];
+      const n = hexNum(addr);
+      const isSp = spReg && addr === spReg.value;
+      const isFp = which === "fp" && fpReg && fpReg.value && addr === fpReg.value;
+      d.classList.toggle("is-sp", isSp);
+      d.classList.toggle("below", n < spNum);
+      d.classList.toggle("frame", !!(row && row.zone === "frame"));
+      d.querySelector(".mark-sp").textContent = isSp ? "sp" : "";
+      d.querySelector(".mark-fp").textContent = isFp ? "fp" : "";
+      d.querySelector(".val").textContent = row && row.value ? row.value : (known[addr] || "");
+      d.querySelector(".rel-sp").textContent = spReg ? offSp(addr, spReg.value) : "";
+      if (isSp) spEl = d;
+    });
+
+    if (pcEl) ensureVisible($("asm"), pcEl);
+    if (spEl) ensureVisible($("stk"), spEl);
+  }
+
+  function stopPlay() {
+    playing = false;
+    clearInterval(timer);
+    $("btn-play").textContent = "播放";
+  }
+
+  $("btn-back").onclick = () => { stopPlay(); go(idx - 1); };
+  $("btn-si").onclick = () => { stopPlay(); go(idx + 1); };
+  $("btn-main").onclick = () => { stopPlay(); go(0); };
+  $("btn-pc").onclick = () => {
+    const el = $("asm").querySelector(".insn.pc");
+    if (el) {
+      $("asm").scrollTop = Math.max(0, paneContentY($("asm"), el) - 40);
+    }
+  };
+  $("btn-sp").onclick = () => {
+    const el = $("stk").querySelector(".stk.is-sp");
+    if (el) {
+      $("stk").scrollTop = Math.max(0, paneContentY($("stk"), el) - 40);
+    }
+  };
+  $("btn-play").onclick = () => {
+    if (idx >= frames.length - 1) go(0);
+    playing = !playing;
+    $("btn-play").textContent = playing ? "暂停" : "播放";
+    clearInterval(timer);
+    if (playing) {
+      timer = setInterval(() => {
+        if (idx >= frames.length - 1) { stopPlay(); paint(); return; }
+        go(idx + 1);
+      }, 380);
+    }
+  };
+  $("slider").oninput = (e) => { stopPlay(); go(Number(e.target.value)); };
+
+  document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT") return;
+    if (e.key === "F7" || e.key === "s" || e.key === "ArrowRight") {
+      e.preventDefault(); stopPlay(); go(idx + 1);
+    } else if (e.key === "F8" || e.key === "n" || e.key === "ArrowLeft") {
+      e.preventDefault(); stopPlay(); go(idx - 1);
+    } else if (e.key === "Home") {
+      e.preventDefault(); stopPlay(); go(0);
+    } else if (e.key === " ") {
+      e.preventDefault(); $("btn-play").click();
+    }
+  });
+
+  fetch(TAPE).then((r) => {
+    if (!r.ok) throw new Error(r.status + " " + r.statusText);
+    return r.json();
+  }).then((tape) => {
+    frames = tape.frames || [];
+    if (tape.title) $("title").textContent = tape.title;
+    buildLists();
+    mountLists();
+    go(0);
+  }).catch((e) => {
+    $("err").hidden = false;
+    $("err").textContent = "没能读到回放数据: " + e.message;
+  });
+</script>
+</body>
+</html>

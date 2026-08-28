@@ -4,6 +4,7 @@ homeTitle: libusb Windows 枚举失败
 homeDesc: 一个没有子节点的虚拟 root hub 让 HCD pass 直接失败，整张设备列表为空
 sidebarOrder: 50
 sidebarTitle: libusb Windows 枚举失败
+date: 2026-08-16
 ---
 
 # libusb 在 Windows 上枚举不到设备

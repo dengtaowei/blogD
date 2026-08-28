@@ -1,12 +1,12 @@
-# ARM64 函数调用栈示例
+# AArch64 add1 / add2
 
 配合笔记 `docs/notes/arm64/function-call-stack.md`。
 
 ```bash
 sudo apt install gcc-aarch64-linux-gnu qemu-user
-make
-make run
-aarch64-linux-gnu-objdump -d hello_arm64
+make          # -fomit-frame-pointer
+make dump     # 应看到 str x30
+make fp dump  # 应看到 stp x29, x30 与 mov/add x29
 ```
 
-`study_stack` 的开头应是 `stp x29, x30, [sp, #-32]!`，后面跟 `mov x29, sp`。
+单步回放见笔记里的 gdbsp JSON，不必在本目录开 QEMU。

@@ -4,6 +4,7 @@ homeTitle: UVC 拔出后 DQBUF 不返回
 homeDesc: vb2 早就留好了 q->error 出口，断连时无人置位，应用线程一直等在 done_wq
 sidebarOrder: 30
 sidebarTitle: 拔出后 DQBUF 不返回
+date: 2026-08-16
 ---
 
 # UVC 摄像头拔出后 `VIDIOC_DQBUF` 不返回
