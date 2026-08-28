@@ -6,4 +6,4 @@ home: false
 
 ARM64 应用程序里的栈和汇编。
 
-- [ARM64 函数调用栈：从一条 `stp [sp, #-32]!` 读起](/notes/arm64/function-call-stack) — `stp` 开头、`x29` / `x30`、局部变量在栈上的位置，以及逐步动画
+- [AArch64 调用约定：从栈上的第九个参数读起](/notes/arm64/function-call-stack) — 参数怎么进寄存器和栈；有 `x29` 时怎么顺着 `[x29]` / `[x29,#8]` 回溯
