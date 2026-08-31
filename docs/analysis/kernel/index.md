@@ -67,8 +67,9 @@ Linux 内核子系统源码分析（Linux 6.8）。
 4. [i.MX6ULL 声卡录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) — `arecord` / `read` / SAI RX
 5. [ALSA PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) — 状态、阈值与 underrun/overrun
 6. [WM8960 kcontrol 构造与使用](/analysis/kernel/sound/wm8960-kcontrol) — `SOC_*` 宏、音量写到寄存器
-7. [从 tinymix 到 WM8960 DAPM 路由](/analysis/kernel/sound/wm8960-dapm-routes) — 开关、播录路径、本板接线
-8. [DAPM widget 上电：谁判、何时判](/analysis/kernel/sound/dapm-widget-power) — `power_check`、complete path
+7. [amixer 改音量、拨开关：内核在哪里分开走](/analysis/kernel/sound/alsa-ctl-write-flow) — 两条 `sset` 的 `.put` 不是同一个函数
+8. [从 tinymix 到 WM8960 DAPM 路由](/analysis/kernel/sound/wm8960-dapm-routes) — 开关、播录路径、本板接线
+9. [DAPM widget 上电：谁判、何时判](/analysis/kernel/sound/dapm-widget-power) — `power_check`、complete path
 
 ## BPF / kprobe
 

@@ -19,6 +19,7 @@ home: false
 - [ALSA PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) — 状态、`start`/`stop`、underrun/overrun
 - [ALSA hw_params 参数协商](/analysis/kernel/sound/alsa-hw-params-negotiate) — 本板成功/失败对照；dump 区间与 rule 离散率
 - [WM8960 kcontrol 构造与使用](/analysis/kernel/sound/wm8960-kcontrol) — `SOC_*` 宏、音量怎么写到寄存器
+- [amixer 改音量、拨开关：内核在哪里分开走](/analysis/kernel/sound/alsa-ctl-write-flow) — 两条 `sset` 的 `.put` 不是同一个函数
 - [从 tinymix 到 WM8960 DAPM 路由](/analysis/kernel/sound/wm8960-dapm-routes) — 开关、播录路径、本板接线
 - [DAPM widget 上电：谁判、何时判](/analysis/kernel/sound/dapm-widget-power) — `power_check`、complete path
 
@@ -36,7 +37,7 @@ home: false
 
 ## 后续蓝图
 
-九篇已覆盖的主干是：一次 `write` / `read` 在四层里怎么走完、`/dev/snd` 节点从哪来、kcontrol 与 DAPM 图怎么建，以及 hw_params 协商。下面按层记录后续选题；**本专题暂以 NXP BSP Linux 4.9.88 为准**（与站内多数 6.8 文不同），与主线有出入处文内并列写明。升级内核后再统一基线。优先级只表示动笔顺序。
+主干已覆盖：一次 `write` / `read` 在四层里怎么走完、`/dev/snd` 节点从哪来、kcontrol 与 DAPM 图怎么建、`amixer` 改音量和拨开关进内核后怎么分开走，以及 hw_params 协商。下面按层记录后续选题；**本专题暂以 NXP BSP Linux 4.9.88 为准**（与站内多数 6.8 文不同），与主线有出入处文内并列写明。升级内核后再统一基线。优先级只表示动笔顺序。
 
 ### PCM 核心
 
