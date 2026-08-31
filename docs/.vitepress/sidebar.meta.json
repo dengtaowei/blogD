@@ -23,6 +23,7 @@
         "text": "Linux 内核",
         "items": [
           { "index": "analysis/kernel", "text": "概览" },
+          { "text": "中断 / softirq", "index": "analysis/kernel/irq" },
           { "text": "USB 子系统", "index": "analysis/kernel/usb" },
           {
             "text": "Pinctrl / GPIO 子系统",

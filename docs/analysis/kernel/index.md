@@ -6,6 +6,12 @@ home: false
 
 Linux 内核子系统源码分析（Linux 6.8）。
 
+## 中断 / softirq
+
+专题页：[中断 / softirq](/analysis/kernel/irq/)
+
+- [硬中断、softirq 与 arm64 路径](/analysis/kernel/irq/hardirq-softirq-arm64) — 栈与上下文、`irq_exit`、`local_bh_disable`、加锁
+
 ## USB 子系统
 
 专题页：[USB 子系统](/analysis/kernel/usb/)

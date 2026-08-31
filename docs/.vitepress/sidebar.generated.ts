@@ -29,6 +29,10 @@ const sidebar: DefaultTheme.Sidebar = {
           "link": "/analysis/kernel/"
         },
         {
+          "text": "中断 / softirq",
+          "link": "/analysis/kernel/irq/"
+        },
+        {
           "text": "USB 子系统",
           "link": "/analysis/kernel/usb/"
         },
