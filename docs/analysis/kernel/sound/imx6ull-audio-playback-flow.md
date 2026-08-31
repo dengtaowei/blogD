@@ -12,7 +12,7 @@ date: 2026-08-01
 > **平台**：100ask i.MX6ULL Pro（SAI2 + WM8960）  
 > **内核**：NXP BSP **Linux 4.9.88**（`imx-wm8960` / `fsl_sai` / `imx-pcm-dma-v2` / `wm8960`）；与站点多数 6.8 文路径不同，差异处另行注明  
 > **关联**：[`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) · [录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) · [PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) · [ASoC 四层](/analysis/kernel/sound/imx6ull-asoc-layers)  
-> **本文**：`aplay` 播放的七层路径、HiFi（`pcmC0D0p`）内核调用栈、关键源文件
+> **本文**：`aplay` 播放的七层路径、HiFi（`pcmC0D0p`）内核调用栈，以及 prepare 上电、close 断电
 
 ---
 
@@ -21,6 +21,13 @@ date: 2026-08-01
 - [1. 本文要回答什么](#1-本文要回答什么)
 - [2. 七层概览](#2-七层概览)
 - [3. 播放内核调用栈](#3-播放内核调用栈hifi--pcmc0d0p)
+  - [3.1 open](#31-open打开设备)
+  - [3.2 hw_params](#32-hw_params配置参数ioctl)
+  - [3.3 prepare](#33-prepare模拟通路上电)
+  - [3.4 write + 首次 start](#34-write--首次-start数据期主路径)
+  - [3.5 period 完成回调](#35-period-完成回调异步唤醒阻塞的-write)
+  - [3.6 对照简图](#36-对照简图)
+  - [3.7 drain / close](#37-drain--close停-dma-与模拟断电)
 - [4. 分层流程图](#4-分层流程图)
 - [5. 简化分层与源文件](#5-简化分层与源文件)
 - [6. 小结](#6-小结)
@@ -43,7 +50,7 @@ date: 2026-08-01
    播放器用 ALSA 库打开声卡，通过 `write()` / `snd_pcm_writei()` 连续写入 PCM 数据。控制参数（采样率、通道、格式）走 `ioctl`。
 
 2. **ALSA 设备接口**  
-   用户态落到 `/dev/snd/pcmC0D0p`，对应内核 `snd_pcm_f_ops[0]`：`write` 进 `snd_pcm_write()`，`ioctl` 负责 `hw_params` / `prepare` / `start` 等。
+   用户态落到 `/dev/snd/pcmC0D0p`，对应内核 `snd_pcm_f_ops[0]`：`write` 进 `snd_pcm_write()`，`ioctl` 负责 `hw_params` / `prepare` / `start` 等。prepare 做完，PCM 进入 `PREPARED`，模拟电路也在这时上电。
 
 3. **ALSA PCM 核心**  
    `snd_pcm_lib_write()` → `snd_pcm_lib_write1()` 管理环形缓冲：  
@@ -60,7 +67,7 @@ date: 2026-08-01
    `snd_dmaengine_pcm_trigger()` 准备 cyclic DMA 描述符并 `issue_pending`，SDMA 开始把内存中的 PCM 搬到 SAI2 FIFO。每个 period 完成会回调，唤醒阻塞中的 `write`。
 
 6. **CPU DAI / Codec**  
-   `fsl_sai_trigger()` 打开 SAI 发送（FRDE/TERE 等）；WM8960 通过 I2S 收数字音频，DAC 转成模拟，再经 DAPM 路由到耳机或喇叭。
+   `fsl_sai_trigger()` 打开 SAI 发送（FRDE/TERE 等）。WM8960 从 I2S 收数字音频，DAC 转成模拟，再送到耳机或喇叭。DAC、输出混音这些块在 prepare 时已经上电；`trigger(START)` 打开的是 SAI。
 
 7. **硬件数据通路**
 
@@ -74,7 +81,7 @@ date: 2026-08-01
 
 ## 3. 播放内核调用栈（HiFi / `pcmC0D0p`）
 
-下面以 `aplay -D hw:0,0` 直连通路为例。配置期（open / hw_params）和数据期（write / start）分开列出。
+下面以 `aplay -D hw:0,0` 直连通路为例。先 open、设参数、prepare，再进入 write / start 搬数据。
 
 ### 3.1 open（打开设备）
 
@@ -109,9 +116,30 @@ sys_ioctl(SNDRV_PCM_IOCTL_HW_PARAMS)
                       → wm8960_hw_params
 ```
 
-此阶段配置采样率、格式、时钟等。
+此阶段配置采样率、格式、时钟等。参数设完，PCM 进入 `SETUP`。接下来 `aplay` 会做 prepare。
 
-### 3.3 write + 首次 start（数据期主路径）
+### 3.3 prepare（模拟通路上电）
+
+```text
+sys_ioctl(SNDRV_PCM_IOCTL_PREPARE)
+  → snd_pcm_playback_ioctl
+      → snd_pcm_prepare                            // sound/core/pcm_native.c
+          → snd_pcm_do_prepare
+              → substream->ops->prepare
+                  → soc_pcm_prepare                // sound/soc/soc-pcm.c
+                      → machine / platform / codec / cpu 的 .prepare
+                      → snd_soc_dapm_stream_event(..., STREAM_START)
+                      → snd_soc_dai_digital_mute(..., 0)   // 解除数字静音
+          → snd_pcm_post_prepare                   // 状态 → PREPARED
+```
+
+`aplay` 设完采样率之后一定会再做一次 prepare，PCM 从 `SETUP` 进入 `PREPARED`，这之后才能 start。
+
+本板的 Codec、DMA、SAI、Machine 都没有自己的 prepare 函数。内核进入公共的 `soc_pcm_prepare`，在这里调用 `snd_soc_dapm_stream_event(..., STREAM_START)`：等于告诉 DAPM「播放流开始了」。混音开关已经打开的话，DAC、输出混音这些模拟块就在这一步上电。
+
+数据还没开始搬。SDMA 和 SAI 要等到下面第一次 `write` 里的 `trigger(START)` 才打开。
+
+### 3.4 write + 首次 start（数据期主路径）
 
 ```text
 sys_write(pcmC0D0p, buf, len)
@@ -145,7 +173,7 @@ sys_write(pcmC0D0p, buf, len)
 
 之后再次 `write` 只继续往环形缓冲填数，不再走 `snd_pcm_start`；DMA 按采样率持续消费。
 
-### 3.4 period 完成回调（异步，唤醒阻塞的 write）
+### 3.5 period 完成回调（异步，唤醒阻塞的 write）
 
 ```text
 SDMA period 完成中断
@@ -156,9 +184,13 @@ SDMA period 完成中断
 
 本板 Platform 是 `imx-pcm-dma-v2`，period 完成走通用 dmaengine PCM 回调（上表）。
 
-### 3.5 对照简图
+### 3.6 对照简图
 
 ```text
+配置期:
+  open → hw_params → prepare
+    prepare: soc_pcm_prepare → STREAM_START（模拟上电）→ PREPARED
+
 write 热路径:
   snd_pcm_write
     → snd_pcm_lib_write1
@@ -170,13 +202,41 @@ write 热路径:
 
 异步反馈:
   SDMA → dmaengine_pcm_dma_complete → period_elapsed → 唤醒 write
+
+退出:
+  drain / drop → trigger(STOP) 停 DMA/SAI
+  close → soc_pcm_close → STREAM_STOP（模拟大约 5 秒后断电）
 ```
+
+### 3.7 drain / close（停 DMA 与模拟断电）
+
+wav 播完后，`aplay` 会先等环形缓冲里剩下的数据都送出去（`drain`），再关掉设备。内核 `snd_pcm_release_substream`（`pcm_native.c`）的顺序是：
+
+```text
+snd_pcm_drop
+  → 若仍 RUNNING：ops->trigger(STOP)
+      → soc_pcm_trigger(STOP)
+          → snd_dmaengine_pcm_trigger  // 停 SDMA cyclic
+          → fsl_sai_trigger            // 清 SAI FRDE/TERE
+ops->hw_free
+  → soc_pcm_hw_free
+      → imx_hifi_hw_free / fsl_sai_hw_free
+ops->close
+  → soc_pcm_close
+      → fsl_sai_shutdown / imx_hifi_shutdown
+      → platform close（释放 SDMA 通道）
+      → 排队 delayed_work，默认 5000 ms 后 STREAM_STOP
+```
+
+`trigger(STOP)` 停掉 SDMA 和 SAI，数字通路不再传数。耳机/喇叭模拟电路的断电发生在 `soc_pcm_close` 里的 `STREAM_STOP`。
+
+本板日常用的 HiFi（`hw:0,0`）默认再等 5000 毫秒才断电（`pmdown_time`，减轻开关机时的爆破音）。所以命令行已经回到提示符，Codec 模拟口还会保持上电一小会儿。
 
 ---
 
 ## 4. 分层流程图
 
-软件调用链与硬件数据通路是两件事，分开看更清楚：前者是 `write` 这次系统调用做了什么，后者是数据实际怎么流动。
+软件调用链和硬件数据通路是两件事。下面这张图画一次 `write` 做了什么；模拟电路上电发生在更早的 prepare。
 
 ### 4.1 调用流程（软件，一次 `write`）
 
@@ -241,7 +301,8 @@ ALSA fops   snd_pcm_write / ioctl
    ↓
 PCM 核心    拷入环形缓冲；满则 wait；够阈值则 start
    ↓
-ASoC        soc_pcm_trigger
+ASoC        prepare：STREAM_START（模拟上电）
+            trigger：soc_pcm_trigger
    ├─ Platform : SDMA cyclic 传输启动
    └─ CPU DAI  : SAI2 打开发送
    ↓
@@ -252,7 +313,7 @@ ASoC        soc_pcm_trigger
 |------|------|
 | ALSA fops / start | `sound/core/pcm_native.c` |
 | write / 环形缓冲 | `sound/core/pcm_lib.c` |
-| ASoC trigger | `sound/soc/soc-pcm.c` |
+| ASoC prepare / trigger / close | `sound/soc/soc-pcm.c` |
 | Machine | `sound/soc/fsl/imx-wm8960.c` |
 | DMA PCM | `sound/soc/fsl/imx-pcm-dma-v2.c`、`sound/core/pcm_dmaengine.c` |
 | SAI | `sound/soc/fsl/fsl_sai.c` |
@@ -265,4 +326,6 @@ ASoC        soc_pcm_trigger
 
 - 播放速度由采样率 / I2S 时钟决定，不是由 `write` 快慢决定。
 - 环形缓冲满时，阻塞模式下 `write` 会等待 DMA 消费出空位。
+- prepare 时调用 `STREAM_START`，给模拟电路上电；第一次写够数据后 `trigger(START)` 打开 DMA 和 SAI。本板 Codec / DMA / SAI 没有自己的 prepare 回调。
 - `soc_pcm_trigger` 中 WM8960 无 codec trigger；有效的是 Platform（DMA）和 CPU DAI（SAI）。
+- 关掉播放后，DMA 和 SAI 马上停；模拟电路默认再过 5 秒才断电。

@@ -85,14 +85,15 @@ open
 hw_params
   → state = SETUP（参数、缓冲大小等落定）
 prepare
-  → state = PREPARED（可 trigger）
+  → soc_pcm_prepare：STREAM_START，模拟电路上电
+  → state = PREPARED（可以 start）
 write / read
   → 若仍为 PREPARED 且满足 start_threshold
         → snd_pcm_start → ops->trigger(START)
         → state = RUNNING
   → RUNNING 下继续填/取环形缓冲
 close / drain / drop
-  → 离开 RUNNING
+  → trigger(STOP) 停 DMA/SAI；soc_pcm_close：STREAM_STOP，模拟断电
 ```
 
 `snd_pcm_start` 的门禁（`pcm_native.c`）：
@@ -208,6 +209,7 @@ flowchart TB
 
 | 话题 | 播 / 录文 | 本文 |
 |------|-----------|------|
+| `soc_pcm_prepare` / `STREAM_START` | prepare 节：模拟上电 | 状态机：`SETUP` → `PREPARED` |
 | `soc_pcm_trigger` / DMA / SAI | 主线 | 仅作为 `RUNNING` 后的后台 |
 | `start_threshold` 自动 start | 流程图菱形 | 状态机：`PREPARED` → `RUNNING` |
 | `wait_for_avail` | 缓冲满/空则阻塞 | `avail` 与 `avail_min` |

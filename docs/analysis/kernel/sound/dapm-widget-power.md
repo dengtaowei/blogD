@@ -178,9 +178,13 @@ dapm_power_widgets(card, event)
 
 ## 7. 两条常见触发链
 
-### 7.1 开始播放（流事件）
+### 7.1 开始播放 / 录音（流事件）
 
-PCM 路径在 open/prepare/close 等处会调 `snd_soc_dapm_stream_event`（`soc-pcm.c`）。核心：
+`aplay` / `arecord` 做 prepare 时，内核在 `soc_pcm_prepare` 里调用 `snd_soc_dapm_stream_event(..., STREAM_START)`，模拟电路在这里上电。关掉设备时走 `soc_pcm_close`，发出 `STREAM_STOP`。`open` 和 `trigger` 不改 DAPM 供电。
+
+播放关掉后默认再等 5000 毫秒才断电；录音马上断电。
+
+核心：
 
 ```c
 /* soc_dapm_dai_stream_event：STREAM_START 时 */
@@ -226,7 +230,7 @@ WM8960 上的 `MICB` 一类 SUPPLY：麦克风通路上的 ADC/Input 需要电�
 
 - 普通 widget 上电 **⇔** 同时能连到有效 source 端点与有效 sink 端点（落在 complete path 上）。  
 - `power_check` 只经 `dapm_widget_power_check` 进入；由 `dapm_power_one_widget`（及 SUPPLY 递归）在 **`dapm_power_widgets`** 扫描 dirty 时调用。  
-- 扫描由流事件、DAPM 开关/MUX、`snd_soc_dapm_sync`、新建 widget 等触发，属**事件驱动**。  
+- 扫描由流事件、DAPM 开关/MUX、`snd_soc_dapm_sync`、新建 widget 等触发，属**事件驱动**。本板 HiFi：prepare 时 `STREAM_START` 上电，close 时 `STREAM_STOP` 断电。  
 - 真正写电源寄存器发生在 `dapm_seq_run` 的上电/断电序列，不在 `power_check` 函数内部。
 
 ---
@@ -240,7 +244,7 @@ WM8960 上的 `MICB` 一类 SUPPLY：麦克风通路上的 ADC/Input 需要电�
 | 同文件 — `soc_dapm_mixer_update_power` / `soc_dapm_connect_path` | 开关改 `connect` 后重算 |
 | 同文件 — `soc_dapm_stream_event` / `soc_dapm_dai_stream_event` | 流 START/STOP 标端点 |
 | 同文件 — `snd_soc_dapm_sync` | 显式触发供电扫描 |
-| `sound/soc/soc-pcm.c` | `snd_soc_dapm_stream_event` 的 PCM 侧调用点 |
+| `sound/soc/soc-pcm.c` — `soc_pcm_prepare` / `soc_pcm_close` | HiFi：`STREAM_START` / `STREAM_STOP` |
 | `include/sound/soc-dapm.h` — `snd_soc_dapm_widget` / `snd_soc_dapm_path` | `power_check`、`connect`、`is_ep` |
 
 ---
