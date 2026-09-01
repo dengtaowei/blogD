@@ -10,7 +10,7 @@ date: 2026-08-02
 # ASoC 四层架构与 i.MX6ULL 驱动对照
 
 > **平台**：100ask i.MX6ULL Pro（`wm8960-audio`，SAI2 + WM8960）  
-> **内核**：NXP BSP **Linux 4.9.88**（`imx-wm8960` / `fsl_sai` / `imx-pcm-dma-v2` / `wm8960`）；与站点多数 6.8 文路径不同，差异处另行注明  
+> **内核**：NXP BSP **Linux 4.9.88**
 > **本文**：ASoC 经典四层各自做什么，以及在本板上对应哪些驱动与设备树节点
 
 ---
@@ -18,18 +18,19 @@ date: 2026-08-02
 ## 目录
 
 - [1. 本文要回答什么](#1-本文要回答什么)
-- [2. ASoC 在 ALSA 中的位置](#2-asoc-在-alsa-中的位置)
+- [2. ASoC 是什么](#2-asoc-是什么)
 - [3. 经典四层与职责](#3-经典四层与职责)
 - [4. 分层关系图](#4-分层关系图)
 - [5. i.MX6ULL Pro 四层驱动对照](#5-imx6ull-pro-四层驱动对照)
 - [6. 设备树如何粘合四层](#6-设备树如何粘合四层)
-  - [6.1 Machine：`sound`](#61-machine-sound)
+  - [6.1 Machine：`sound`](#61-machinesound)
+  - [6.2 CPU DAI：`&sai2`](#62-cpu-daisai2)
+  - [6.3 Codec：`wm8960@1a`](#63-codecwm89601a)
+  - [6.4 Platform](#64-platform)
   - [6.5 内核如何管理这三层](#65-内核如何管理这三层)
-  - [6.6 绑卡：soc_bind_dai_link 与 rtd](#66-绑卡soc_bind_dai_link-与-rtd)
+  - [6.6 组卡：`soc_bind_dai_link` 与 `rtd`](#66-组卡soc_bind_dai_link-与-rtd)
 - [7. Probe 顺序](#7-probe-顺序)
-- [8. 运行时数据走哪几层](#8-运行时数据走哪几层)
-- [9. 术语澄清](#9-术语澄清)
-- [10. 小结](#10-小结)
+- [8. 小结](#8-小结)
 - [附录 A 源码索引](#附录-a-源码索引)
 - [附录 B 要点速记](#附录-b-要点速记)
 
@@ -37,36 +38,30 @@ date: 2026-08-02
 
 ## 1. 本文要回答什么
 
-> **ASoC 一般分哪几层？每层做什么？100ask i.MX6ULL Pro 上分别对应哪个驱动文件？**
+> **ASoC 一般分哪几层？每层做什么？**
 
 ---
 
-## 2. ASoC 在 ALSA 中的位置
+## 2. ASoC 是什么
 
-ALSA 面向用户态提供 `/dev/snd/*`（PCM、控制等）。嵌入式 SoC 上，声卡往往由「控制器 + 编解码器 + DMA」拼成，ASoC（ALSA System on Chip）把这块拆成可复用的驱动层，再由 **Machine** 按板级接线组卡。
-
-用户态仍只认 card / device；四层是内核里的组织方式，不是用户态再开四套 API。
+嵌入式 SoC 上，声卡往往由「控制器 + 编解码器 + DMA」拼成，ASoC（ALSA System on Chip）把这块拆成可复用的驱动层，再由 **Machine** 按板级接线组卡。
 
 ---
 
 ## 3. 经典四层与职责
 
-| 层 | 英文 | 职责（做什么） | 一般不做什么 |
-|----|------|----------------|--------------|
-| **Machine** | Machine / Card | 板级粘合：解析 DTS、`dai_link`、`audio-routing`、主从与时钟策略、耳机插入等；注册 `snd_soc_card` | 不搬 PCM 字节流，不直接操作 SAI FIFO |
-| **Platform** | Platform / PCM | PCM 设备与 DMA：环形缓冲、period、SDMA / DMA 把内存与 DAI FIFO 对接 | 不解析编解码器寄存器；不是「某某开发板平台」的意思 |
-| **CPU DAI** | CPU DAI | SoC 侧数字音频接口：SSI / SAI / I2S 等，配置格式、时钟、触发收发 | 不负责模拟增益、耳机功放 |
-| **Codec** | Codec | 编解码器：I2C / SPI 控制、DAC / ADC、DAPM 模拟路由、音量 | 一般不负责 SoC 侧 DMA |
-
-一条 `dai_link` 通常绑定：**CPU DAI + Codec DAI + Platform**；Machine 持有整张 card 与一条或多条 link。
-
-较新主线内核里不少驱动合成 **Component**，但读板级代码、对照 DTS 时，仍按上述四层拆最清楚。
+| 层 | 职责 |
+|----|------|
+| **Machine** | 板级粘合：解析 DTS、`dai_link`、`audio-routing`、主从与时钟策略、耳机插入等；注册 `snd_soc_card` |
+| **Platform** | PCM 设备与 DMA：环形缓冲、period、SDMA / DMA 把内存与 DAI FIFO 对接 |
+| **CPU DAI** | SoC 侧数字音频接口：SSI / SAI / I2S 等，配置格式、时钟、触发收发 |
+| **Codec** | 编解码器：I2C / SPI 控制、DAC / ADC、DAPM 模拟路由、音量 |
 
 ---
 
 ## 4. 分层关系图
 
-用户态只看到 ALSA 提供的设备节点；Machine 把 Platform、CPU DAI、Codec 绑进同一张声卡，本身不搬运 PCM 数据。
+用户态只看到 ALSA 提供的设备节点；Machine 把 Platform、CPU DAI、Codec 绑成一张声卡。
 
 ```mermaid
 flowchart TB
@@ -88,7 +83,7 @@ flowchart TB
 
 ## 5. i.MX6ULL Pro 四层驱动对照
 
-本板声卡名 `wm8960-audio`，数字接口为 **SAI2**，编解码器为 **WM8960**（I2C2 `@0x1a`）。
+本板声卡名 `wm8960-audio`，数字接口为 **SAI2**，编解码器为 **WM8960**。
 
 | 层 | 本板驱动 | 源文件 | 设备树 / 绑定要点 |
 |----|----------|--------|-------------------|
@@ -96,8 +91,6 @@ flowchart TB
 | **Platform** | `imx-pcm-dma-v2` | `sound/soc/fsl/imx-pcm-dma-v2.c` | **无独立节点**；`fsl_sai` probe 末尾 `imx_pcm_platform_register()` |
 | **CPU DAI** | `fsl_sai` | `sound/soc/fsl/fsl_sai.c` | `&sai2`；SoC 定义在 `imx6ull.dtsi`（`fsl,imx6ul-sai`） |
 | **Codec** | `wm8960` | `sound/soc/codecs/wm8960.c` | `wm8960@1a`；`compatible = "wlf,wm8960"` |
-
-本板另外还有一套经 ASRC 的前端 PCM，节点说明见 [`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices)。下文仍按不经 ASRC、直连 Codec 的 `HiFi` 通路来对照四层。
 
 辅助头文件：`sound/soc/fsl/fsl_sai.h`、`sound/soc/fsl/imx-pcm.h`。
 
@@ -142,7 +135,50 @@ sound {
 
 ### 6.2 CPU DAI：`&sai2`
 
-板级使能时钟与引脚；控制器寄存器与 DMA 通道在 `imx6ull.dtsi`。`sound` 的 `cpu-dai = <&sai2>` 只把节点指到 Machine；真正成为 ASoC CPU DAI，靠 `fsl_sai_probe` 末尾注册：
+`imx6ull.dtsi` 给出 SAI2 的寄存器和 DMA 通道，默认关掉：
+
+```txt
+sai2: sai@0202c000 {
+    compatible = "fsl,imx6ul-sai",
+                 "fsl,imx6sx-sai";
+    reg = <0x0202c000 0x4000>;
+    dma-names = "rx", "tx";
+    dmas = <&sdma 37 24 0>, <&sdma 38 24 0>;
+    status = "disabled";
+};
+```
+
+板级 dts 打开时钟、配好引脚，并启用该节点：
+
+```txt
+&sai2 {
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_sai2>;
+    assigned-clocks = <&clks IMX6UL_CLK_SAI2_SEL>,
+                      <&clks IMX6UL_CLK_SAI2>;
+    assigned-clock-parents = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
+    assigned-clock-rates = <0>, <12288000>;
+    status = "okay";
+};
+```
+
+`sound` 节点用 `cpu-dai` 指向这个设备：
+
+```txt
+sound {
+    cpu-dai = <&sai2>;
+    ...
+};
+```
+
+Machine 驱动 `imx_wm8960_probe` 读出这个 phandle，找到 SAI 的 platform 设备：
+
+```c
+cpu_np = of_parse_phandle(pdev->dev.of_node, "cpu-dai", 0);
+cpu_pdev = of_find_device_by_node(cpu_np);
+```
+
+`fsl_sai_probe` 末尾把 CPU DAI 登记进 ASoC：
 
 ```c
 ret = devm_snd_soc_register_component(&pdev->dev, &fsl_component,
@@ -192,9 +228,9 @@ static const struct snd_soc_dai_ops fsl_sai_pcm_dai_ops = {
 };
 ```
 
-同一 probe 里随后 `imx_pcm_platform_register()` 挂上 Platform（见 6.4）。
+同一 probe 里随后 `imx_pcm_platform_register()` 挂上 Platform（见 [6.4](#64-platform)）。
 
-### 6.3 Codec：`wm8960@1a`（`&i2c2` 下）
+### 6.3 Codec：`wm8960@1a`
 
 ```txt
 codec: wm8960@1a {
@@ -206,16 +242,14 @@ codec: wm8960@1a {
 };
 ```
 
-`wlf,shared-lrclk`：录放共用 LRCLK，便于 `codec-master` 下录音。
-
-`sound` 的 `audio-codec = <&codec>` 只做绑定；真正注册靠 `wm8960_i2c_probe`：
+`sound` 里 `audio-codec = <&codec>` 让 Machine 组卡时找到这颗芯片。`wm8960_i2c_probe` 把 Codec 注册进 ASoC：
 
 ```c
 ret = snd_soc_register_codec(&i2c->dev,
                 &soc_codec_dev_wm8960, &wm8960_dai, 1);
 ```
 
-与 SAI 的 `snd_soc_register_component` 对应：本 BSP 仍用经典 **`snd_soc_register_codec`**。`soc_codec_dev_wm8960` 是 `snd_soc_codec_driver`（codec `probe` / bias 等）；`wm8960_dai` 是 Codec 侧静态 `snd_soc_dai_driver`，core 据此建运行时 Codec DAI（挂链见 [6.5](#65-内核如何管理这三层)）：
+`wm8960_dai` 是 Codec 侧静态 `snd_soc_dai_driver`，core 据此建运行时 Codec DAI（挂链见 [6.5](#65-内核如何管理这三层)）：
 
 ```c
 static struct snd_soc_dai_driver wm8960_dai = {
@@ -253,18 +287,11 @@ static const struct snd_soc_dai_ops wm8960_dai_ops = {
 };
 ```
 
-模拟路由、音量等不在这份 `dai_ops` 里，而在 codec 驱动 / DAPM（`wm8960_probe` 等）；`audio-routing` 由 Machine 挂到这些 widget 名上。
-
 ### 6.4 Platform
 
-DTS **没有**单独的 `imx-pcm` 节点；`sound` 也不写 `dmas`。DMA 写在 CPU DAI 设备上（`imx6ull.dtsi` 的 `&sai2`）：
+DTS 没有单独的 `imx-pcm` 节点；`sound` 也不写 `dmas`。DMA 通道写在 [§6.2](#62-cpu-daisai2) 的 `sai2` 节点上。
 
-```txt
-dma-names = "rx", "tx";
-dmas = <&sdma 37 24 0>, <&sdma 38 24 0>;
-```
-
-Platform 在 `fsl_sai_probe` 末尾、与 CPU DAI **同一次 probe、同一个 `pdev->dev`** 上注册——容易看成「合在一层」，其实是另一次注册：
+Platform 在 `fsl_sai_probe` 末尾、与 CPU DAI **同一次 probe、同一个 `pdev->dev`** 上注册：
 
 ```c
 if (sai->soc->imx)
@@ -278,19 +305,15 @@ int imx_pcm_platform_register(struct device *dev)
 }
 ```
 
-`imx_soc_platform`（`imx-pcm-dma-v2.c`）提供 PCM ops：`open` 时按 CPU DAI 填好的 `chan_name`（`"rx"` / `"tx"`）对 **该 SAI 设备** `dma_request_slave_channel()`，再配置 SDMA、管环形缓冲与 period。FIFO 地址等仍由 `fsl_sai` 的 `dma_params` 提供。内核如何挂进全局表见 [6.5](#65-内核如何管理这三层)。
-
-分工一句话：**通道描述挂在 SAI（外设）上；搬数与 PCM 生命周期由 Platform 做。** `dai_link` 里仍是 CPU DAI 与 Platform 两项并列。
-
 ### 6.5 内核如何管理这三层
 
-这里的「三层」指 `dai_link` 上的 **CPU DAI、Codec、Platform**（Machine 是 `snd_soc_card`，另论）。注册入口不同，ASoC core（`sound/soc/soc-core.c`）用几张链表把运行时对象管起来，绑卡时再按设备和名字匹配。
+这里的「三层」指 `dai_link` 上的 **CPU DAI、Codec、Platform**（Machine 是 `snd_soc_card`，另论）。注册入口不同，ASoC core（`sound/soc/soc-core.c`）用链表把运行时对象管起来，Machine 组卡时再按设备和名字匹配。
 
-| 层 | 注册入口（本板） | 运行时对象 | core 如何挂链 |
-|----|------------------|------------|---------------|
-| **CPU DAI** | `snd_soc_register_component`（`fsl_sai`） | `snd_soc_dai` | `soc_add_dai`：`list_add` 到所属 **`component->dai_list`**；component 本身在全局 **`component_list`** |
-| **Codec** | `snd_soc_register_codec`（`wm8960`） | `snd_soc_codec` + Codec DAI | codec 进全局 **`codec_list`**；其 DAI 同样经 `soc_add_dai` 挂到 **`codec->component.dai_list`** |
-| **Platform** | `snd_soc_register_platform`（`imx_pcm_platform_register`） | `snd_soc_platform` | `snd_soc_add_platform`：内嵌 component 进 **`component_list`**，再 `list_add` 到全局 **`platform_list`** |
+| 层 | 注册入口（本板） | 运行时对象 |
+|----|------------------|------------|
+| **CPU DAI** | `snd_soc_register_component`（`fsl_sai`） | `snd_soc_dai` |
+| **Codec** | `snd_soc_register_codec`（`wm8960`） | `snd_soc_codec` + Codec DAI |
+| **Platform** | `snd_soc_register_platform`（`imx_pcm_platform_register`） | `snd_soc_platform` |
 
 三层注册调用栈（本板路径）：
 
@@ -328,24 +351,33 @@ Platform
                       → list_add(&platform->list, &platform_list)
 ```
 
-要点：
+### 6.6 组卡：`soc_bind_dai_link` 与 `rtd`
 
-- **DAI 不单独一张全局「裸 DAI 表」**：挂在所属 component 的 `dai_list` 上；CPU 侧宿主是 SAI component，Codec 侧宿主是 codec component。
-- **Platform / Codec 另有专用全局表**（`platform_list` / `codec_list`），方便按设备查找。
-- Machine 的 `snd_soc_register_card` → `snd_soc_instantiate_card` 再按 `dai_link` 匹配三层，填入 `rtd`（详见 [6.6](#66-绑卡soc_bind_dai_link-与-rtd)）。
+Machine 把「CPU DAI、Codec、Platform 怎么接」写成 `snd_soc_dai_link` 数组。本板在 `imx-wm8960.c`：
 
-```text
-注册阶段
-  fsl_sai     → component_list + component.dai_list（CPU DAI）
-              → platform_list（同 pdev 上的 Platform）
-  wm8960      → codec_list + component.dai_list（Codec DAI）
-绑卡阶段
-  imx-wm8960  → snd_soc_register_card → instantiate → soc_bind_dai_link（见 6.6）
+```c
+static struct snd_soc_dai_link imx_wm8960_dai[] = {
+	{
+		.name = "HiFi",
+		.stream_name = "HiFi",
+		.codec_dai_name = "wm8960-hifi",
+		.ops = &imx_hifi_ops,
+	},
+	/* [1] HiFi-ASRC-FE、[2] HiFi-ASRC-BE */
+};
 ```
 
-### 6.6 绑卡：`soc_bind_dai_link` 与 `rtd`
+静态表只写了名字和 Codec DAI 名。`imx_wm8960_probe` 把 [§6.2](#62-cpu-daisai2) 解析到的节点填进 `[0]`，再把数组挂到 card 上：
 
-三层注册进链表之后，Machine 调用 `devm_snd_soc_register_card` → `snd_soc_register_card` → **`snd_soc_instantiate_card`**。真正「把四层接到一条路上」的第一步，就是按 `num_links` 循环绑定：
+```c
+data->card.dai_link = imx_wm8960_dai;
+
+imx_wm8960_dai[0].codec_of_node = codec_np;              /* &codec */
+imx_wm8960_dai[0].cpu_dai_name = dev_name(&cpu_pdev->dev); /* SAI 设备名 */
+imx_wm8960_dai[0].platform_of_node = cpu_np;             /* &sai2 */
+```
+
+三层登记进链表之后，`devm_snd_soc_register_card` → `snd_soc_instantiate_card` 按 `num_links` 循环，每一条 `dai_link` 绑一次：
 
 ```c
 /* snd_soc_instantiate_card */
@@ -356,18 +388,7 @@ for (i = 0; i < card->num_links; i++) {
 }
 ```
 
-**一条 `dai_link` 对应一个 `rtd`（`struct snd_soc_pcm_runtime`）**。`rtd` 是该 link 的运行时上下文：挂上已匹配的 `cpu_dai` / `codec_dai` / `platform`，以及稍后创建的 `snd_pcm`；PCM 回调经 `rtd` 找到各层，而不是临时满世界搜驱动。
-
-本板 `imx_wm8960_probe` 填好的 `HiFi` 直连（`imx_wm8960_dai[0]`）要点：
-
-| `dai_link` 字段 | 本板取值 | 绑定时用途 |
-|-----------------|----------|------------|
-| `cpu_dai_name` | SAI 的 `dev_name` | 找 CPU DAI |
-| `platform_of_node` | `cpu_np`（即 `&sai2`） | 在 `platform_list` 里匹配 Platform（与 SAI 同设备） |
-| `codec_of_node` | `codec_np` | 找 Codec 侧 DAI |
-| `codec_dai_name` | `"wm8960-hifi"` | 与 `wm8960_dai.name` 对齐 |
-
-本文只讨论 `HiFi` 这条直连：`num_links = 1`，绑定一次即可。
+**一条 `dai_link` 对应一个 `rtd`（`struct snd_soc_pcm_runtime`）**。`rtd` 是该 link 的运行时上下文：挂上已匹配的 `cpu_dai` / `codec_dai` / `platform`，以及稍后创建的 `snd_pcm`；PCM 回调经 `rtd` 找到各层。
 
 `soc_bind_dai_link` 对单条 link 做的事：
 
@@ -384,8 +405,7 @@ soc_bind_dai_link(card, dai_link)
         → list_add_tail(&rtd->list, &card->rtd_list)
 ```
 
-任一层尚未注册，返回 **`-EPROBE_DEFER`**：释放本次 `rtd`，Machine probe 延后重试——这与 §7 里「Codec / SAI 未就绪则 deferred」是同一机制。绑成功后，`instantiate_card` 还会继续 probe 各 component、建 PCM 等；那是后续步骤，本节只盯「匹配进 `rtd`」这一环。
-
+任一层尚未注册，返回 **`-EPROBE_DEFER`**：释放本次 `rtd`，Machine probe 延后重试。
 ---
 
 ## 7. Probe 顺序
@@ -406,36 +426,19 @@ soc_bind_dai_link(card, dai_link)
         imx_wm8960_probe
           → 解析 cpu-dai / audio-codec / routing
           → snd_soc_register_card（wm8960-audio）
-               → instantiate_card → soc_bind_dai_link（见 6.6）
+               → instantiate_card → soc_bind_dai_link（见 [6.6](#66-组卡soc_bind_dai_link-与-rtd)）
 ```
 
 Machine 若早于 Codec / SAI 就绪，`soc_bind_dai_link` 返回 `-EPROBE_DEFER`，属正常现象。
 
 ---
 
-## 8. 运行时数据走哪几层
-
-播放、录音时 PCM 数据不经过 Machine。具体怎么走，见 [播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow)、[录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow)。
-
----
-
-## 9. 术语澄清
-
-| 说法 | 含义 |
-|------|------|
-| **Platform** | ASoC 的 PCM / DMA 层，不是「开发板平台」 |
-| **CPU DAI** | SoC 侧数字接口驱动，不是 ARM 应用 CPU |
-| **dai_link** | Machine 里「CPU DAI ↔ Codec（+ Platform）」的一条连接 |
-| **Component** | 较新框架里对 DAI / Codec / Platform 的统一抽象；本 BSP 代码仍多见经典四分法 |
-
----
-
-## 10. 小结
+## 8. 小结
 
 - ASoC 经典 **四层**：Machine（组卡）、Platform（PCM/DMA）、CPU DAI（数字接口）、Codec（编解码与模拟路由）。
 - 本板对应：`imx-wm8960.c` / `imx-pcm-dma-v2.c` / `fsl_sai.c` / `wm8960.c`。
 - DTS 用 `sound` 的 phandle 把 SAI 与 WM8960 绑在一起；Platform 挂在 SAI 上注册，无单独节点。
-- Machine 负责板级策略与路由；PCM 数据不经过 Machine（见 [§8](#8-运行时数据走哪几层)）。
+
 
 ---
 
@@ -456,8 +459,6 @@ Machine 若早于 Codec / SAI 就绪，`soc_bind_dai_link` 返回 `-EPROBE_DEFER
 
 ## 附录 B 要点速记
 
-1. 四层职责一句话：组卡 / 搬数 / 数字口 / 编解码。  
-2. Pro 板：Machine=`imx-wm8960`，Platform=`imx-pcm-dma-v2`，CPU DAI=`fsl_sai`（SAI2），Codec=`wm8960`。  
+1. 四层职责：组卡 / 搬数 / 数字口 / 编解码。  
+2. imx6ull Pro 板：Machine=`imx-wm8960`，Platform=`imx-pcm-dma-v2`，CPU DAI=`fsl_sai`（SAI2），Codec=`wm8960`。  
 3. Platform 无 DTS 节点；随 SAI probe 注册。  
-4. `codec-master` + SAI2 MCLK（约 12.288 MHz）是本板时钟策略。  
-5. mini 板可能是 MQS + SAI1，与本文 WM8960 路径不同。

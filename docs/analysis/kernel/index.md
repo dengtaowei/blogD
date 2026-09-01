@@ -62,15 +62,16 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 内核以百问 **Linux 4.9.88 BSP** 为主（文首已注明；上面多数是 6.8）。
 
-1. [ASoC 四层架构与 i.MX6ULL 驱动对照](/analysis/kernel/sound/imx6ull-asoc-layers) — Machine / Platform / CPU DAI / Codec
-2. [i.MX6ULL `/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) — `controlC0` / `pcmC0D0`·`D1`、`dai_link`
-3. [i.MX6ULL 声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) — `aplay` → SDMA / SAI / WM8960
-4. [i.MX6ULL 声卡录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) — `arecord` / `read` / SAI RX
-5. [ALSA PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) — 状态、阈值与 underrun/overrun
-6. [WM8960 kcontrol 构造与使用](/analysis/kernel/sound/wm8960-kcontrol) — `SOC_*` 宏、音量写到寄存器
-7. [amixer 改音量、拨开关：内核在哪里分开走](/analysis/kernel/sound/alsa-ctl-write-flow) — 两条 `sset` 的 `.put` 不是同一个函数
-8. [从 tinymix 到 WM8960 DAPM 路由](/analysis/kernel/sound/wm8960-dapm-routes) — 开关、播录路径、本板接线
-9. [DAPM widget 上电：谁判、何时判](/analysis/kernel/sound/dapm-widget-power) — `power_check`、complete path
+1. [ASoC 四层架构](/analysis/kernel/sound/imx6ull-asoc-layers) — Machine / Platform / CPU DAI / Codec
+2. [`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) — `ls /dev/snd` 看到的那些文件是干什么的
+3. [声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) — `aplay` → SDMA / SAI / WM8960
+4. [声卡录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) — `arecord`、`read`、SAI RX
+5. [ALSA PCM 状态机](/analysis/kernel/sound/alsa-pcm-state-xrun) — 状态、`start`/`stop`、underrun/overrun
+6. [ALSA hw_params 参数协商](/analysis/kernel/sound/alsa-hw-params-negotiate) — 为什么 48 kHz 能播，96 kHz 就不行
+7. [WM8960 kcontrol 构造与使用](/analysis/kernel/sound/wm8960-kcontrol) — `tinymix` 里那些音量名字是怎么来的
+8. [amixer 改音量、拨开关：内核在哪里分开走](/analysis/kernel/sound/alsa-ctl-write-flow) — 一条只改数字，一条才会接通通路
+9. [从 tinymix 到 WM8960 DAPM 路由](/analysis/kernel/sound/wm8960-dapm-routes) — 那些开关对应芯片里哪条线
+10. [DAPM widget 上电：谁判、何时判](/analysis/kernel/sound/dapm-widget-power) — 电源管理
 
 ## BPF / kprobe
 

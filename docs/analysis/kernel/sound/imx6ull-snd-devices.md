@@ -1,7 +1,7 @@
 ---
 homeTag: Sound · ALSA
 homeTitle: i.MX6ULL /dev/snd 设备节点
-homeDesc: controlC0 / pcm 节点、fops 与 open→soc_pcm_open
+homeDesc: ls /dev/snd 看到的那些文件是干什么的
 sidebarOrder: 1
 sidebarTitle: /dev/snd 节点
 date: 2026-08-01
