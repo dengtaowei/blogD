@@ -1,7 +1,7 @@
 ---
 homeTag: Sound · ALSA
 homeTitle: tinymix 看 WM8960 DAPM 路由
-homeDesc: controls/contents、播录路径图、audio_paths 与源码对照
+homeDesc: 那些开关对应芯片里哪条线
 sidebarOrder: 6
 sidebarTitle: WM8960 DAPM 路由
 date: 2026-08-06

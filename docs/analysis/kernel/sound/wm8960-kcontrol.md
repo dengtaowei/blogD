@@ -1,7 +1,7 @@
 ---
 homeTag: Sound · ALSA
 homeTitle: WM8960 kcontrol 构造与使用
-homeDesc: SOC_* 宏、注册到 controlC0、tinymix 读写路径
+homeDesc: tinymix 里那些音量名字是怎么来的
 sidebarOrder: 5
 sidebarTitle: WM8960 kcontrol
 date: 2026-08-03

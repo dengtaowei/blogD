@@ -1,7 +1,7 @@
 ---
 homeTag: Sound · ALSA
 homeTitle: amixer 写 mixer 时内核怎么走
-homeDesc: 改音量和拨开关进内核后，为什么不是同一条路
+homeDesc: 一条只改数字，一条才会接通通路
 sidebarOrder: 9
 sidebarTitle: amixer 写 mixer 分叉
 date: 2026-08-31

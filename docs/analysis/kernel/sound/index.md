@@ -4,24 +4,24 @@ home: false
 
 # Sound / ALSA
 
-以百问 **i.MX6ULL（SAI2 + WM8960）** 为主线看 ASoC 分层、`/dev/snd` 与播录路径。
+以百问网 **i.MX6ULL（SAI2 + WM8960）** 为主线看 Linux 音频子系统的设计。
 
-内核是 NXP BSP **Linux 4.9.88**（和站里多数 6.8 文不一样，各篇文首有写）。PCM 调用链换板可对照；时钟和模拟口跟板子有关——该板耳机麦进 LINPUT1，板载麦克风进 RINPUT1/2，详见 [DAPM §5.3](/analysis/kernel/sound/wm8960-dapm-routes#53-本板原理图与脚位)。
+内核是 NXP BSP **Linux 4.9.88**（和站里多数 6.8 的文章不一样，因为我手上只有这个内核版本的板子）。
 
 板级踩坑见 [调试与实践 · Sound](/analysis/kernel/debug/sound/)。
 
 ## 文章
 
-- [ASoC 四层架构与 i.MX6ULL 驱动对照](/analysis/kernel/sound/imx6ull-asoc-layers) — Machine / Platform / CPU DAI / Codec
-- [i.MX6ULL `/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) — `controlC0`、`pcmC0D0` / `D1`、三条 `dai_link`
-- [i.MX6ULL 声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) — `aplay` → SDMA / SAI / WM8960
-- [i.MX6ULL 声卡录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) — `arecord`、`read`、SAI RX
-- [ALSA PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) — 状态、`start`/`stop`、underrun/overrun
-- [ALSA hw_params 参数协商](/analysis/kernel/sound/alsa-hw-params-negotiate) — 本板成功/失败对照；dump 区间与 rule 离散率
-- [WM8960 kcontrol 构造与使用](/analysis/kernel/sound/wm8960-kcontrol) — `SOC_*` 宏、音量怎么写到寄存器
-- [amixer 改音量、拨开关：内核在哪里分开走](/analysis/kernel/sound/alsa-ctl-write-flow) — 两条 `sset` 的 `.put` 不是同一个函数
-- [从 tinymix 到 WM8960 DAPM 路由](/analysis/kernel/sound/wm8960-dapm-routes) — 开关、播录路径、本板接线
-- [DAPM widget 上电：谁判、何时判](/analysis/kernel/sound/dapm-widget-power) — `power_check`、complete path
+- [ASoC 四层架构](/analysis/kernel/sound/imx6ull-asoc-layers) — Machine / Platform / CPU DAI / Codec
+- [`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) — `ls /dev/snd` 看到的那些文件是干什么的
+- [声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) — `aplay` → SDMA / SAI / WM8960
+- [声卡录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) — `arecord`、`read`、SAI RX
+- [ALSA PCM 状态机](/analysis/kernel/sound/alsa-pcm-state-xrun) — 状态、`start`/`stop`、underrun/overrun
+- [ALSA hw_params 参数协商](/analysis/kernel/sound/alsa-hw-params-negotiate) — 为什么 48 kHz 能播，96 kHz 就不行
+- [WM8960 kcontrol 构造与使用](/analysis/kernel/sound/wm8960-kcontrol) — `tinymix` 里那些音量名字是怎么来的
+- [amixer 改音量、拨开关：内核在哪里分开走](/analysis/kernel/sound/alsa-ctl-write-flow) — 一条只改数字，一条才会接通通路
+- [从 tinymix 到 WM8960 DAPM 路由](/analysis/kernel/sound/wm8960-dapm-routes) — 那些开关对应芯片里哪条线
+- [DAPM widget 上电：谁判、何时判](/analysis/kernel/sound/dapm-widget-power) — 电源管理
 
 ## 英文资料
 
@@ -37,7 +37,7 @@ home: false
 
 ## 后续蓝图
 
-主干已覆盖：一次 `write` / `read` 在四层里怎么走完、`/dev/snd` 节点从哪来、kcontrol 与 DAPM 图怎么建、`amixer` 改音量和拨开关进内核后怎么分开走，以及 hw_params 协商。下面按层记录后续选题；**本专题暂以 NXP BSP Linux 4.9.88 为准**（与站内多数 6.8 文不同），与主线有出入处文内并列写明。升级内核后再统一基线。优先级只表示动笔顺序。
+主干已覆盖：`ls /dev/snd` 那些文件是干什么的、一次播录怎么走完、为什么 48 kHz 能播而 96 kHz 不行、`tinymix` 里的音量名字从哪来、改数字和拨开关为何不是一路、开关对应芯片哪条线、通路接通后芯片哪块才上电。下面按层记录后续选题；**本专题暂以 NXP BSP Linux 4.9.88 为准**（与站内多数 6.8 文不同），与主线有出入处文内并列写明。升级内核后再统一基线。优先级只表示动笔顺序。
 
 ### PCM 核心
 

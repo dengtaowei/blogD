@@ -1,7 +1,7 @@
 ---
 homeTag: Sound · ALSA
 homeTitle: ALSA hw_params 参数协商
-homeDesc: 本板成功/失败对照；dump 区间与 rule_rate 离散率
+homeDesc: 为什么 48 kHz 能播，96 kHz 就不行
 sidebarOrder: 8
 sidebarTitle: hw_params 参数协商
 date: 2026-08-15
