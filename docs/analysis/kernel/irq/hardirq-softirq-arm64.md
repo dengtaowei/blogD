@@ -111,7 +111,7 @@ softirq 拿到 CPU 的常见方式：
 | per-CPU IRQ 栈 | 硬中断处理；6.8 上 arm64 的 softirq 也常切到这里跑 |
 
 从用户态陷入时：硬件自动改用 `SP_EL1`（内核栈），用户栈留在 `SP_EL0`。  
-保存现场在 `arch/arm64/kernel/entry.S` 的 `kernel_entry`（`el == 0`）：通用寄存器、`elr`/`spsr`、用户 SP 等写入内核栈上的 `pt_regs`。
+保存现场在 `arch/arm64/kernel/entry.S` 的 `kernel_entry`（`el == 0`）：通用寄存器、`elr`/`spsr`、用户 SP 等写入内核栈上的 `pt_regs`。切栈时间线见 [ARM64 异常路径上的栈切换](/analysis/kernel/irq/arm64-stack-switch)。
 
 ---
 
