@@ -293,14 +293,22 @@
   color: var(--gh-fg-accent);
 }
 
-/* Mermaid 图表字体与 GitHub 渲染接近 */
+/* Mermaid 节点按 themeVariables.fontSize 排版，须与标签实绘字号一致，否则框会裁字。 */
 .vp-doc .mermaid,
 .vp-doc .mermaid svg {
   font-family: var(--gh-font-sans) !important;
+  font-size: 18px !important;
+  line-height: 1.3 !important;
 }
 
 .vp-doc .mermaid .label,
 .vp-doc .mermaid .nodeLabel,
 .vp-doc .mermaid .edgeLabel {
   font-family: var(--gh-font-sans) !important;
+  font-size: 18px !important;
+  line-height: 1.3 !important;
+}
+
+.vp-doc .mermaid foreignObject {
+  overflow: visible;
 }

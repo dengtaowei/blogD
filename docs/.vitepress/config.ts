@@ -39,7 +39,7 @@ export default withMermaid(
       background: '#ffffff',
       fontFamily:
         '-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif',
-      fontSize: '16px',
+      fontSize: '18px',
       primaryColor: '#e8eaf6',
       primaryTextColor: '#1f2328',
       primaryBorderColor: '#57606a',
@@ -66,7 +66,7 @@ export default withMermaid(
       background: '#0d1117',
       fontFamily:
         '-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif',
-      fontSize: '16px',
+      fontSize: '18px',
       primaryColor: '#2a2f4a',
       primaryTextColor: '#e6edf3',
       primaryBorderColor: '#8b949e',
