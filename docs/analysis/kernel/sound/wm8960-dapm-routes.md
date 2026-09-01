@@ -306,7 +306,7 @@ flowchart TB
 | 耳机插入检测 `HPD` | **`RINPUT3` / JD3**；`ADCLRC/GPIO1` 作 `AUD_INT` | Machine 用 `hp-det = <3 0>` 选片内 JD |
 | OUT3 | 未外接 | 驱动另有 Mono / capless 附加表；本板日常走 `HP_*` / `SPK_*` |
 
-`audio-routing` 用 `Mic Jack`、`Main MIC`、`Headphone Jack` 等名字挂到这些 Codec 脚；DAPM / `tinymix` 里看到的仍是 `LINPUT*`、`HP_*` 一类芯片侧名字。Machine 侧 `sound` 节点写法见 [ASoC 四层 §6.1](/analysis/kernel/sound/imx6ull-asoc-layers#61-machine-sound)。
+`audio-routing` 用 `Mic Jack`、`Main MIC`、`Headphone Jack` 等名字挂到这些 Codec 脚；DAPM / `tinymix` 里看到的仍是 `LINPUT*`、`HP_*` 一类芯片侧名字。Machine 侧 `sound` 节点写法见 [ASoC 四层 §6.1](/analysis/kernel/sound/imx6ull-asoc-layers#61-machinesound)。
 
 ---
 
