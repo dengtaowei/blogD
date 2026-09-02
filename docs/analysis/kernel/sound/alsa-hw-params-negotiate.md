@@ -9,10 +9,9 @@ date: 2026-08-15
 
 # ALSA hw_params 参数协商
 
-> **平台**：100ask i.MX6ULL Pro（`wm8960-audio`，SAI2 + WM8960）  
-> **内核**：NXP BSP **Linux 4.9.88**（`sound/core/pcm_native.c`、`pcm_lib.c`、`sound/soc/soc-pcm.c`）；与站点多数 6.8 文路径不同，主线若函数名拆分有出入会另行注明  
-> **关联**：[PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) · [播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) · [ASoC 四层](/analysis/kernel/sound/imx6ull-asoc-layers)  
-> **本文**：在 `hw:0,0` 上对照一次成功播放与三类协商失败，看合法范围从哪来、`snd_pcm_hw_refine` 如何求交
+> **平台**：100ask i.MX6ULL Pro
+> **内核**：NXP BSP **Linux 4.9.88**
+> **本文**：在 `hw:0,0` 上对照一次成功播放与三类协商失败，看参数的合法范围从哪来、`snd_pcm_hw_refine` 如何求交
 
 概念对照：[Writing an ALSA Driver · Constraints](https://www.kernel.org/doc/html/latest/sound/kernel-api/writing-an-alsa-driver.html#constraints)（与 4.9 一致）。
 
@@ -31,7 +30,6 @@ date: 2026-08-15
   - [7.2 区间内也会失败：rule 比 dump 更严](#72-区间内也会失败rule-比-dump-更严)
 - [8. refine：与 hw_constraints 求交](#8-refine与-hw_constraints-求交)
 - [9. 和播放路径文的衔接](#9-和播放路径文的衔接)
-- [10. 小结](#10-小结)
 - [附录 A 源码索引](#附录-a-源码索引)
 - [附录 B 常用 constraint API](#附录-b-常用-constraint-api)
 
@@ -39,21 +37,19 @@ date: 2026-08-15
 
 ## 1. 本文要回答什么
 
-> **应用要 48 kHz / S16_LE / 立体声时，内核凭什么说可行？要 96 kHz 或 U8 时，失败发生在哪一步？**
-
-[播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) 从 `hw_params` 往下讲到 DMA / SAI / Codec 时钟。本文只讲**参数协商本身**：合法范围如何表示、如何求交，失败时用户态看到什么。
+> **播放和录音要设 48 kHz / S16_LE / 立体声时，内核凭什么说可行？要 96 kHz 或 U8 时，失败发生在哪一步？**
 
 下文命令均在板端对 **`hw:0,0`（播放，`pcmC0D0p`）** 执行；录音侧求交公式相同，仅 stream 方向不同。
 
 ---
 
-## 2. 先看本卡合法范围
+## 2. 先看本声卡参数合法范围
 
 ```bash
 aplay -D hw:0,0 --dump-hw-params /dev/zero
 ```
 
-板端输出（节选）：
+输出（节选）：
 
 ```text
 HW Params of device "hw:0,0":
@@ -66,16 +62,16 @@ RATE: [8000 48000]
 aplay: set_params:1341: Sample format non available
 ```
 
-读法：
+解析：
 
 | 行 | 含义 | 内核侧对应 |
 |----|------|------------|
 | `FORMAT: S16_LE S24_LE S32_LE` | 只能选这些位 | **mask**：位图 AND，不支持的位清掉 |
 | `CHANNELS: [1 2]`、`RATE: [8000 48000]` | 只能落在区间内 | **interval**：取重叠段 |
 
-`RATE` 这一行只是上下界，**不是**「8000～48000 内任意 Hz 都行」；离散名单由后面的 rules 再收紧（见 §7）。
+`RATE` 这一行只是上下界，**不是**「8000～48000 内任意 Hz 都行」；离散的取值点由后面的 rules 再收紧（见 §7）。
 
-末尾报错是因为 `aplay` 对 `/dev/zero` 默认按 **U8**（无符号 8 bit PCM）去设参数，而 U8 不在 FORMAT 列表里——这本身就是一次「mask 求交为空」。真正要用 dump 时，看中间那块表即可。
+末尾报错是因为 `aplay` 对 `/dev/zero` 默认按 **U8**（无符号 8 bit PCM）去设参数，而 U8 不在 FORMAT 列表里——这本身就是一次「mask 求交为空」。看中间那块表即可。
 
 ---
 
@@ -109,7 +105,7 @@ buffer_size: 16384
 
 若 `cat` 时已显示 `closed`，说明 PCM 已关掉（`-d` 太短或 `sleep` 太晚）。必须在仍在播放时读。
 
-这一步表示：用户态最终参数与约束求交后仍非空，`SNDRV_PCM_IOCTL_HW_PARAMS` 选定一组唯一值，驱动 `hw_params` 回调已跑完，runtime 写入上表。之后才是 prepare / write，见播放路径文。
+上表就是协商成功后的结果：格式、采样率、通道等已经定死，驱动也按这些值配好了硬件。接下来才是 prepare、写数据（见[播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow)）。
 
 ---
 
@@ -117,7 +113,7 @@ buffer_size: 16384
 
 三类请求都落在 §2 合法范围之外，求交结果为空，用户态拿到 `-EINVAL`（或 alsa-lib 转成的英文提示）。
 
-### 4.1 采样率：`speaker-test` 要 96 kHz
+### 4.1 采样率：`speaker-test` 设置 96 kHz
 
 ```bash
 speaker-test -D hw:0,0 -r 96000 -c 2 -t sine -l 1
@@ -131,7 +127,7 @@ Setting of hwparams failed: Invalid argument
 
 对照 dump：`RATE: [8000 48000]`。96 kHz 与该 interval 无重叠 → **interval 求交失败**。
 
-### 4.2 格式：要 U8（无符号 8 bit）
+### 4.2 格式：设置 U8（无符号 8 bit）
 
 U8 即 `SNDRV_PCM_FORMAT_U8`：每个样点 1 字节、无符号。本卡只声明有符号 16/24/32 bit。
 
@@ -149,7 +145,7 @@ Available formats:
 
 对照 dump：FORMAT 三位图里没有 U8 → **mask 求交失败**。
 
-### 4.3 声道：要 8 声道
+### 4.3 声道：设置 8 声道
 
 ```bash
 aplay -D hw:0,0 -c 8 -r 48000 -f S16_LE -d 1 /dev/zero
@@ -190,13 +186,11 @@ Warning: rate is not accurate (requested = 96000Hz, got = 48000Hz)
 
 `aplay` 对采样率走的是 **`set_rate_near`**：在合法 interval 里找最接近的值（本卡即 48000），协商**成功**，只是结果不是你写的数字。`speaker-test` 按给定 rate 硬设，96 kHz 直接 `-EINVAL`。
 
-写调试笔记时：要观察「空集失败」用 `speaker-test` 或显式拒绝 near 的路径；要观察「near 收窄」用这条 `aplay`。
-
 ---
 
 ## 6. open：各层 startup 与能力求交
 
-前面 dump、成功和失败，都已经假定卡上有一张合法范围。这张表是在 **open** 里，把 CPU DAI 与 Codec 的能力求交后写出来的。
+前面 dump、成功和失败，都已经假定声卡上有一张合法参数范围的表。这张表是在 **open** 里，把 CPU DAI 与 Codec 的能力求交后得到的。
 
 本板播放：CPU DAI（`fsl_sai` / SAI2）+ Platform（`imx-pcm-dma-v2`）+ Codec DAI（WM8960）+ Machine（`imx-wm8960`）。从节点进到 ASoC 见 [`/dev/snd` 设备节点 §6](/analysis/kernel/sound/imx6ull-snd-devices#6-pcm-节点-open-与-soc_pcm_open)。与协商相关的顺序：
 
@@ -222,7 +216,7 @@ snd_pcm_open_substream()                            // pcm_native.c
   └─ snd_pcm_hw_constraints_complete()              // 见 §7.1
 ```
 
-各层 `startup` / `open` **先**追加 constraint、可先写一份 `runtime->hw`；**然后** `soc_pcm_init_runtime_hw` 用 DAI 驱动里的 `playback` 描述求交；**回到** `open_substream` 再 `complete`。
+各层 `startup` / `open` **先**追加 constraint、先写一份 `runtime->hw`；**然后** `soc_pcm_init_runtime_hw` 用 DAI 驱动里的 `playback` 描述求交；**回到** `open_substream` 再 `complete`。
 
 两端能力声明（节选）：
 
@@ -249,7 +243,7 @@ static const unsigned int fsl_sai_rates[] = {
 /* fsl_sai_startup → snd_pcm_hw_constraint_list(RATE, fsl_sai_rates) */
 ```
 
-SAI 的 `KNOT` **不是**「这个范围内随便设」。含义是：标准位概括不了我的集合，请看 `rate_min/max` 和 `constraint_list`。CPU DAI 的采样率限制因此有两层：声明里的上下界 + `fsl_sai_rates[]` 名单。
+SAI 的 `KNOT` 表示标准位概括不了该集合，以 `rate_min/max` 和 `constraint_list` 为准。CPU DAI 的采样率限制因此有两层：声明里的上下界 + `fsl_sai_rates[]` 名单。
 
 合并逻辑（4.9.88 `soc_pcm_init_runtime_hw`，本板 `num_codecs == 1`）：
 
@@ -257,16 +251,16 @@ SAI 的 `KNOT` **不是**「这个范围内随便设」。含义是：标准位�
 /* 先累加 Codec，再与 CPU DAI 求交 → runtime->hw */
 formats &= codec_stream->formats;
 rates = snd_pcm_rate_mask_intersect(codec_stream->rates, rates);
-/* … channels / rate_min/max 同理取紧 … */
+/* … channels / rate_min/max 同理取严格的约束 … */
 hw->formats = formats & cpu_stream->formats;   /* 若已有初值则 &= */
 hw->rates = snd_pcm_rate_mask_intersect(rates, cpu_stream->rates);
 snd_pcm_limit_hw_rates(runtime);
 ```
 
-`snd_pcm_rate_mask_intersect` 对 `KNOT` / `CONTINUOUS` 有单独分支（一侧是这类标志时，结果取另一侧的标准位图）。本板 Codec 是 `WM8960_RATES`、CPU 是 `KNOT`，求交后 **`hw->rates` 只留下 Codec 那几颗标准位**，不再带 `KNOT`。  
+`snd_pcm_rate_mask_intersect` 对 `KNOT` / `CONTINUOUS` 有单独分支（一侧是这类标志时，结果取另一侧的标准位图）。本板 Codec 是 `WM8960_RATES`、CPU 是 `KNOT`，求交后 **`hw->rates` 只留下 Codec 那几个标准位**，不再带 `KNOT`。  
 注意：这只改了 `runtime->hw.rates` 位图；SAI 在 `startup` 挂上的 `fsl_sai_rates` **list 仍在约束表里**，后面 refine 还要再过一遍名单。
 
-合并后若 `rates` / `formats` 为空或 `channels_min > channels_max`，`open` 失败并 `printk` `No matching rates/formats/channels`。例如把 Codec 的 `rates` 改成与 CPU 完全无交集位，会在 **open** 就失败，到不了 §4 那种已经打开后再设参数的阶段。本节板端失败均发生在 open 已成功之后，dmesg 通常没有该行。
+合并后若 `rates` / `formats` 为空或 `channels_min > channels_max`，`open` 失败并 `printk` `No matching rates/formats/channels`。例如把 Codec 的 `rates` 改成与 CPU 完全无交集位，会在 **open** 就失败，到不了 §4 那种已经打开后再设参数的阶段。上面测试的失败例子均发生在 open 已成功之后，dmesg 通常没有该行。
 
 求交结果写在 `runtime->hw` 里。还要经 `constraints_complete` 写进约束表，才会变成 §2 那种 dump；且 dump 的上下界之外，还有更严的离散 rule（下两节）。
 
@@ -298,7 +292,7 @@ snd_pcm_hw_rule_add(…, snd_pcm_hw_rule_rate, hw, RATE, -1);
 ### 7.2 区间内也会失败：rule 比 dump 更严
 
 本板在 `complete` 时因 `hw->rates` 已是 WM8960 离散位图，会挂上 `snd_pcm_hw_rule_rate`：只允许 `snd_pcm_known_rates` 里对应位置为 1 的标准率（8k / 11.025k / 16k / 22.05k / 32k / 44.1k / 48k 等，**不含** 12k / 24k）。  
-`fsl_sai_startup` 另挂的 `constraint_list` 与上述规则一起参与 refine，最终取更紧的一侧。
+`fsl_sai_startup` 另挂的 `constraint_list` 与上述规则一起参与 refine，最终取更严格的一侧。
 
 板端对照（均在 dump 的 `[8000 48000]` 内）：
 
@@ -342,7 +336,9 @@ do {
 } while (again);
 ```
 
-`HW_PARAMS` 会再 refine 一次，经 `snd_pcm_hw_params_choose` 定唯一值，再进各层 `hw_params`（见播放路径 §3.2）。追加 `constraint_*` 必须落在 §6 树里的 `startup` / `open`；挂晚了不参与当次协商。常用 API 见附录 B。
+真正设参数（`HW_PARAMS`）时，内核会再做一遍上面的 refine，然后挑出一组具体数值（`snd_pcm_hw_params_choose`），再调用各层驱动的 `hw_params` 去配硬件（见[播放路径 §3.2](/analysis/kernel/sound/imx6ull-audio-playback-flow#32-hw_params配置参数ioctl)）。
+
+驱动若要追加约束，必须挂在 §6 那次 `startup` / `open` 里；挂晚了，这一轮协商用不上。常用约束 API 见附录 B。
 
 ---
 
@@ -361,16 +357,6 @@ do {
 2. **请求在 dump 区间外**（96k / U8 / 8ch）→ mask / interval 空集（§4）；  
 3. **请求在区间内仍失败**（9k / 12k）→ rules / 位图比 dump 更严（§7.2）；  
 4. **只告警 rate not accurate**（§5）→ near 已改到合法值，不是空集。
-
----
-
-## 10. 小结
-
-- 本卡 dump：`FORMAT` 三位、`RATE [8000 48000]`、`CHANNELS [1 2]`；48 kHz WAV 可落到 `/proc/.../hw_params`。  
-- 96 kHz（`speaker-test`）、U8、8ch：mask / interval 求交为空 → `-EINVAL`。  
-- dump 的 RATE 只是上下界；`rule_rate` + SAI `constraint_list` 使 9k / 12k 等在区间内仍失败，44.1k 可行。  
-- `aplay -r 96000` 用 near，常收到 48000 并告警。  
-- open：`startup` 挂约束 → `init_runtime_hw` 求交 → `constraints_complete` 写入约束表；其后 refine 按 mask → interval → rules。
 
 ---
 
