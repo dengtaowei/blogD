@@ -9,9 +9,9 @@ date: 2026-08-06
 
 # 从 tinymix 到 WM8960 DAPM 路由
 
-> **平台**：100ask i.MX6ULL Pro（声卡 `wm8960-audio`，Codec WM8960）  
-> **内核**：NXP BSP **Linux 4.9.88**（`sound/soc/codecs/wm8960.c`）  
-> **本文**：用板子上的 `tinymix` 输出对照 Codec 内模拟路由图，再落到 `snd_soc_dapm_route` / mixer widget 源码
+> **平台**：100ask i.MX6ULL Pro  
+> **内核**：NXP BSP **Linux 4.9.88**
+> **本文**：用板子上的 `tinymix` 输出对照 Codec 内模拟通路，再阅读 `snd_soc_dapm_route` / mixer widget 源码
 
 ---
 
@@ -19,17 +19,20 @@ date: 2026-08-06
 
 - [1. 本文要回答什么](#1-本文要回答什么)
 - [2. 先建立图像：读后续所需概念](#2-先建立图像读后续所需概念)
-- [3. tinymix：清单与状态](#3-tinymix清单与状态)
-- [4. 两类控件：音量与路由开关](#4-两类控件音量与路由开关)
+- [3. tinymix 的输出](#3-tinymix-的输出)
+- [4. 两类控件：音量与 route 开关](#4-两类控件音量与-route-开关)
 - [5. 按开关画出路由图](#5-按开关画出路由图)
   - [5.1 录音（Capture）](#51-录音capture)
   - [5.2 播放（Playback）](#52-播放playback)
   - [5.3 本板原理图与脚位](#53-本板原理图与脚位)
 - [6. 源码：路由写在哪个结构体](#6-源码路由写在哪个结构体)
+  - [6.1 边：`struct snd_soc_dapm_route`](#61-边struct-snd_soc_dapm_route)
+  - [6.2 widget：`struct snd_soc_dapm_widget`](#62-widgetstruct-snd_soc_dapm_widget)
+  - [6.3 Mixer 开关：`SOC_DAPM_SINGLE`](#63-mixer-开关soc_dapm_single)
+  - [6.4 注册入口](#64-注册入口)
 - [7. 一个开关挂两条边](#7-一个开关挂两条边)
 - [8. 小结](#8-小结)
 - [附录 A 源码索引](#附录-a-源码索引)
-- [附录 B 要点速记](#附录-b-要点速记)
 
 ---
 
@@ -37,27 +40,25 @@ date: 2026-08-06
 
 > **`tinymix controls` 里那一长串名字是什么？其中带 Mixer / Switch 的项如何对应 WM8960 内部连线？驱动里用哪个结构体声明这些连线？**
 
-范围限定 **Codec 内 DAPM 图**（widget + route + mixer 开关）以及如何用 `tinymix` 观察；[§5.3](#53-本板原理图与脚位) 对照本板插座与板载麦克风接到哪些输入脚。不展开 PCM DMA / SAI 数据面，也不展开 `SOC_*` 音量宏的逐字段展开。
-
 ---
 
 ## 2. 先建立图像：读后续所需概念
 
 把 Codec 里的模拟音频想成一座**小城市供电网络**。后文会反复出现下面这些词，先对齐含义：
 
-| 概念 | 形象 | 在驱动 / 用户态里是什么 |
+| 概念 | 比喻 | 在驱动 / 用户态里是什么 |
 |------|------|-------------------------|
 | **DAPM** | 整座城的调度所：谁在用电就给谁通电 | Dynamic Audio Power Management：按**是否存在 complete path** 给 widget 上电 / 断电 |
 | **widget** | 一座变电站 / 路口 | 图上的**节点**（`snd_soc_dapm_widget`）：DAC、ADC、Mixer、`HP_L` 等，常绑一颗电源位 |
 | **route** | 图纸上画好的「应从 A 到 B」 | 驱动里的**静态声明**（`snd_soc_dapm_route` / 本驱动的 `audio_paths[]`）：`{ sink, control, source }` |
 | **path** | 两站之间真正铺好的**一段电线** | route 注册后的**运行时边**（`snd_soc_dapm_path`）；字段 `connect` 表示这段当前是否接通 |
-| **DAPM kcontrol** | 电线上的**闸刀** | 挂在 MIXER 等 widget 上的开关（常 `SOC_DAPM_SINGLE`）；`tinymix` 里名字多含 `… Mixer … Switch` |
+| **DAPM kcontrol** | 电线上的**闸刀** | 挂在 MIXER 等 widget 上的开关（使用 `SOC_DAPM_SINGLE` 声明）；`tinymix` 里名字多含 `… Mixer … Switch` |
 | **普通 kcontrol** | 变电站里的**旋钮**（音量等） | 改增益 / 静音 / ALC，一般**不决定**边通不通；与闸刀出现在同一张 `tinymix` 列表里 |
 | **complete path** | 从发电厂一直通到用户家的**整条线路** | 端点有效（在播 / 在录）且中间每一段 path 的 `connect` 都为真 |
 
 关系可以记成一句话：
 
-> 驱动用 **route** 画图纸 → 内核建成 **path** → **DAPM kcontrol** 决定某段 path 是否 `connect` → 若拼出 **complete path**，沿线 **widget** 才由 **DAPM** 供电。
+> 驱动用 **route** 画图纸，内核建成 **path**。**DAPM kcontrol** 决定某段 path 是否 `connect`。拼出 **complete path** 之后，沿线 **widget** 才由 **DAPM** 供电。
 
 播放时心里可以记这一条：
 
@@ -75,18 +76,16 @@ widget                 widget
 
 几个易混点：
 
-- **route 与 path**：route 是源码里的静态表项；path 是跑起来之后的边。后文画图、谈通断，说的是 path；落到 `audio_paths[]`，说的是 route。  
-- **DAPM kcontrol 与普通 kcontrol**：都在 `tinymix` 里，但前者管「路通不通」，后者管「声音大小 / 参数」。只拧音量、闸刀断开 → **complete path 断了** → 常见「音量有、喇叭无声」。  
+- **route 与 path**：route 是源码里的静态表项；path 是运行时的边。后文画图、谈通断，说的是 path；谈到 `audio_paths[]`，说的是 route。  
+- **DAPM kcontrol 与普通 kcontrol**：都在 `tinymix` 里。闸刀管这段路通不通，旋钮管音量和参数。闸刀断开时，有音量，喇叭仍然无声，因为 **complete path** 没有接通。  
 - **`control == NULL` 的 route**：图纸上规定常通，没有闸刀，注册后 path 一直 `connect`。  
 - 内核在 `dapm_power_widgets` 里扫描的，正是 complete path（DAC→输出脚、输入脚→ADC、旁路、环回等）。
 
-后文先用 `tinymix` 认出闸刀，再按闸刀画出播 / 录两张图，最后对照 `audio_paths[]` 与 widget 上的开关表。
-
 ---
 
-## 3. tinymix：清单与状态
+## 3. tinymix 的输出
 
-本板 `tinymix` 默认操作 card 0。两个常用子命令职责不同：
+本板 `tinymix` 默认操作 card 0。两个常用子命令：
 
 | 命令 | 作用 |
 |------|------|
@@ -94,7 +93,7 @@ widget                 widget
 | `tinymix contents` | 在清单基础上再读出当前值（BOOL 为 `On`/`Off`，INT 带 range） |
 | `tinymix get '名字'` | 读单个控件 |
 
-只跑 `controls` 时看不到开关是开还是关，这是命令语义，不是驱动没暴露状态。看路由开关请用：
+只跑 `controls` 时看不到开关是开还是关，看 `route` 开关请用：
 
 ```bash
 tinymix contents
@@ -105,7 +104,7 @@ tinymix get 'Left Output Mixer PCM Playback Switch'
 
 ---
 
-## 4. 两类控件：音量与路由开关
+## 4. 两类控件：音量与 route 开关
 
 同一声卡的 mixer 列表里混着两类东西，宜分开看：
 
@@ -114,7 +113,7 @@ tinymix get 'Left Output Mixer PCM Playback Switch'
 | 普通 mixer | `Speaker Playback Volume`、`Capture Volume`、ALC / 3D 等 | 改增益、静音、算法参数；多数来自 `wm8960_snd_controls[]` |
 | DAPM mixer 开关 | `… Mixer … Switch`（约 ctl 42～57） | 选模拟支路是否接通；来自 widget 上挂的 `SOC_DAPM_SINGLE` |
 
-音量旋钮拧对了仍可能无声：若 **PCM Playback Switch** 等路径开关未接通，或 DAPM 未上电，数字通路与喇叭之间仍断开。本文后面只画 **路由开关** 对应的图。
+音量设置对了仍可能无声：可能是 **PCM Playback Switch** 等路径开关未接通，或 DAPM 未上电，数字通路与喇叭之间仍断开。
 
 板子上与路由直接相关的 BOOL（`tinymix controls` 摘录）：
 
@@ -143,7 +142,7 @@ tinymix get 'Left Output Mixer PCM Playback Switch'
 
 图中边上的标注对应上表 ctl 编号；**无编号的边**在驱动里 `control` 字段为 `NULL`，表示常通（不经 tinymix 开关）。
 
-读 DAPM 录音图之前，可先对照芯片手册里的模拟前端（本板耳机麦走 **LINPUT1** 这一路）：
+读 DAPM 路由图之前，可先对照芯片手册里的模拟前端（本板耳机麦走 **LINPUT1** 这一路）：
 
 ![WM8960 Figure 8：Microphone Input PGA Circuit](/files/wm8960-fig8-mic-input-pga.png)
 
@@ -157,12 +156,12 @@ tinymix get 'Left Output Mixer PCM Playback Switch'
 
 | 手册 | 本板日常对照 |
 |------|----------------|
-| **LMN1** | `Left Boost Mixer LINPUT1 Switch`（约 ctl **44**） |
-| **LMIC2B** | `Left Input Mixer Boost Switch`（约 ctl **48**） |
+| **LMN1** | `Left Boost Mixer LINPUT1 Switch`（ctl **44**） |
+| **LMIC2B** | `Left Input Mixer Boost Switch`（ctl **48**） |
 | **LMICBOOST** | `Left Input Boost Mixer LINPUT1 Volume`（粗档再放大） |
 | **LINVOL** | `Capture Volume` 等 PGA 细调增益 |
 
-手册方块名与驱动 widget 名**同名不一定同物**。手册没有 `Left Input Mixer` 这一块；驱动为挂电源位 / 开关另起了两个 MIXER 名。对照时以寄存器位为准：
+手册与驱动 widget **名称可能对不上**。手册没有 `Left Input Mixer` 这一块。对照时以寄存器位为准：
 
 | 手册 Figure 8 | 驱动 `wm8960.c` DAPM |
 |-----------|----------------------|
@@ -218,7 +217,7 @@ flowchart LR
 
 要点：
 
-- `LINPUT2` / `LINPUT3`（及右侧对称）进入 **Input Mixer** 的边在驱动里是常通。  
+- `LINPUT2` / `LINPUT3`（及对称 `RINPUT2` / `RINPUT3`）进入 **Input Mixer** 的边在驱动里是常通。  
 - 走 **Boost** 支路时，需打开对应 `LINPUT`/`RINPUT` Switch，并打开 **48 / 49**（Boost Switch）。  
 - **48** 同时出现在两条边上（Boost Mixer→Input Mixer，以及 LINPUT1→Input Mixer），见 [§7](#7-一个开关挂两条边)。  
 - 本板插座 / 板载麦克风接到哪几个输入脚，见 [§5.3](#53-本板原理图与脚位)。
@@ -261,8 +260,9 @@ flowchart LR
   MOM --> OUT3
 ```
 
-日常数字播放：至少需要 **50 / 53**（`PCM Playback Switch`）打开，使 Left/Right DAC 进入 Output Mixer；再经常通边到 `HP_*` / `SPK_*`。  
-**51 / 54**、**52 / 55** 是模拟旁路；**56 / 57** 服务 Mono / OUT3。本板耳机走 `HP_L` / `HP_R` 隔直输出，OUT3 未接到插座，日常播放一般只用到 **50 / 53** 这一路。
+播放时打开 **50 / 53**（`PCM Playback Switch`），Left/Right DAC 才能进 Output Mixer，再经后面的常通边到 `HP_*` / `SPK_*`。
+
+`LINPUT3 Switch`（51、54）和 `Boost Bypass`（52、55）不经过 DAC，模拟信号直接进 Output Mixer。`Left Switch` / `Right Switch`（56、57）把左右 Output Mixer 送到 Mono Mixer，再出到芯片的 OUT3 脚。本板耳机插座接在 `HP_L` / `HP_R`，OUT3 没有接到插座，日常播放只开 50 / 53。
 
 ### 5.3 本板原理图与脚位
 
@@ -352,11 +352,9 @@ static const struct snd_soc_dapm_route audio_paths[] = {
 
 有名字的 `control` 必须与某个 **MIXER widget 上挂的 DAPM kcontrol 名字**一致，否则边无法受 tinymix 控制。
 
-OUT3 / capless 等模式另有 `audio_paths_out3[]`、`audio_paths_capless[]`，在 `wm8960_add_widgets` 里按平台数据追加。本板耳机走 `HP_*` 隔直、OUT3 未外接，日常 complete path 一般落在 `audio_paths[]` 主表。
+### 6.2 widget：`struct snd_soc_dapm_widget`
 
-### 6.2 点：`struct snd_soc_dapm_widget`
-
-节点在 `wm8960_dapm_widgets[]`，例如：
+widget 在 `wm8960_dapm_widgets[]`，例如：
 
 ```c
 SND_SOC_DAPM_INPUT("LINPUT1"),
@@ -373,7 +371,7 @@ SND_SOC_DAPM_MIXER("Left Output Mixer", WM8960_POWER3, 3, 0,
 
 `SND_SOC_DAPM_MIXER` 的后两个参数是该 mixer 的开关表及其长度。
 
-### 6.3 开关表：`SOC_DAPM_SINGLE`
+### 6.3 Mixer 开关：`SOC_DAPM_SINGLE`
 
 例如输出混音与输入 Boost：
 
@@ -391,7 +389,7 @@ static const struct snd_kcontrol_new wm8960_loutput_mixer[] = {
 };
 ```
 
-用户态看到的长名字是 **widget 名 + 控件短名** 拼出来的，例如：
+用户态看到的长名字是 **widget 名 + Mixer 开关名** 拼出来的，例如：
 
 `Left Output Mixer` + `PCM Playback Switch`  
 → `Left Output Mixer PCM Playback Switch`（ctl 50）。
@@ -404,7 +402,7 @@ snd_soc_dapm_new_controls(dapm, wm8960_dapm_widgets,
 snd_soc_dapm_add_routes(dapm, audio_paths, ARRAY_SIZE(audio_paths));
 ```
 
-顺序上：先建 widget（含 mixer 开关），再 `add_routes` 把字符串形式的边挂进 DAPM 图。开关因此出现在同一张声卡的 `controlC0` 上，才能被 `tinymix` 枚举。
+顺序上：先建 widget（含 mixer 开关），再 `add_routes` 把字符串表示的边挂进 DAPM 图。
 
 ---
 
@@ -424,9 +422,8 @@ snd_soc_dapm_add_routes(dapm, audio_paths, ARRAY_SIZE(audio_paths));
 ## 8. 小结
 
 - **widget = 点，path = 边，route = 图纸，DAPM kcontrol = 闸刀，complete path = 端到端通电线路**。  
-- `tinymix controls` 只给清单；看开关状态用 `contents` / `get`。  
 - 列表里约 42～57 的 BOOL 是 DAPM 路由开关；前面多为音量 / 算法类控件。  
-- 播 / 录应分开看图：录音盯 Boost / Input Mixer（42～49）；播放盯 Output Mixer 的 PCM / Bypass（50～57）。  
+- 播 / 录应分开看图：录音看 Boost / Input Mixer（42～49）；播放看 Output Mixer 的 PCM / Bypass（50～57）。  
 - 本板：耳机麦进 **LINPUT1**，板载麦克风进 **RINPUT1/2**，耳机 / 喇叭走 `HP_*` / `SPK_*`；OUT3 未外接。  
 - 边在 `audio_paths[]`（`struct snd_soc_dapm_route`）；点在 `wm8960_dapm_widgets[]`；开关短名在 `SOC_DAPM_SINGLE` 表里，经 `snd_soc_dapm_add_routes` 挂上。
 
@@ -443,16 +440,3 @@ snd_soc_dapm_add_routes(dapm, audio_paths, ARRAY_SIZE(audio_paths));
 | `include/sound/soc-dapm.h` | `snd_soc_dapm_route` / widget 宏 |
 | 仓库 [`refs/datasheets/WM8960.pdf`](https://github.com/dengtaowei/blogD/blob/main/refs/datasheets/WM8960.pdf) | 芯片手册 |
 | `/files/wm8960-fig8-mic-input-pga.png` | 手册 Figure 8 摘图 |
-
----
-
-## 附录 B 要点速记
-
-1. **DAPM** 按 complete path 供电；**route → path**；**DAPM kcontrol** 是闸刀，**普通 kcontrol** 多是旋钮。  
-2. **widget / path / complete path** ≈ 变电站 / 一段电线 / 整条通电线路。  
-3. **controls ≠ 当前值**；状态看 **contents**。  
-4. 路由三件套：**widget + route +（可选）DAPM kcontrol**。  
-5. `route = { sink, control, source }`；`control == NULL` 常通。  
-6. 数字播放关键开关：`Left/Right Output Mixer PCM Playback Switch`（50 / 53）。  
-7. 同一 `control` 字符串可出现在多行 route 里，对应一次开关、多条边。  
-8. 本板耳机麦 → LINPUT1，板载麦克风 → RINPUT1/2；播放走 HP_* / SPK_*。
