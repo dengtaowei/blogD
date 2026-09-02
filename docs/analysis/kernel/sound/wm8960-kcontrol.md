@@ -9,8 +9,8 @@ date: 2026-08-03
 
 # WM8960 kcontrol 构造与使用
 
-> **平台**：100ask i.MX6ULL Pro（声卡 `wm8960-audio`，Codec WM8960）  
-> **内核**：NXP BSP **Linux 4.9.88**（`sound/soc/codecs/wm8960.c`）  
+> **平台**：100ask i.MX6ULL Pro
+> **内核**：NXP BSP **Linux 4.9.88**
 > **本文**：本板 Codec 侧 mixer 控制项如何用 `SOC_*` 宏构造、如何挂到声卡，以及用户态读写时内核怎么走到寄存器
 
 ---
@@ -25,7 +25,6 @@ date: 2026-08-03
 - [6. DAPM 带出的控制项](#6-dapm-带出的控制项)
 - [7. 小结](#7-小结)
 - [附录 A 源码索引](#附录-a-源码索引)
-- [附录 B 要点速记](#附录-b-要点速记)
 
 ---
 
@@ -33,7 +32,7 @@ date: 2026-08-03
 
 > **WM8960 驱动里那些「Headphone Playback Volume」是怎么定义出来的？`tinymix` / `amixer` 改音量时，内核经过哪些函数写到 Codec 寄存器？**
 
-范围限定 **Codec 驱动 `wm8960.c` 的 kcontrol**（含随 DAPM mixer 挂上的开关）。不展开 Machine 耳机 jack、也不展开 PCM 数据面。
+范围限定 **Codec 驱动 `wm8960.c` 的 kcontrol**（含随 DAPM mixer 挂上的开关）。
 
 ---
 
@@ -75,7 +74,7 @@ static const struct snd_kcontrol_new wm8960_snd_controls[] = {
 
 ### 3.2 以 `SOC_DOUBLE_R_TLV` 为例
 
-左右声道各一个寄存器、带 dB 刻度（TLV）时常用。宏（`include/sound/soc.h`）展开后大致填：
+宏（`include/sound/soc.h`）展开后大致是：
 
 | 字段 | 作用 |
 |------|------|
@@ -86,7 +85,7 @@ static const struct snd_kcontrol_new wm8960_snd_controls[] = {
 | `.info` / `.get` / `.put` | 通用 `snd_soc_info_volsw` / `get_volsw` / `put_volsw` |
 | `.private_value` | 打包成 `soc_mixer_control`：左右寄存器、移位、`max`、是否 invert |
 
-也就是说：**构造阶段几乎不写业务函数**，把「哪个寄存器、哪几位、范围多少」塞进 `private_value`，读写交给 ASoC 通用 volsw 回调。
+换句话说：定义控制项时，一般不用自己写读写函数；只要用宏填好「读哪个寄存器、从哪一位开始、最大多少」，ASoC 自带的音量回调（`get_volsw` / `put_volsw`）就会按这些信息去改芯片寄存器。
 
 ### 3.3 常见宏对照（本驱动用到的）
 
@@ -98,11 +97,11 @@ static const struct snd_kcontrol_new wm8960_snd_controls[] = {
 | `SOC_ENUM` | 枚举（极性、ALC 模式等） |
 | `SOC_SINGLE_BOOL_EXT` | 自定义 get/put（如 Deemphasis） |
 
-`SOC_DAPM_SINGLE` 出现在 **DAPM mixer 的 kcontrol 数组**里（见 §6），不是 `wm8960_snd_controls[]` 主表项的同一种挂法，但最终同样会变成用户可见的 mixer 项。
+另外还有一类宏 `SOC_DAPM_SINGLE`：它不写在上面的 `wm8960_snd_controls[]` 主表里，而是挂在 DAPM 混音器的开关数组上（见 §6）。注册路径不同，但 `tinymix` / `amixer` 里同样能看到这些开关。
 
 ### 3.4 `private_value` 与 get/put
 
-通用路径（`sound/soc/soc-ops.c`）里，`snd_soc_get_volsw` / `snd_soc_put_volsw` 会：
+`snd_soc_get_volsw` / `snd_soc_put_volsw` 会：
 
 1. 把 `kcontrol->private_value` 还原成 `struct soc_mixer_control`；
 2. `snd_soc_component` 读写 Codec 寄存器（经 regmap / I2C）；
@@ -169,14 +168,9 @@ ioctl(controlC0, SNDRV_CTL_IOCTL_ELEM_WRITE)
           → 若 put 返回 >0：snd_ctl_notify（值变更事件）
 ```
 
-读对称：`ELEM_READ` → `kctl->get` → 常为 `snd_soc_get_volsw` → 读寄存器填 `ucontrol`。
+读音量对称：发 `ELEM_READ`，走到该控件的 `get`（一般是 `snd_soc_get_volsw`），从寄存器读出当前值，填回给用户态。
 
-`ELEM_INFO` 走 `kctl->info`（类型、通道数、min/max），供 `tinymix` 打印范围。TLV ioctl 则读 `.tlv`，把原始整数换成 dB 显示。
-
-### 5.3 和 PCM 节点的关系
-
-- **改音量**：只动 `controlC0` + Codec 寄存器，不必打开 `pcmC0D0p`。  
-- **播声音**：PCM 数据面与 kcontrol 独立；没开合适 DAPM 路径时，音量旋钮有效也可能无声（电源/路由问题，不在本文展开）。
+`tinymix` 列出「范围多大、是整数还是开关」时，发的是 `ELEM_INFO`，走控件的 `info` 回调。若要按分贝显示，再走 TLV 相关 ioctl，用表里的 `.tlv` 把整数换算成 dB。
 
 ---
 
@@ -220,12 +214,3 @@ SND_SOC_DAPM_MIXER("Left Output Mixer", ...,
 | `sound/soc/soc-core.c` | `snd_soc_add_codec_controls` / `snd_soc_add_controls` / `snd_soc_cnew` |
 | `sound/core/control.c` | `snd_ctl_add`、`ELEM_READ` / `ELEM_WRITE` |
 | `include/sound/control.h` | `snd_kcontrol` / `snd_kcontrol_new` |
-
----
-
-## 附录 B 要点速记
-
-1. 模板是 `snd_kcontrol_new`，活对象是 `snd_kcontrol`。  
-2. `SOC_DOUBLE_R_TLV("Headphone Playback Volume", LOUT1, ROUT1, …)` = 名字 + 双寄存器 + TLV + 通用 volsw。  
-3. `snd_soc_add_codec_controls` → `snd_ctl_add` → 出现在 `controlC0`。  
-4. `tinymix` 写值：`ELEM_WRITE` → `put` → 写 Codec 寄存器。
