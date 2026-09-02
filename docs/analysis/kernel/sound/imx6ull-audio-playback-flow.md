@@ -9,9 +9,8 @@ date: 2026-08-01
 
 # i.MX6ULL 声卡播放路径
 
-> **平台**：100ask i.MX6ULL Pro（SAI2 + WM8960）  
-> **内核**：NXP BSP **Linux 4.9.88**（`imx-wm8960` / `fsl_sai` / `imx-pcm-dma-v2` / `wm8960`）；与站点多数 6.8 文路径不同，差异处另行注明  
-> **关联**：[`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices) · [录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) · [PCM 状态机与 XRUN](/analysis/kernel/sound/alsa-pcm-state-xrun) · [ASoC 四层](/analysis/kernel/sound/imx6ull-asoc-layers)  
+> **平台**：100ask i.MX6ULL Pro
+> **内核**：NXP BSP **Linux 4.9.88**
 > **本文**：`aplay` 播放的七层路径、HiFi（`pcmC0D0p`）内核调用栈，以及 prepare 上电、close 断电
 
 ---
@@ -27,7 +26,7 @@ date: 2026-08-01
   - [3.4 write + 首次 start](#34-write--首次-start数据期主路径)
   - [3.5 period 完成回调](#35-period-完成回调异步唤醒阻塞的-write)
   - [3.6 对照简图](#36-对照简图)
-  - [3.7 drain / close](#37-drain--close停-dma-与模拟断电)
+  - [3.7 drain / close](#37-drain--close停-dma-与模拟通路断电)
 - [4. 分层流程图](#4-分层流程图)
 - [5. 简化分层与源文件](#5-简化分层与源文件)
 - [6. 小结](#6-小结)
@@ -36,38 +35,33 @@ date: 2026-08-01
 
 ## 1. 本文要回答什么
 
-> **一次 `aplay -D hw:0,0`，PCM 如何从用户态写到耳机/喇叭？内核调用栈经过哪些函数？**
+> **`aplay -D hw:0,0` 播放时，PCM 数据如何从用户态传到耳机/喇叭？内核调用栈经过哪些函数？**
 
 设备节点与 `dai_link` 含义见 [`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices)。本文以 **HiFi / `pcmC0D0p`** 直连通路为准。
 
-一次播放可以看成：软件把 PCM 送进内核环形缓冲，硬件按采样率把数据搬出去变成声音。
+播放可以看成：软件把 PCM 送进内核环形缓冲区，硬件按采样率把数据搬出去变成声音。
 
 ---
 
 ## 2. 七层概览
 
 1. **应用层**  
-   播放器用 ALSA 库打开声卡，通过 `write()` / `snd_pcm_writei()` 连续写入 PCM 数据。控制参数（采样率、通道、格式）走 `ioctl`。
+   `aplay` 等播放器打开声卡，设好采样率 / 通道 / 格式，再不断把 PCM 样本写进设备。
 
 2. **ALSA 设备接口**  
-   用户态落到 `/dev/snd/pcmC0D0p`，对应内核 `snd_pcm_f_ops[0]`：`write` 进 `snd_pcm_write()`，`ioctl` 负责 `hw_params` / `prepare` / `start` 等。prepare 做完，PCM 进入 `PREPARED`，模拟电路也在这时上电。
+   用户态打开的是 `/dev/snd/pcmC0D0p`。内核在这里接收「设参数、准备、开始」等控制，以及后续的写数据；prepare 完成后模拟通路已上电，PCM 进入可播状态。
 
 3. **ALSA PCM 核心**  
-   `snd_pcm_lib_write()` → `snd_pcm_lib_write1()` 管理环形缓冲：  
-   - `copy_from_user` 把用户 PCM 拷到 `dma_area`  
-   - 缓冲满了，阻塞 `write` 会等待  
-   - 第一次写够 `start_threshold` 后调用 `snd_pcm_start()` 启动播放
+   管理内存环形缓冲：把用户态数据拷进来；缓冲满了就让写阻塞等待；攒够启动阈值后，正式开始播放。
 
 4. **ASoC 汇总**  
-   `snd_pcm_start()` 最终进入 `soc_pcm_trigger()`，按顺序通知：  
-   Codec → Platform(DMA) → CPU DAI(SAI) → Machine。  
-   本板 WM8960 无 codec trigger，Machine 一般也无；真正有效的是 DMA 和 SAI。
+   收到「开始」后，按 Codec → Platform → CPU DAI → Machine 的顺序通知各层。
 
-5. **DMA 平台**  
-   `snd_dmaengine_pcm_trigger()` 准备 cyclic DMA 描述符并 `issue_pending`，SDMA 开始把内存中的 PCM 搬到 SAI2 FIFO。每个 period 完成会回调，唤醒阻塞中的 `write`。
+5. **DMA**  
+   配置并启动 SDMA：按 period 把环形缓冲里的 PCM 搬进 SAI2 的 FIFO。搬完一段就回调，唤醒还在等空位的写操作。
 
 6. **CPU DAI / Codec**  
-   `fsl_sai_trigger()` 打开 SAI 发送（FRDE/TERE 等）。WM8960 从 I2S 收数字音频，DAC 转成模拟，再送到耳机或喇叭。DAC、输出混音这些块在 prepare 时已经上电；`trigger(START)` 打开的是 SAI。
+   SAI 打开发送，把 FIFO 里的数字音频经 I2S 送给 WM8960；芯片侧 DAC 转成模拟，再出到耳机或喇叭。DAC 等在 prepare 时已上电，这里主要是打开 SAI 发送。
 
 7. **硬件数据通路**
 
@@ -116,7 +110,7 @@ sys_ioctl(SNDRV_PCM_IOCTL_HW_PARAMS)
                       → wm8960_hw_params
 ```
 
-此阶段配置采样率、格式、时钟等。参数设完，PCM 进入 `SETUP`。接下来 `aplay` 会做 prepare。
+此阶段配置采样率、格式、时钟等。参数设完，PCM 进入 `SETUP`。
 
 ### 3.3 prepare（模拟通路上电）
 
@@ -135,9 +129,9 @@ sys_ioctl(SNDRV_PCM_IOCTL_PREPARE)
 
 `aplay` 设完采样率之后一定会再做一次 prepare，PCM 从 `SETUP` 进入 `PREPARED`，这之后才能 start。
 
-本板的 Codec、DMA、SAI、Machine 都没有自己的 prepare 函数。内核进入公共的 `soc_pcm_prepare`，在这里调用 `snd_soc_dapm_stream_event(..., STREAM_START)`：等于告诉 DAPM「播放流开始了」。混音开关已经打开的话，DAC、输出混音这些模拟块就在这一步上电。
+本板的 Codec、DMA、SAI、Machine 都没有自己的 prepare 函数。内核进入公共的 `soc_pcm_prepare`，在这里调用 `snd_soc_dapm_stream_event(..., STREAM_START)`：等于告诉 DAPM「播放流开始了」。混音开关已经打开的话，DAC、输出混音这些模拟硬件模块就在这一步上电。
 
-数据还没开始搬。SDMA 和 SAI 要等到下面第一次 `write` 里的 `trigger(START)` 才打开。
+此时还没开始播放数据。SDMA 和 SAI 要等到下面第一次 `write` 里的 `trigger(START)` 才打开。
 
 ### 3.4 write + 首次 start（数据期主路径）
 
@@ -182,16 +176,14 @@ SDMA period 完成中断
           → 更新硬件指针 / 唤醒 wait_for_avail 中的写端
 ```
 
-本板 Platform 是 `imx-pcm-dma-v2`，period 完成走通用 dmaengine PCM 回调（上表）。
-
 ### 3.6 对照简图
 
 ```text
 配置期:
   open → hw_params → prepare
-    prepare: soc_pcm_prepare → STREAM_START（模拟上电）→ PREPARED
+    prepare: soc_pcm_prepare → STREAM_START（模拟通路上电）→ PREPARED
 
-write 热路径:
+write:
   snd_pcm_write
     → snd_pcm_lib_write1
         → copy_from_user(dma_area)
@@ -208,7 +200,7 @@ write 热路径:
   close → soc_pcm_close → STREAM_STOP（模拟大约 5 秒后断电）
 ```
 
-### 3.7 drain / close（停 DMA 与模拟断电）
+### 3.7 drain / close（停 DMA 与模拟通路断电）
 
 wav 播完后，`aplay` 会先等环形缓冲里剩下的数据都送出去（`drain`），再关掉设备。内核 `snd_pcm_release_substream`（`pcm_native.c`）的顺序是：
 
@@ -235,8 +227,6 @@ ops->close
 ---
 
 ## 4. 分层流程图
-
-软件调用链和硬件数据通路是两件事。下面这张图画一次 `write` 做了什么；模拟电路上电发生在更早的 prepare。
 
 ### 4.1 调用流程（软件，一次 `write`）
 
