@@ -18,74 +18,52 @@ date: 2026-08-01
 ## 目录
 
 - [1. 本文要回答什么](#1-本文要回答什么)
-- [2. 与播放的对称关系](#2-与播放的对称关系)
-- [3. 七层概览](#3-七层概览)
-- [4. 录音内核调用栈](#4-录音内核调用栈hifi--pcmc0d0c)
-  - [4.1 open](#41-open打开设备)
-  - [4.2 hw_params](#42-hw_paramsioctl与播放共用-machine)
-  - [4.3 prepare](#43-prepare模拟通路上电)
-  - [4.4 read + 首次 start](#44-read--首次-start数据期主路径)
-  - [4.5 period 完成回调](#45-period-完成回调异步唤醒阻塞的-read)
-  - [4.6 对照简图](#46-对照简图)
-  - [4.7 close](#47-close停-dma-与模拟断电)
-- [5. 分层流程图](#5-分层流程图)
-- [6. 简化分层与源文件](#6-简化分层与源文件)
-- [7. 小结](#7-小结)
+- [2. 七层概览](#2-七层概览)
+- [3. 录音内核调用栈](#3-录音内核调用栈)
+  - [3.1 open](#31-open打开设备)
+  - [3.2 hw_params](#32-hw_paramsioctl与播放共用-machine)
+  - [3.3 prepare](#33-prepare模拟通路上电)
+  - [3.4 read + 首次 start](#34-read--首次-start数据期主路径)
+  - [3.5 period 完成回调](#35-period-完成回调异步唤醒阻塞的-read)
+  - [3.6 对照简图](#36-对照简图)
+  - [3.7 close](#37-close停-dma-与模拟断电)
+- [4. 分层流程图](#4-分层流程图)
+- [5. 简化分层与源文件](#5-简化分层与源文件)
+- [6. 小结](#6-小结)
 
 ---
 
 ## 1. 本文要回答什么
 
-> **一次 `arecord -D hw:0,0`，PCM 如何从 codec ADC 进到用户态？和播放比，内核里哪些地方对称、哪些方向相反？**
+> `arecord -D hw:0,0` 录音时，PCM 如何从 codec ADC 进到用户态？
 
-设备节点见 [`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices)；播放热路径见 [声卡播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow)。本文以 **HiFi / `pcmC0D0c`** 为准。
+本文以 **HiFi / `pcmC0D0c`** 为例。
 
 录音可以看成：硬件按采样率把 ADC 采样搬进内核环形缓冲，应用用 `read()` 取走。ALSA PCM / ASoC / dmaengine 框架与播放共用，差异主要在**数据方向**与 **RX 侧使能**。
 
-模拟输入选哪路麦、左右声道是否都有信号，取决于板级接线与 Codec DAPM。本板：耳机麦进 **LINPUT1**，板载麦克风进 **RINPUT1 / RINPUT2**（见 [DAPM 路由 §5.3](/analysis/kernel/sound/wm8960-dapm-routes#53-本板原理图与脚位)）。下文只跟 PCM 热路径。
+模拟输入选哪路麦、左右声道是否都有信号，取决于板级接线与 Codec DAPM。本板：耳机麦进 **LINPUT1**，板载麦克风进 **RINPUT1 / RINPUT2**（见 [DAPM 路由 §5.3](/analysis/kernel/sound/wm8960-dapm-routes#53-本板原理图与脚位)）。
 
 ---
 
-## 2. 与播放的对称关系
-
-| 项目 | 播放（`pcmC0D0p`） | 录音（`pcmC0D0c`） |
-|------|--------------------|--------------------|
-| 字符设备 fops | `snd_pcm_f_ops[0]` | `snd_pcm_f_ops[1]` |
-| 用户态 I/O | `write` / `copy_from_user` | `read` / `copy_to_user` |
-| 环形缓冲角色 | 应用填、DMA 消费 | DMA 填、应用消费 |
-| 首次 start | 写够 `start_threshold` | 读请求 ≥ `start_threshold`（常为 1，一读即 start） |
-| 模拟上电（`STREAM_START`） | prepare 时，DAI 作为播放源 | prepare 时，DAI 作为录音入口 |
-| 模拟断电（`STREAM_STOP`） | 关掉后大约再等 5 秒 | 关掉后马上断电 |
-| DMA 方向 | `DMA_MEM_TO_DEV` | `DMA_DEV_TO_MEM` |
-| SAI | TX FIFO / 发送使能 | RX FIFO / 接收使能（`xCSR` 用 `tx=false`） |
-| Codec | DAC → 耳机/喇叭 | 麦 → ADC → I2S |
-
-`soc_pcm_trigger`、`snd_dmaengine_pcm_trigger`、`fsl_sai_trigger` **同一套函数**，靠 `substream->stream` 区分方向。
-
----
-
-## 3. 七层概览
+## 2. 七层概览
 
 1. **应用层**  
-   `arecord` 等通过 ALSA 库 `read()` / `snd_pcm_readi()` 取 PCM；采样率等仍走 `ioctl`。
+   `arecord` 等录音程序打开声卡，设好采样率 / 通道 / 格式，再不断从设备读出 PCM 样本。
 
 2. **ALSA 设备接口**  
-   `/dev/snd/pcmC0D0c` → `snd_pcm_f_ops[1]`：`read` → `snd_pcm_read()`，`ioctl` 仍负责 `hw_params` / `prepare` / `start`。prepare 做完，PCM 进入 `PREPARED`，模拟电路也在这时上电。
+   用户态打开的是 `/dev/snd/pcmC0D0c`。内核在这里接收「设参数、准备、开始」等控制，以及后续的读数据；prepare 完成后模拟通路已上电，PCM 进入可录状态。
 
 3. **ALSA PCM 核心**  
-   `snd_pcm_lib_read()` → `snd_pcm_lib_read1()`：  
-   - 若状态为 `PREPARED` 且本次请求帧数 ≥ `start_threshold`，先 `snd_pcm_start()`  
-   - 无数据则 `wait_for_avail` 阻塞  
-   - 有数据则 `copy_to_user` 从 `dma_area` 拷出
+   管理内存环形缓冲区：DMA 往里填数，应用往外取；缓冲空了就让读阻塞等待；读请求达到启动阈值后，正式开始录音（常为一读即启动）。
 
 4. **ASoC 汇总**  
-   `snd_pcm_start()` → `soc_pcm_trigger(START)`：Codec → Platform(DMA) → CPU DAI(SAI)。有效的仍是 DMA 与 SAI RX。
+   收到「开始」后，按 Codec → Platform → CPU DAI → Machine 的顺序通知各层。
 
-5. **DMA 平台**  
-   `snd_dmaengine_pcm_trigger()` 配 **DEV_TO_MEM** cyclic DMA：SAI RX FIFO → 内存。period 完成回调唤醒阻塞的 `read`。
+5. **DMA**  
+   配置并启动 SDMA：按 period 把 SAI2 RX FIFO 里的 PCM 搬进环形缓冲。搬完一段就回调，唤醒还在等数据的读操作。
 
 6. **CPU DAI / Codec**  
-   `fsl_sai_trigger()` 对 RX 置 `FRDE` / `TERE` 等；WM8960 ADC 经 I2S 送出数字音频（具体输入脚由 DAPM 决定）。ADC、输入 PGA 这些块在 prepare 时已经上电；`trigger(START)` 打开的是 SAI 接收。
+   SAI 打开接收，经 I2S 收下 WM8960 ADC 送来的数字音频；麦侧模拟经 ADC 变成数字。ADC、输入 PGA 等在 prepare 时已上电，这里主要是打开 SAI 接收。
 
 7. **硬件数据通路**
 
@@ -93,15 +71,15 @@ date: 2026-08-01
 麦/线路 ──► WM8960 ADC ──I2S──► SAI2 RX FIFO ──SDMA──► 内存环形缓冲 ──read──► 应用
 ```
 
-节奏仍由采样率 / I2S 时钟决定；缓冲空时阻塞 `read` 等待 DMA 填数。
+节奏仍由采样率 / I2S 时钟决定；缓冲空时阻塞 `read` 等待 DMA 填数据。
 
 ---
 
-## 4. 录音内核调用栈（HiFi / `pcmC0D0c`）
+## 3. 录音内核调用栈
 
 以 `arecord -D hw:0,0` 为例。先 open、设参数、prepare，再进入 read 取数；和播放同属配置期，只是方向为 capture。
 
-### 4.1 open（打开设备）
+### 3.1 open（打开设备）
 
 ```text
 sys_open("/dev/snd/pcmC0D0c")
@@ -115,7 +93,7 @@ sys_open("/dev/snd/pcmC0D0c")
                   → imx_hifi_startup              // Machine
 ```
 
-### 4.2 hw_params（ioctl，与播放共用 Machine）
+### 3.2 hw_params（ioctl，与播放共用 Machine）
 
 ```text
 sys_ioctl(SNDRV_PCM_IOCTL_HW_PARAMS)
@@ -123,9 +101,9 @@ sys_ioctl(SNDRV_PCM_IOCTL_HW_PARAMS)
       → imx_hifi_hw_params / fsl_sai_hw_params / wm8960_hw_params
 ```
 
-格式、采样率、主从时钟在此配置；本板仍是 codec 出 BCLK/FSYNC、SAI 从。播录共用一套 I2S 时钟时，Machine 里常有「另一方向已在用则跳过改时钟」的逻辑。参数设完，PCM 进入 `SETUP`。接下来 `arecord` 会做 prepare。
+格式、采样率、主从时钟在此配置；本板仍是 codec 输出 BCLK/FSYNC、SAI 作为从设备。播录共用一套 I2S 时钟时，Machine 里常有「另一方向已在用则跳过改时钟」的逻辑。参数设完，PCM 进入 `SETUP`。接下来 `arecord` 会做 prepare。
 
-### 4.3 prepare（模拟通路上电）
+### 3.3 prepare（模拟通路上电）
 
 ```text
 sys_ioctl(SNDRV_PCM_IOCTL_PREPARE)
@@ -142,9 +120,9 @@ sys_ioctl(SNDRV_PCM_IOCTL_PREPARE)
 
 `arecord` 设完采样率之后同样会再做一次 prepare，PCM 从 `SETUP` 进入 `PREPARED`。
 
-和播放走同一个 `soc_pcm_prepare`，本板同样没有各层自己的 prepare 函数。录音时这条 DAI 在图上是音频入口。麦到 ADC 的开关已经打开的话，ADC、输入 PGA 在这一步上电。SAI 接收和 SDMA 要等到下面 `read` 里的 `trigger(START)`。
+和播放走同一个 `soc_pcm_prepare`，本板同样没有各层自己的 prepare 函数。录音时这条 DAI 在图上是音频入口。麦到 ADC 的开关已经打开的话，ADC、输入 PGA 在这一步上电。
 
-### 4.4 read + 首次 start（数据期主路径）
+### 3.4 read + 首次 start（数据期主路径）
 
 ```text
 sys_read(pcmC0D0c, buf, len)
@@ -172,7 +150,7 @@ sys_read(pcmC0D0c, buf, len)
 - 传输是 **`copy_to_user`**，不是 `copy_from_user`  
 - DMA 是 **设备到内存**；SAI 使能的是 **RX**（`FSL_SAI_xCSR(false, …)`）
 
-### 4.5 period 完成回调（异步，唤醒阻塞的 read）
+### 3.5 period 完成回调（异步，唤醒阻塞的 read）
 
 ```text
 SDMA period 完成
@@ -183,14 +161,14 @@ SDMA period 完成
 
 与播放同一回调路径，只是唤醒的是 `read` 等待者。
 
-### 4.6 对照简图
+### 3.6 对照简图
 
 ```text
 配置期:
   open → hw_params → prepare
     prepare: soc_pcm_prepare → STREAM_START（模拟上电）→ PREPARED
 
-read 热路径:
+read:
   snd_pcm_read
     → snd_pcm_lib_read1
         → [首次] snd_pcm_start
@@ -207,7 +185,7 @@ read 热路径:
   close → soc_pcm_close → STREAM_STOP（马上断电）
 ```
 
-### 4.7 close（停 DMA 与模拟断电）
+### 3.7 close（停 DMA 与模拟断电）
 
 `arecord` 结束时，内核同样先停 DMA/SAI，再进 `soc_pcm_close`。
 
@@ -222,11 +200,9 @@ soc_pcm_close
 
 ---
 
-## 5. 分层流程图
+## 4. 分层流程图
 
-下面两张图：一次 `read` 的调用链，以及数据怎么从麦流到应用。模拟上电已经在 prepare 里做完。启动 DMA 的判断在**取数之前**，数据方向与播放相反。
-
-### 5.1 调用流程（软件，一次 `read`）
+### 4.1 调用流程（软件，一次 `read`）
 
 ```mermaid
 flowchart TB
@@ -255,7 +231,7 @@ flowchart TB
   C3 -->|是| C5 --> C6
 ```
 
-### 5.2 数据通路（硬件）
+### 4.2 数据通路（硬件）
 
 ```mermaid
 flowchart LR
@@ -277,7 +253,7 @@ flowchart LR
 
 ---
 
-## 6. 简化分层与源文件
+## 5. 简化分层与源文件
 
 ```text
 应用层      arecord / read(PCM)
@@ -305,9 +281,8 @@ ASoC        prepare：STREAM_START（模拟上电）
 
 ---
 
-## 7. 小结
+## 6. 小结
 
 - 录音与播放共用 ASoC / dmaengine / SAI 驱动入口，差别在 **fops 下标、读写方向、DMA 方向、SAI TX/RX**。  
 - 首次启动常发生在 **`read` 且请求帧数 ≥ `start_threshold`**，之后阻塞等待 DMA 填满可读区域。  
 - prepare 时调用 `STREAM_START`，给 ADC 一侧上电；第一次 `read` 里的 `trigger(START)` 打开 DMA 和 SAI 接收。关掉录音后马上断电。  
-- 换板时优先复用本文调用链；麦走哪只脚、左右有无声，看板级接线与 DAPM。本板：耳机麦 **LINPUT1**、板载麦克风 **RINPUT1/2**，见 [DAPM §5.3](/analysis/kernel/sound/wm8960-dapm-routes#53-本板原理图与脚位)。

@@ -9,22 +9,20 @@ date: 2026-08-01
 
 # ALSA PCM 状态机与 XRUN
 
-> **内核**：对照 NXP BSP **Linux 4.9.88**（`sound/core/pcm_native.c`、`pcm_lib.c`）；状态枚举与主流内核一致，换板可直接对照  
-> **关联**：[播放路径](/analysis/kernel/sound/imx6ull-audio-playback-flow) · [录音路径](/analysis/kernel/sound/imx6ull-audio-capture-flow) · [`/dev/snd` 设备节点](/analysis/kernel/sound/imx6ull-snd-devices)  
-> **本文**：PCM 子流状态如何变迁、`start_threshold` / `stop_threshold` / `avail_min` 管什么、XRUN 如何判定与恢复
+> **内核**：对照 NXP BSP **Linux 4.9.88**
+> **本文**：PCM 子流状态如何变迁、`start_threshold` / `stop_threshold` / `avail_min` 什么作用、XRUN 如何判定与恢复
 
 ---
 
 ## 目录
 
 - [1. 本文要回答什么](#1-本文要回答什么)
-- [2. 状态一览](#2-状态一览)
+- [2. 状态机](#2-状态机)
 - [3. 正常路径怎么走](#3-正常路径怎么走)
 - [4. 环形缓冲与三个阈值](#4-环形缓冲与三个阈值)
 - [5. XRUN：何时发生、内核做什么](#5-xrun何时发生内核做什么)
 - [6. 应用侧怎么恢复](#6-应用侧怎么恢复)
-- [7. 和播 / 录文的对照](#7-和播--录文的对照)
-- [8. 小结](#8-小结)
+- [7. 小结](#7-小结)
 
 ---
 
@@ -32,13 +30,9 @@ date: 2026-08-01
 
 > **一次 `write` / `read` 为什么有时直接返回、有时阻塞、有时变成 `-EPIPE`？PCM 子流到底处在什么状态？**
 
-[播放](/analysis/kernel/sound/imx6ull-audio-playback-flow) / [录音](/analysis/kernel/sound/imx6ull-audio-capture-flow) 讲的是数据怎么经过 ALSA → ASoC → DMA → SAI。本文补的是**同一条流上的状态约束**：哪些 ioctl / I/O 合法、缓冲空满如何反压、跟不上采样率时如何变成 XRUN。
-
-状态存在 `runtime->status->state`（UAPI：`SNDRV_PCM_STATE_*`），与具体声卡芯片无关。
-
 ---
 
-## 2. 状态一览
+## 2. 状态机
 
 定义见 `include/uapi/sound/asound.h`：
 
@@ -47,14 +41,14 @@ date: 2026-08-01
 | `OPEN` | 已 `open`，尚未完成参数设置 |
 | `SETUP` | `hw_params` 已设，尚未 `prepare` |
 | `PREPARED` | 已 `prepare`，可以 `start` / 自动 start |
-| `RUNNING` | 已 trigger，DMA/硬件在传数 |
+| `RUNNING` | 已 trigger，DMA/硬件在传数据 |
 | `XRUN` | underrun（播）或 overrun（录），传输已停 |
 | `DRAINING` | 播放侧把剩余数据播完再停 |
 | `PAUSED` | 已 pause |
 | `SUSPENDED` | 电源挂起相关 |
 | `DISCONNECTED` | 设备断开 |
 
-日常热路径主要碰前五个，外加播放结束时的 `DRAINING`。
+日常播录路径主要存在前五个状态，外加播放结束时的 `DRAINING`。
 
 ```mermaid
 stateDiagram-v2
@@ -93,10 +87,10 @@ write / read
         → state = RUNNING
   → RUNNING 下继续填/取环形缓冲
 close / drain / drop
-  → trigger(STOP) 停 DMA/SAI；soc_pcm_close：STREAM_STOP，模拟断电
+  → trigger(STOP) 停 DMA/SAI；soc_pcm_close：STREAM_STOP，模拟通路断电
 ```
 
-`snd_pcm_start` 的门禁（`pcm_native.c`）：
+`snd_pcm_start` 的条件（`pcm_native.c`）：
 
 ```text
 snd_pcm_pre_start
@@ -108,7 +102,7 @@ snd_pcm_post_start
   → state = RUNNING
 ```
 
-播放文里「写够阈值再 start」、录音文里「读请求够阈值再 start」，都是在 **`PREPARED` → `RUNNING`** 这一跳上。
+前面的播放文章里「写够阈值再 start」、录音文章里「读请求够阈值再 start」，都是在 **`PREPARED` → `RUNNING`** 这一跳上。
 
 ---
 
@@ -136,8 +130,6 @@ snd_pcm_post_start
 
 阻塞 `write`：`playback_avail` 不够 → `wait_for_avail`，等 DMA 消费出空位。  
 阻塞 `read`：`capture_avail` 为 0 → 同样 wait，等 DMA 填数。
-
-这解释了播/录流程图里的菱形分支，而不必再绑到某一款 Codec。
 
 ---
 
@@ -197,7 +189,7 @@ flowchart TB
 1. **`prepare` 再传**（`SNDRV_PCM_IOCTL_PREPARE` → `snd_pcm_prepare`）  
    回到可 trigger 的 `PREPARED`，再 `write`/`read`（或显式 `start`）。
 2. **alsa-lib `snd_pcm_recover()`**  
-   对 `-EPIPE` 做恢复封装（内部仍落到 prepare 一类路径）。
+   对 `-EPIPE` 做恢复封装。
 3. **调大缓冲 / period、提高写读节奏、降低负载**  
    减少再次踩 `stop_threshold`。
 
@@ -205,22 +197,7 @@ flowchart TB
 
 ---
 
-## 7. 和播 / 录文的对照
-
-| 话题 | 播 / 录文 | 本文 |
-|------|-----------|------|
-| `soc_pcm_prepare` / `STREAM_START` | prepare 节：模拟上电 | 状态机：`SETUP` → `PREPARED` |
-| `soc_pcm_trigger` / DMA / SAI | 主线 | 仅作为 `RUNNING` 后的后台 |
-| `start_threshold` 自动 start | 流程图菱形 | 状态机：`PREPARED` → `RUNNING` |
-| `wait_for_avail` | 缓冲满/空则阻塞 | `avail` 与 `avail_min` |
-| `-EPIPE` | 调用栈里带过 | `XRUN` + `stop_threshold` |
-| 换板差异 | 有板级节点名作对照 | 几乎纯框架 |
-
-读完播/录再读本文，可以把「正常热路径」和「状态 / 异常」拼成一张完整图。
-
----
-
-## 8. 小结
+## 7. 小结
 
 - PCM 状态约束「现在能不能 start、能不能读写」；非法状态直接 `-EBADFD` / `-EPIPE`。  
 - `start_threshold` 管何时进入 `RUNNING`；`stop_threshold` 管何时判 XRUN；`avail_min` 管阻塞唤醒粒度。  
