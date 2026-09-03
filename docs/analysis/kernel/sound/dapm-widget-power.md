@@ -9,8 +9,7 @@ date: 2026-08-07
 
 # DAPM widget 上电：谁判、何时判
 
-> **内核**：NXP BSP **Linux 4.9.88**（主文件 `sound/soc/soc-dapm.c`；PCM 侧触发见 `sound/soc/soc-pcm.c`）  
-> **对照**：100ask i.MX6ULL + WM8960 上的播放 / `tinymix` 拨开关场景  
+> **内核**：NXP BSP **Linux 4.9.88**
 > **本文**：普通音频 widget 的上电充要条件，以及 `power_check` 由谁、在何时调用
 
 ---
@@ -18,7 +17,7 @@ date: 2026-08-07
 ## 目录
 
 - [1. 本文要回答什么](#1-本文要回答什么)
-- [2. 先对齐几个词](#2-先对齐几个词)
+- [2. 名词对齐](#2-名词对齐)
 - [3. 上电充要条件：generic 路径](#3-上电充要条件generic-路径)
 - [4. power_check：谁调用](#4-power_check谁调用)
 - [5. 何时跑整次供电扫描](#5-何时跑整次供电扫描)
@@ -27,23 +26,20 @@ date: 2026-08-07
 - [8. 特例：SUPPLY / force / always_on](#8-特例supply--force--always_on)
 - [9. 小结](#9-小结)
 - [附录 A 源码索引](#附录-a-源码索引)
-- [附录 B 要点速记](#附录-b-要点速记)
 
 ---
 
 ## 1. 本文要回答什么
 
-> **Linux 什么时候给 DAPM 图上的 widget 上电？`w->power_check` 被谁调用、在什么事件之后跑起来？**
-
-范围限定 **DAPM 电源决策**（`power_check` → `dapm_power_widgets` → 上下电序列）。不展开某颗 Codec 的模拟连线表，也不展开 PCM DMA 数据面。
+> **Linux 什么时候给 DAPM 图上的 widget 上电？`w->power_check` 被谁调用、在什么条件下跑起来？**
 
 ---
 
-## 2. 先对齐几个词
+## 2. 名词对齐
 
 | 词 | 含义（本文用法） |
 |----|------------------|
-| **widget** | DAPM 节点：DAC / ADC / Mixer / 输出脚等，常绑一颗电源位 |
+| **widget** | DAPM 节点：DAC / ADC / Mixer / 输出脚等，常和电源位绑定 |
 | **path** | 两 widget 之间的运行时边（`snd_soc_dapm_path`）；`connect` 表示是否接通 |
 | **端点（endpoint）** | 行走时可当作「路径终点」的 widget：`is_ep` 标明 source/sink，且 `connected` |
 | **complete path** | 从有效 source 端点沿 `connect==1` 的边走到有效 sink 端点的整条链 |
@@ -69,15 +65,15 @@ return out != 0 && in != 0;
 1. 从该 widget 往 **输入方向** 走，能到达至少一个**有效 source 端点**（`in != 0`）；  
 2. 从该 widget 往 **输出方向** 走，能到达至少一个**有效 sink 端点**（`out != 0`）。
 
-两者同时成立 ⇔ 该 widget 落在至少一条 **complete path** 上 ⇔ `new_power = 1`。
+两个方向都走通，说明这个 widget 落在至少一条 **complete path** 上，于是 `new_power` 为 1。
 
 行走规则要点（`is_connected_ep`）：
 
-- 只沿 **`path->connect == 1`** 的边前进（闸刀打开或常通边）；  
+- 只沿 **`path->connect == 1`** 的边前进（开关打开或常通边）；  
 - 跳过 `weak`、以及标记为 supply 的边（它们不计入这条「音频 complete path」）；  
-- 碰到带正确 `is_ep` 且 `connected` 的 widget 时停下，再经 `snd_soc_dapm_suspend_check`（卡在 D3 且未 `ignore_suspend` 则端点作废）。
+- 走到标记了对应 `is_ep`、并且 `connected` 的 widget，就当作端点停下。
 
-内核注释对 complete path 的典型形态（`dapm_power_widgets` 上方）：
+内核注释 complete path 的典型形态（`dapm_power_widgets` 上方）：
 
 ```text
 DAC → 输出脚
@@ -93,13 +89,13 @@ DAC → ADC（loopback）
 | source | PCM **START** 后，DAI 的 playback widget 被标成 `EP_SOURCE` 且 `active` |
 | sink | `OUTPUT` / `HP` / `SPK` 等输出类 widget，且未被 `dapm_nc_pin` 置成未连接 |
 
-因此：只拧音量、中间 Mixer Switch 断开 → 边 `connect=0` → 中间 widget 的 `in` 或 `out` 为 0 → **不上电**。流没起来（DAI 不是有效端点）同理。
+因此：只调音量、中间 Mixer Switch 断开 → 边 `connect=0` → 中间 widget 的 `in` 或 `out` 为 0 → **不上电**。流没起来（DAI 不是有效端点）同理。
 
 ---
 
 ## 4. `power_check`：谁调用
 
-`w->power_check` **没有**独立的周期性轮询。唯一包装入口：
+`w->power_check` **没有**独立的周期性轮询。唯一封装的入口：
 
 ```c
 static int dapm_widget_power_check(struct snd_soc_dapm_widget *w)
@@ -124,9 +120,7 @@ static int dapm_widget_power_check(struct snd_soc_dapm_widget *w)
 | `dapm_power_one_widget` | 给某个 dirty widget 算该上还是该下，再 `dapm_widget_set_power` |
 | `dapm_supply_check_power` | SUPPLY 判断自己要不要上电时，递归问下游 sink：`dapm_widget_power_check(path->sink)` |
 
-`dapm_power_one_widget` 再被 **`dapm_power_widgets`** 调用：先扫 `card->dapm_dirty`；电源状态变化时可能把邻居也 `dapm_mark_dirty`，同一次扫描里继续处理。
-
-每次进入 `dapm_power_widgets` 会先 `dapm_reset()`，把全卡 widget 的 `power_checked = false`，于是**这一轮扫描里每个 widget 的 `power_check` 最多执行一次**。
+真正扫描上电的是 **`dapm_power_widgets`**：只处理标脏的 widget，每个最多算一次该不该上电。进入时先清掉「已经算过」的标记。
 
 ```text
 dapm_power_widgets
@@ -172,8 +166,6 @@ dapm_power_widgets(card, event)
 
 注释强调：完整路径是「有有效端点的 route」；扫描的目的就是找出谁在 complete path 上，谁该进上电/断电列表。
 
-`dapm_widget_set_power`：若 `w->power` 与目标相同则直接返回；否则更新邻居 dirty，并把 widget 插入 up/down 有序列表，供后面按类型排序写硬件（减轻 pop）。
-
 ---
 
 ## 7. 两条常见触发链
@@ -198,7 +190,7 @@ dapm_power_widgets(rtd->card, event);
 
 对播放：DAI 成为有效 **source** 端点；若输出脚仍是有效 **sink**，且中间 Mixer 等边 `connect==1`，则 DAC / Output Mixer / PGA 等 `in && out` 成立 → 进入上电序列。
 
-### 7.2 `tinymix` 拨路由开关
+### 7.2 `tinymix` 拨 route 开关
 
 DAPM 的 `put` 改完寄存器后走 mixer 更新：
 
@@ -209,7 +201,7 @@ soc_dapm_connect_path(path, connect, "mixer update");
 dapm_power_widgets(card, SND_SOC_DAPM_STREAM_NOP);
 ```
 
-例如打开 `Left Output Mixer PCM Playback Switch`：对应 path 变为接通 → 若此时流已 START，complete path 被补全 → 沿线 widget 上电。只拨开关、从未 START，则往往仍缺 source 端点，中间块仍可保持断电。
+例如打开 `Left Output Mixer PCM Playback Switch`：对应 path 变为接通 → 若此时流已 START，complete path 被补全 → 沿线 widget 上电。
 
 ---
 
@@ -228,9 +220,9 @@ WM8960 上的 `MICB` 一类 SUPPLY：麦克风通路上的 ADC/Input 需要电�
 
 ## 9. 小结
 
-- 普通 widget 上电 **⇔** 同时能连到有效 source 端点与有效 sink 端点（落在 complete path 上）。  
+- 普通 widget 上电，必须同时能连到有效 source 端点与有效 sink 端点（落在 complete path 上）。  
 - `power_check` 只经 `dapm_widget_power_check` 进入；由 `dapm_power_one_widget`（及 SUPPLY 递归）在 **`dapm_power_widgets`** 扫描 dirty 时调用。  
-- 扫描由流事件、DAPM 开关/MUX、`snd_soc_dapm_sync`、新建 widget 等触发，属**事件驱动**。本板 HiFi：prepare 时 `STREAM_START` 上电，close 时 `STREAM_STOP` 断电。  
+- 扫描由流事件、DAPM 开关/MUX、`snd_soc_dapm_sync`、新建 widget 等触发，属**事件驱动**。
 - 真正写电源寄存器发生在 `dapm_seq_run` 的上电/断电序列，不在 `power_check` 函数内部。
 
 ---
@@ -247,13 +239,3 @@ WM8960 上的 `MICB` 一类 SUPPLY：麦克风通路上的 ADC/Input 需要电�
 | `sound/soc/soc-pcm.c` — `soc_pcm_prepare` / `soc_pcm_close` | HiFi：`STREAM_START` / `STREAM_STOP` |
 | `include/sound/soc-dapm.h` — `snd_soc_dapm_widget` / `snd_soc_dapm_path` | `power_check`、`connect`、`is_ep` |
 
----
-
-## 附录 B 要点速记
-
-1. **generic 上电** = `is_connected_input_ep && is_connected_output_ep`。  
-2. **complete path** = 有效端点 + 中间每段 `path->connect == 1`。  
-3. **`power_check` ← `dapm_widget_power_check` ← `dapm_power_one_widget` ← `dapm_power_widgets`**。  
-4. 触发靠 **dirty + 事件**（流 / 开关 / sync），不是轮询。  
-5. 一轮扫描内 `power_checked` 保证每个 widget 的 `power_check` 最多算一次。  
-6. SUPPLY 跟下游是否需要电；`force` 可强制上电。
