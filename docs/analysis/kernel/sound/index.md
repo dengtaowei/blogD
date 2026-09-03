@@ -19,7 +19,7 @@ home: false
 - [ALSA PCM 状态机](/analysis/kernel/sound/alsa-pcm-state-xrun) — 状态、`start`/`stop`、underrun/overrun
 - [ALSA hw_params 参数协商](/analysis/kernel/sound/alsa-hw-params-negotiate) — 为什么 48 kHz 能播，96 kHz 就不行
 - [WM8960 kcontrol 构造与使用](/analysis/kernel/sound/wm8960-kcontrol) — `tinymix` 里那些音量名字是怎么来的
-- [amixer 改音量、拨开关：内核在哪里分开走](/analysis/kernel/sound/alsa-ctl-write-flow) — 一条只改数字，一条才会接通通路
+- [amixer 改音量、拨开关：内核的不同调用](/analysis/kernel/sound/alsa-ctl-write-flow) — 一条只改数字，一条才会接通通路
 - [从 tinymix 到 WM8960 DAPM 路由](/analysis/kernel/sound/wm8960-dapm-routes) — 那些开关对应芯片里哪条线
 - [DAPM widget 上电：谁判、何时判](/analysis/kernel/sound/dapm-widget-power) — 电源管理
 
