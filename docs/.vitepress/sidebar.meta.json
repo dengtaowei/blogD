@@ -64,6 +64,10 @@
                 "text": "Oops 栈回溯"
               },
               {
+                "file": "analysis/kernel/debug/timer-sample-preempt-busyloop-pc.md",
+                "text": "定时器采样抓空转 PC"
+              },
+              {
                 "file": "analysis/kernel/debug/template.md",
                 "text": "写作模板"
               }
