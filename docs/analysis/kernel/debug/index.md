@@ -29,6 +29,7 @@ home: false
 - 通用工具与方法
   - [根据 Oops 的 PC 定位到出错指令](/analysis/kernel/debug/oops-pc-to-source)
   - [从 Oops 栈转储手工回溯调用栈](/analysis/kernel/debug/oops-stack-unwind)
+  - [用 arch_timer 采样抓关抢占空转的 PC / LR](/analysis/kernel/debug/timer-sample-preempt-busyloop-pc)
 - [写作模板](/analysis/kernel/debug/template)
 
 ---
