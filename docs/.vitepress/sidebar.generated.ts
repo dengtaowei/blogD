@@ -84,6 +84,10 @@ const sidebar: DefaultTheme.Sidebar = {
               "link": "/analysis/kernel/debug/oops-stack-unwind"
             },
             {
+              "text": "定时器采样抓空转 PC",
+              "link": "/analysis/kernel/debug/timer-sample-preempt-busyloop-pc"
+            },
+            {
               "text": "写作模板",
               "link": "/analysis/kernel/debug/template"
             }
