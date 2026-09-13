@@ -81,6 +81,7 @@ Linux 内核子系统源码分析（Linux 6.8）。
 
 1. [eBPF kprobe：load / attach / 命中](/analysis/kernel/bpf/ebpf-kprobe-load-attach) — PROG_LOAD / 插桩 / LINK / 多 BPF 分发
 2. [kprobe-on-ftrace 插桩实测](/analysis/kernel/bpf/kprobe-on-ftrace-lab) — 入口 NOP↔CALL 与 handler 上下文
+3. [经典 kprobe 插桩实测](/analysis/kernel/bpf/kprobe-breakpoint-lab) — ARM32 undef 断点（非 ftrace）
 
 ## 调试与实践
 

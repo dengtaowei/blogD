@@ -10,7 +10,8 @@ date: 2026-07-30
 
 > Ubuntu HWE **Linux 5.15.0-139-generic**（`CONFIG_PREEMPT_VOLUNTARY`）· `arch/x86/kernel/kprobes/ftrace.c` + `ftrace_64.S`  
 > **Linux 内核 · BPF / kprobe**  
-> 用 out-of-tree 模块观察 usbtrace 同款 **kprobe-on-ftrace**（入口 NOP↔CALL）；原理主文见 [eBPF kprobe 路径](/analysis/kernel/bpf/ebpf-kprobe-load-attach)。
+> 用 out-of-tree 模块观察 usbtrace 同款 **kprobe-on-ftrace**（入口 NOP↔CALL）；原理主文见 [eBPF kprobe 路径](/analysis/kernel/bpf/ebpf-kprobe-load-attach)。  
+> ARM32 无 ftrace 挂接时的对照实验见 [经典 kprobe 插桩实测](/analysis/kernel/bpf/kprobe-breakpoint-lab)。
 
 配套源码：[`code/kprobe-bytes-demo/`](https://github.com/dengtaowei/blogD/tree/main/code/kprobe-bytes-demo)。
 
