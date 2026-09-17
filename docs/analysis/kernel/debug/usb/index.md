@@ -18,6 +18,7 @@ USB 子系统相关的具体问题排查与实验记录。
 - [重启后 USB WiFi 概率性枚举不到](/analysis/kernel/debug/usb/usb-wifi-reboot-power-residue) — 软复位不断电，设备侧上电序列轮询 `0x05` 超时；按序停流量再下电
 - [libusb 在 Windows 上枚举不到设备](/analysis/kernel/debug/usb/libusb-windows-hcd-enum-fail) — 无子节点的虚拟 root hub 让 HCD 扫描轮失败，整张设备列表为空
 - [USB HID 键盘 Remote Wakeup](/analysis/kernel/debug/usb/hid-remote-wakeup) — Host 何时 `SET_FEATURE`；DWC2 上 Device 主动 Resume 收不到检测中断
+- [PC 休眠时鼠标日志刷屏](/analysis/kernel/debug/usb/pc-suspend-mouse-wakeup-log) — 休眠进入时挂起与远程唤醒拉锯；假成功与卡 K / 口断电
 
 ---
 
